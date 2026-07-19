@@ -91,6 +91,20 @@ void main() {
       expect(updated.bpm, 90);
     });
 
+    test('toggleFavorite flips the star both ways', () async {
+      final id = await repo.insert(_newSong(title: 'Starrable'));
+      final song = await repo.watchSongById(id).first;
+      expect(song!.favorite, isFalse);
+
+      await repo.toggleFavorite(song);
+      final starred = await repo.watchSongById(id).first;
+      expect(starred!.favorite, isTrue);
+
+      await repo.toggleFavorite(starred);
+      final unstarred = await repo.watchSongById(id).first;
+      expect(unstarred!.favorite, isFalse);
+    });
+
     test('delete removes a song', () async {
       final id = await repo.insert(_newSong(title: 'Doomed'));
       expect(await repo.watchSongById(id).first, isNotNull);

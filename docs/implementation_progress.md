@@ -17,13 +17,13 @@ to keep separately. The plan file stays the source of **scope**; this file track
 
 ## 1. Status overview
 
-**Current status:** Phase 1 complete. **Phase 2 (Songbook list screen) is next.**
+**Current status:** Phase 2 complete. **Phase 3 (Editor) is next.**
 
 | Phase | Title | Status |
 | --- | --- | --- |
 | 0 | Project setup | ✅ Done |
 | 1 | Foundation: data, theme, seeding | ✅ Done |
-| 2 | Songbook (list screen) | ⬜ Not started |
+| 2 | Songbook (list screen) | ✅ Done |
 | 3 | Editor | ⬜ Not started |
 | 4 | Performance view | ⬜ Not started |
 | 5 | Auto-scroll | ⬜ Not started |
@@ -48,10 +48,17 @@ to keep separately. The plan file stays the source of **scope**; this file track
 
 ---
 
-## 4. Phase 2 — Songbook (list screen) ⬜ Not started
+## 4. Phase 2 — Songbook (list screen) ✅ Done
 
-- [ ] Can search, star/unstar, filter, and delete; counts update live.
-- [ ] Dual-pane appears on a tablet/large window; single-pane on a phone.
+- [x] Can search, star/unstar, filter, and delete; counts update live.
+- [x] Dual-pane appears on a tablet/large window; single-pane on a phone.
+
+Built on 2026-07-19 — see
+[change_log/20260719_212233_phase-2-songbook.md](../change_log/20260719_212233_phase-2-songbook.md).
+Still open for later phases: Import ChordPro is shown but disabled (Phase 7),
+and `lib/screens/song_detail_placeholder_screen.dart` stands in for the editor
+(Phase 3) and the performance view (Phase 4) — delete it then. A manual run on a
+device has not been done yet.
 
 ---
 

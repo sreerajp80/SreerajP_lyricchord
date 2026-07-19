@@ -46,6 +46,13 @@ class SongRepository {
     }
   }
 
+  /// Flips the starred flag on [song] and saves it.
+  ///
+  /// Kept here so widgets never have to build a changed copy themselves.
+  Future<void> toggleFavorite(SongNote song) {
+    return update(song.copyWith(favorite: !song.favorite));
+  }
+
   /// Deletes a song by id.
   Future<void> delete(int id) async {
     try {
