@@ -1,34 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'screens/home_screen.dart';
+import 'package:lyriccord/data/app_database.dart';
+import 'package:lyriccord/providers/database_provider.dart';
+import 'package:lyriccord/providers/theme_mode_provider.dart';
+import 'package:lyriccord/screens/home_screen.dart';
+import 'package:lyriccord/theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: LyricCordApp()));
+
+  // Open the database (seeds the classic songs on first run) and load the saved
+  // preferences before the first frame, so the app opens with the right theme.
+  final database = AppDatabase();
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const LyricCordApp(),
+    ),
+  );
 }
 
-class LyricCordApp extends StatelessWidget {
+class LyricCordApp extends ConsumerWidget {
   const LyricCordApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Phase 0 uses a default Material 3 seed theme. The full violet palette
-    // and saved theme mode are wired in Phase 1.
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
       title: 'LyricCord',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6750A4)),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6750A4),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeMode,
       home: const HomeScreen(),
     );
   }
