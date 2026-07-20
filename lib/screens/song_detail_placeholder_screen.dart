@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:lyriccord/providers/song_list_provider.dart';
 
-/// Temporary stand-in for the screens that later phases build.
+/// Temporary stand-in for the performance view, which Phase 4 builds.
 ///
-/// Phase 2 already has a working list, a **+** button and a tablet detail pane,
-/// but the performance view (Phase 4) and the editor (Phase 3) do not exist
-/// yet. This screen fills those routes so nothing dead-ends.
+/// The list (Phase 2) and the editor (Phase 3) are real, so this screen only
+/// covers `/song/:id` — reading a song. It offers an **Edit** button so the
+/// editor is reachable from here on a phone and in the tablet pane.
 ///
-/// **Delete this file in Phase 3/4** when the real screens land.
+/// **Delete this file in Phase 4** when the performance view lands.
 class SongDetailPlaceholderScreen extends ConsumerWidget {
   const SongDetailPlaceholderScreen({
     super.key,
@@ -56,6 +57,12 @@ class SongDetailPlaceholderScreen extends ConsumerWidget {
             if (id != null) ...[
               const SizedBox(height: 16),
               _SongTitle(songId: id),
+              const SizedBox(height: 16),
+              FilledButton.tonalIcon(
+                onPressed: () => context.push('/song/$id/edit'),
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Edit song'),
+              ),
             ],
           ],
         ),

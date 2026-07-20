@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:lyriccord/screens/about_screen.dart';
 import 'package:lyriccord/screens/home_shell.dart';
 import 'package:lyriccord/screens/song_detail_placeholder_screen.dart';
+import 'package:lyriccord/screens/song_editor_screen.dart';
 
 /// The app's routes, exactly as architecture §13 lists them.
 ///
-/// `/song/:id`, `/song/:id/edit` and `/new` still point at
-/// [SongDetailPlaceholderScreen]; Phase 3 and Phase 4 replace those builders
-/// with the real editor and performance screens.
+/// `/new` and `/song/:id/edit` open the real editor. `/song/:id` still points
+/// at [SongDetailPlaceholderScreen]; Phase 4 replaces it with the performance
+/// view.
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
@@ -17,8 +18,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', builder: (context, state) => const HomeShell()),
       GoRoute(
         path: '/new',
-        builder: (context, state) =>
-            const SongDetailPlaceholderScreen(phaseLabel: 'Editor (Phase 3)'),
+        builder: (context, state) => const SongEditorScreen(),
       ),
       GoRoute(
         path: '/song/:id',
@@ -29,10 +29,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: 'edit',
-            builder: (context, state) => SongDetailPlaceholderScreen(
-              songId: _idOf(state),
-              phaseLabel: 'Editor (Phase 3)',
-            ),
+            builder: (context, state) => SongEditorScreen(songId: _idOf(state)),
           ),
         ],
       ),

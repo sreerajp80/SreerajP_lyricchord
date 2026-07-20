@@ -17,14 +17,14 @@ to keep separately. The plan file stays the source of **scope**; this file track
 
 ## 1. Status overview
 
-**Current status:** Phase 2 complete. **Phase 3 (Editor) is next.**
+**Current status:** Phase 3 complete. **Phase 4 (Performance view) is next.**
 
 | Phase | Title | Status |
 | --- | --- | --- |
 | 0 | Project setup | ✅ Done |
 | 1 | Foundation: data, theme, seeding | ✅ Done |
 | 2 | Songbook (list screen) | ✅ Done |
-| 3 | Editor | ⬜ Not started |
+| 3 | Editor | ✅ Done |
 | 4 | Performance view | ⬜ Not started |
 | 5 | Auto-scroll | ⬜ Not started |
 | 6 | Chord reference | ⬜ Not started |
@@ -62,10 +62,17 @@ device has not been done yet.
 
 ---
 
-## 5. Phase 3 — Editor ⬜ Not started
+## 5. Phase 3 — Editor ✅ Done
 
-- [ ] Can create a new song and edit an existing one; changes persist.
-- [ ] Chord suggestions change with the entered key; custom chords can be added.
+- [x] Can create a new song and edit an existing one; changes persist.
+- [x] Chord suggestions change with the entered key; custom chords can be added.
+
+Built on 2026-07-20 — see
+[change_log/20260720_073000_phase-3-editor.md](../change_log/20260720_073000_phase-3-editor.md).
+`/new` and `/song/:id/edit` open the real editor. Reading a song still shows
+`lib/screens/song_detail_placeholder_screen.dart`, which now carries an
+**Edit song** button; Phase 4 replaces that file with the performance view.
+A manual run on a device has not been done yet.
 
 ---
 
