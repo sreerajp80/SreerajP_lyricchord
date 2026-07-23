@@ -10,6 +10,7 @@ void main() {
     required SongNote song,
     VoidCallback? onTap,
     VoidCallback? onToggleFavorite,
+    VoidCallback? onDuplicate,
     VoidCallback? onDelete,
   }) {
     return tester.pumpWidget(
@@ -19,6 +20,7 @@ void main() {
             song: song,
             onTap: onTap ?? () {},
             onToggleFavorite: onToggleFavorite ?? () {},
+            onDuplicate: onDuplicate ?? () {},
             onDelete: onDelete ?? () {},
           ),
         ),
@@ -50,9 +52,28 @@ void main() {
     expect(find.byIcon(Icons.star), findsOneWidget);
   });
 
-  testWidgets('fires the tap, star and delete callbacks', (tester) async {
+  testWidgets('badges expose full screen-reader labels', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpCard(tester, song: _song());
+
+    // The short badge text stays on screen, but a screen reader hears the full
+    // wording (accessibility pass, Phase 8). The card merges its labels into one
+    // node, so match the full wording within it rather than as a whole label.
+    expect(find.bySemanticsLabel(RegExp('Key G')), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('80 beats per minute')),
+      findsOneWidget,
+    );
+
+    handle.dispose();
+  });
+
+  testWidgets('fires the tap, star, duplicate and delete callbacks', (
+    tester,
+  ) async {
     var tapped = 0;
     var starred = 0;
+    var duplicated = 0;
     var deleted = 0;
 
     await pumpCard(
@@ -60,16 +81,19 @@ void main() {
       song: _song(),
       onTap: () => tapped++,
       onToggleFavorite: () => starred++,
+      onDuplicate: () => duplicated++,
       onDelete: () => deleted++,
     );
 
     await tester.tap(find.text('Amazing Grace'));
     await tester.tap(find.byIcon(Icons.star));
+    await tester.tap(find.byIcon(Icons.content_copy_outlined));
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.pump();
 
     expect(tapped, 1);
     expect(starred, 1);
+    expect(duplicated, 1);
     expect(deleted, 1);
   });
 }

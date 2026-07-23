@@ -112,6 +112,29 @@ void main() {
       await repo.delete(id);
       expect(await repo.watchSongById(id).first, isNull);
     });
+
+    test('duplicate saves an unstarred copy and leaves the original', () async {
+      final id = await repo.insert(
+        _newSong(title: 'Original').copyWith(favorite: true, key: 'D', bpm: 88),
+      );
+      final original = await repo.watchSongById(id).first;
+
+      final copyId = await repo.duplicate(original!);
+      expect(copyId, isNot(id));
+
+      final copy = await repo.watchSongById(copyId).first;
+      expect(copy!.title, 'Original (Copy)');
+      expect(copy.favorite, isFalse);
+      // The rest of the song carries over unchanged.
+      expect(copy.key, 'D');
+      expect(copy.bpm, 88);
+      expect(copy.lyrics, original.lyrics);
+
+      // The original is untouched.
+      final stillThere = await repo.watchSongById(id).first;
+      expect(stillThere!.title, 'Original');
+      expect(stillThere.favorite, isTrue);
+    });
   });
 
   group('reactive streams', () {

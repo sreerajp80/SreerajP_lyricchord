@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:lyriccord/core/utils/song_copy.dart';
 import 'package:lyriccord/models/song_note.dart';
 import 'package:lyriccord/providers/database_provider.dart';
 import 'package:lyriccord/services/chord_suggestion_service.dart';
@@ -115,12 +116,18 @@ class SongDraft {
   static const int maxBpm = 300;
 
   /// The chords offered by the toolbar: the key's own chords first, then any
-  /// custom ones, with no repeats.
-  List<String> get chordSuggestions {
+  /// custom ones added this session, with no repeats.
+  List<String> get chordSuggestions => chordSuggestionsWith(const []);
+
+  /// Like [chordSuggestions], but with the user's saved custom chords
+  /// (Settings → Chords) slotted in between the key's chords and this
+  /// session's ones. Repeats are dropped.
+  List<String> chordSuggestionsWith(List<String> savedChords) {
     const service = ChordSuggestionService();
     final chords = <String>[...service.suggestionsForKey(key)];
-    for (final custom in customChords) {
-      if (!chords.contains(custom)) chords.add(custom);
+    for (final custom in [...savedChords, ...customChords]) {
+      final clean = custom.trim();
+      if (clean.isNotEmpty && !chords.contains(clean)) chords.add(clean);
     }
     return List.unmodifiable(chords);
   }
@@ -156,10 +163,7 @@ class SongEditorNotifier extends AsyncNotifier<SongDraft> {
   Future<SongDraft> build() async {
     if (songId == 0) return const SongDraft();
 
-    final song = await ref
-        .watch(songRepositoryProvider)
-        .watchSongById(songId)
-        .first;
+    final song = await ref.watch(songRepositoryProvider).findById(songId);
     if (song == null) return const SongDraft();
     return SongDraft.fromSong(song);
   }
@@ -205,6 +209,29 @@ class SongEditorNotifier extends AsyncNotifier<SongDraft> {
     await repository.update(song);
     _update((d) => _saved(song, d.customChords));
     return song.id;
+  }
+
+  /// Saves the current draft as a brand-new song (an arrangement variant) and
+  /// returns the new song's id.
+  ///
+  /// Unlike [save], this never overwrites the song being edited: it inserts a
+  /// new row titled `"<title> (Copy)"`, carrying whatever key, lyrics, and other
+  /// changes the user has made in this session. The editor's own draft is left
+  /// as it was, still pointing at the original song.
+  Future<int> saveAsCopy() async {
+    final draft = state.value;
+    if (draft == null) return 0;
+
+    final repository = ref.read(songRepositoryProvider);
+    final source = draft.toSong(
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+    final copy = source.copyWith(
+      id: 0,
+      title: copiedTitle(source.title),
+      favorite: false,
+    );
+    return repository.insert(copy);
   }
 
   /// The draft after a successful save: clean again (so it is no longer

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:lyriccord/providers/database_provider.dart';
+import 'package:lyriccord/providers/theme_mode_provider.dart';
 import 'package:lyriccord/screens/home_shell.dart';
 import 'package:lyriccord/widgets/song_card.dart';
 
@@ -27,14 +29,26 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [songRepositoryProvider.overrideWithValue(repo)],
+        overrides: [
+          songRepositoryProvider.overrideWithValue(repo),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
         child: const MaterialApp(home: HomeShell()),
       ),
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('the app bar has a Settings button', (tester) async {
+    await pumpSongbook(tester);
+
+    expect(find.byTooltip('Settings'), findsOneWidget);
+  });
 
   testWidgets('lists the seeded songs with their counts', (tester) async {
     await pumpSongbook(tester);
@@ -141,6 +155,20 @@ void main() {
     expect(find.text('All Songs (2)'), findsOneWidget);
   });
 
+  testWidgets('duplicate adds a copy of the song to the list', (tester) async {
+    await pumpSongbook(tester);
+
+    // The list is newest-first, so the first duplicate icon is Jingle Bells.
+    await tester.tap(find.byIcon(Icons.content_copy_outlined).first);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SongCard), findsNWidgets(4));
+    expect(find.text('Jingle Bells (Copy)'), findsOneWidget);
+    expect(find.text('All Songs (4)'), findsOneWidget);
+    // The original is still there.
+    expect(find.text('Jingle Bells'), findsOneWidget);
+  });
+
   testWidgets('the empty songbook state appears when there are no songs', (
     tester,
   ) async {
@@ -181,6 +209,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Pick a song'), findsNothing);
-    expect(find.text('Performance view (Phase 4)'), findsOneWidget);
+    // The right pane now shows the real performance view for the song.
+    expect(
+      find.textContaining('Auto-scroll', findRichText: true),
+      findsOneWidget,
+    );
   });
 }

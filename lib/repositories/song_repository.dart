@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'package:lyriccord/core/errors/app_exception.dart';
+import 'package:lyriccord/core/utils/song_copy.dart';
 import 'package:lyriccord/data/app_database.dart';
 import 'package:lyriccord/models/song_note.dart';
 
@@ -28,6 +29,19 @@ class SongRepository {
         .map((row) => row == null ? null : _toModel(row));
   }
 
+  /// One song by id, read once. Returns `null` if it does not exist.
+  ///
+  /// Used by the editor, which loads the song into its fields and then owns
+  /// the text until it is saved.
+  Future<SongNote?> findById(int id) async {
+    try {
+      final row = await _db.findSongById(id);
+      return row == null ? null : _toModel(row);
+    } catch (e) {
+      throw StorageException('Could not open the song.', cause: e);
+    }
+  }
+
   /// Inserts a new song and returns its assigned id.
   Future<int> insert(SongNote song) async {
     try {
@@ -51,6 +65,22 @@ class SongRepository {
   /// Kept here so widgets never have to build a changed copy themselves.
   Future<void> toggleFavorite(SongNote song) {
     return update(song.copyWith(favorite: !song.favorite));
+  }
+
+  /// Saves a fresh copy of [song] and returns the new song's id.
+  ///
+  /// The copy is a new row (id `0` so the database assigns one), titled
+  /// `"<title> (Copy)"`, unstarred, and stamped with the current time so it
+  /// lands at the top of the songbook. The original is left untouched.
+  Future<int> duplicate(SongNote song) {
+    return insert(
+      song.copyWith(
+        id: 0,
+        title: copiedTitle(song.title),
+        favorite: false,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
   }
 
   /// Deletes a song by id.

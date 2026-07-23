@@ -2,15 +2,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:lyriccord/screens/about_screen.dart';
+import 'package:lyriccord/screens/chord_settings_screen.dart';
+import 'package:lyriccord/screens/font_settings_screen.dart';
+import 'package:lyriccord/screens/general_settings_screen.dart';
 import 'package:lyriccord/screens/home_shell.dart';
-import 'package:lyriccord/screens/song_detail_placeholder_screen.dart';
+import 'package:lyriccord/screens/import_export_screen.dart';
+import 'package:lyriccord/screens/metronome_settings_screen.dart';
+import 'package:lyriccord/screens/settings_screen.dart';
 import 'package:lyriccord/screens/song_editor_screen.dart';
+import 'package:lyriccord/screens/song_performance_screen.dart';
+import 'package:lyriccord/screens/theme_settings_screen.dart';
 
 /// The app's routes, exactly as architecture §13 lists them.
-///
-/// `/new` and `/song/:id/edit` open the real editor. `/song/:id` still points
-/// at [SongDetailPlaceholderScreen]; Phase 4 replaces it with the performance
-/// view.
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
@@ -22,14 +25,44 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/song/:id',
-        builder: (context, state) => SongDetailPlaceholderScreen(
-          songId: _idOf(state),
-          phaseLabel: 'Performance view (Phase 4)',
-        ),
+        builder: (context, state) =>
+            SongPerformanceScreen(songId: _idOf(state)),
         routes: [
           GoRoute(
             path: 'edit',
             builder: (context, state) => SongEditorScreen(songId: _idOf(state)),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(
+            path: 'general',
+            builder: (context, state) => const GeneralSettingsScreen(),
+            routes: [
+              GoRoute(
+                path: 'import',
+                builder: (context, state) => const ImportExportScreen(),
+              ),
+              GoRoute(
+                path: 'metronome',
+                builder: (context, state) => const MetronomeSettingsScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'themes',
+            builder: (context, state) => const ThemeSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'chords',
+            builder: (context, state) => const ChordSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'fonts',
+            builder: (context, state) => const FontSettingsScreen(),
           ),
         ],
       ),
@@ -39,6 +72,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 });
 
 /// Reads the `:id` path parameter. Returns `null` if it is missing or not a
-/// number, so a bad link shows the placeholder instead of crashing.
+/// number, so a bad link shows a "song not found" message instead of crashing.
 int? _idOf(GoRouterState state) =>
     int.tryParse(state.pathParameters['id'] ?? '');

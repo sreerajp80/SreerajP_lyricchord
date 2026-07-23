@@ -64,6 +64,14 @@ class AppDatabase extends _$AppDatabase {
     )..where((t) => t.id.equals(id))).watchSingleOrNull();
   }
 
+  /// A single song by id, read once. `null` if it does not exist.
+  ///
+  /// The editor wants a snapshot, not a live stream — a stream would fight
+  /// with what the user is typing.
+  Future<SongNoteRow?> findSongById(int id) {
+    return (select(songNotes)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
   /// Inserts a song and returns the new row id.
   Future<int> insertSong(SongNotesCompanion song) {
     return into(songNotes).insert(song);

@@ -76,6 +76,17 @@ class _AboutBody extends StatelessWidget {
                   ? () => _openMail(entry.value)
                   : null,
             ),
+        // Flutter's built-in licence page, which also lists the bundled fonts'
+        // Open Font Licence (registered in main.dart).
+        ListTile(
+          leading: const Icon(Icons.description_outlined),
+          title: const Text('Open source licenses'),
+          onTap: () => showLicensePage(
+            context: context,
+            applicationName: config.appName,
+            applicationVersion: 'Version ${config.version}',
+          ),
+        ),
       ],
     );
   }

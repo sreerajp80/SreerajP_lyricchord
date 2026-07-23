@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:lyriccord/core/utils/song_copy.dart';
 import 'package:lyriccord/models/song_note.dart';
 import 'package:lyriccord/repositories/song_repository.dart';
 
@@ -58,6 +59,13 @@ class FakeSongRepository implements SongRepository {
   List<SongNote> get _sorted =>
       List.of(_songs)..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
+  /// The songs stored right now, newest first.
+  ///
+  /// Test-only synchronous read. Prefer this over `await watchAllSongs().first`
+  /// inside a `testWidgets` body: awaiting the broadcast stream there can wedge
+  /// the fake-async clock so the test never finishes.
+  List<SongNote> get currentSongs => _sorted;
+
   void _emit() => _changes.add(_sorted);
 
   @override
@@ -77,6 +85,10 @@ class FakeSongRepository implements SongRepository {
   }
 
   @override
+  Future<SongNote?> findById(int id) async =>
+      _songs.where((s) => s.id == id).firstOrNull;
+
+  @override
   Future<int> insert(SongNote song) async {
     final id = _nextId++;
     _songs.add(song.copyWith(id: id));
@@ -94,6 +106,18 @@ class FakeSongRepository implements SongRepository {
   @override
   Future<void> toggleFavorite(SongNote song) {
     return update(song.copyWith(favorite: !song.favorite));
+  }
+
+  @override
+  Future<int> duplicate(SongNote song) {
+    return insert(
+      song.copyWith(
+        id: 0,
+        title: copiedTitle(song.title),
+        favorite: false,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
   }
 
   @override

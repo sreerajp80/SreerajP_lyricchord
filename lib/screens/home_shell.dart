@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lyriccord/core/constants/app_constants.dart';
 import 'package:lyriccord/providers/song_list_provider.dart';
-import 'package:lyriccord/screens/song_detail_placeholder_screen.dart';
 import 'package:lyriccord/screens/song_list_screen.dart';
+import 'package:lyriccord/screens/song_performance_screen.dart';
 
 /// Chooses the layout for the songbook.
 ///
@@ -71,10 +71,10 @@ class _DetailPane extends ConsumerWidget {
       );
     }
 
-    return SongDetailPlaceholderScreen(
+    return SongPerformanceScreen(
+      // The list stays on screen beside the pane, so no back button.
       songId: selectedId,
-      phaseLabel: 'Performance view (Phase 4)',
-      showAppBar: false,
+      embedded: true,
     );
   }
 }

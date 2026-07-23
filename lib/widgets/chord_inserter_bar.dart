@@ -61,34 +61,60 @@ class ChordInserterBar extends StatelessWidget {
   }
 
   Future<void> _askForChord(BuildContext context) async {
-    final controller = TextEditingController();
     final chord = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Custom chord'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Chord',
-            hintText: 'F#m7, Cmaj7, D/F#',
-          ),
-          onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => const _CustomChordDialog(),
     );
-    controller.dispose();
 
     if (chord != null && chord.trim().isNotEmpty) onCustomChord(chord.trim());
+  }
+}
+
+/// The "add your own chord" dialog.
+///
+/// A [StatefulWidget] so it owns its [TextEditingController] and disposes it
+/// only when the dialog route is fully gone. Disposing the controller right
+/// after `showDialog` returns (while the close animation is still running)
+/// would rebuild the field with a disposed controller and throw.
+class _CustomChordDialog extends StatefulWidget {
+  const _CustomChordDialog();
+
+  @override
+  State<_CustomChordDialog> createState() => _CustomChordDialogState();
+}
+
+class _CustomChordDialogState extends State<_CustomChordDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Custom chord'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'Chord',
+          hintText: 'F#m7, Cmaj7, D/F#',
+        ),
+        onSubmitted: (value) => Navigator.of(context).pop(value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Add'),
+        ),
+      ],
+    );
   }
 }

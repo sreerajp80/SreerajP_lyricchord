@@ -13,6 +13,7 @@ class SongCard extends StatelessWidget {
     required this.song,
     required this.onTap,
     required this.onToggleFavorite,
+    required this.onDuplicate,
     required this.onDelete,
     this.selected = false,
   });
@@ -25,6 +26,9 @@ class SongCard extends StatelessWidget {
 
   /// Called when the star button is tapped.
   final VoidCallback onToggleFavorite;
+
+  /// Called when the duplicate button is tapped (make a copy of this song).
+  final VoidCallback onDuplicate;
 
   /// Called when the delete button is tapped.
   final VoidCallback onDelete;
@@ -74,8 +78,14 @@ class SongCard extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 4,
                       children: [
-                        _Badge(label: song.key),
-                        _Badge(label: '${song.bpm} BPM'),
+                        _Badge(
+                          label: song.key,
+                          semanticLabel: 'Key ${song.key}',
+                        ),
+                        _Badge(
+                          label: '${song.bpm} BPM',
+                          semanticLabel: '${song.bpm} beats per minute',
+                        ),
                       ],
                     ),
                   ],
@@ -88,6 +98,11 @@ class SongCard extends StatelessWidget {
                     ? 'Remove from starred'
                     : 'Add to starred',
                 onPressed: onToggleFavorite,
+              ),
+              IconButton(
+                icon: const Icon(Icons.content_copy_outlined),
+                tooltip: 'Duplicate song',
+                onPressed: onDuplicate,
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline),
@@ -104,9 +119,13 @@ class SongCard extends StatelessWidget {
 
 /// A small rounded chip used for the key and BPM values.
 class _Badge extends StatelessWidget {
-  const _Badge({required this.label});
+  const _Badge({required this.label, this.semanticLabel});
 
   final String label;
+
+  /// What a screen reader announces instead of the short [label] (e.g. "Key G"
+  /// rather than the bare "G"). Falls back to [label] when null.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +138,7 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         label,
+        semanticsLabel: semanticLabel,
         style: theme.textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.onSecondaryContainer,
           fontWeight: FontWeight.bold,

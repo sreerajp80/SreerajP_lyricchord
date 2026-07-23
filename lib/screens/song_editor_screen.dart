@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:lyriccord/core/errors/app_exception.dart';
 import 'package:lyriccord/core/utils/chord_insert.dart';
+import 'package:lyriccord/providers/custom_chords_provider.dart';
+import 'package:lyriccord/providers/lyric_font_provider.dart';
 import 'package:lyriccord/providers/song_editor_provider.dart';
 import 'package:lyriccord/providers/song_list_provider.dart';
 import 'package:lyriccord/widgets/chord_inserter_bar.dart';
@@ -32,6 +34,11 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
   final _lyricsController = TextEditingController();
   final _lyricsFocus = FocusNode();
 
+  /// Drives undo/redo for the lyrics field. Wired to the lyrics [TextField] so
+  /// it records both typing and chord insertions, and read by the app-bar
+  /// Undo/Redo buttons to know when they are usable.
+  final _undoController = UndoHistoryController();
+
   /// The family key: `0` stands for "new song".
   late final int _songId = widget.songId ?? 0;
 
@@ -55,6 +62,9 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
       _bpmController.text = draft.bpmText;
       _lyricsController.text = draft.lyrics;
       _filled = true;
+      // Loading the song is not an edit — throw away the history so the first
+      // Undo cannot wipe an existing song back to empty.
+      _undoController.value = UndoHistoryValue.empty;
     }, fireImmediately: true);
   }
 
@@ -66,6 +76,7 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
     _bpmController.dispose();
     _lyricsController.dispose();
     _lyricsFocus.dispose();
+    _undoController.dispose();
     super.dispose();
   }
 
@@ -94,11 +105,48 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
           ),
           title: Text(isNew ? 'New Song Note' : 'Edit Song Note'),
           actions: [
+            ValueListenableBuilder<UndoHistoryValue>(
+              valueListenable: _undoController,
+              builder: (context, value, _) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.undo),
+                    tooltip: 'Undo',
+                    onPressed: value.canUndo ? _undo : null,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.redo),
+                    tooltip: 'Redo',
+                    onPressed: value.canRedo ? _redo : null,
+                  ),
+                ],
+              ),
+            ),
             TextButton.icon(
               onPressed: _saving ? null : _save,
               icon: const Icon(Icons.check),
               label: const Text('Save'),
             ),
+            // "Save as copy" only makes sense for an existing song — for a new
+            // one, plain Save already creates a new song.
+            if (!isNew)
+              PopupMenuButton<VoidCallback>(
+                tooltip: 'More options',
+                onSelected: (action) => action(),
+                itemBuilder: (menuContext) => [
+                  PopupMenuItem<VoidCallback>(
+                    value: _saving ? null : _saveAsCopy,
+                    enabled: !_saving,
+                    child: const ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.content_copy_outlined),
+                      title: Text('Save as copy'),
+                    ),
+                  ),
+                ],
+              ),
             const SizedBox(width: 8),
           ],
         ),
@@ -124,7 +172,9 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
               ),
               const SizedBox(height: 12),
               ChordInserterBar(
-                chords: draft.chordSuggestions,
+                chords: draft.chordSuggestionsWith(
+                  ref.watch(customChordsProvider),
+                ),
                 onChordTap: _insertChord,
                 onCustomChord: _addCustomChord,
               ),
@@ -137,12 +187,16 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
                   child: TextField(
                     controller: _lyricsController,
                     focusNode: _lyricsFocus,
+                    undoController: _undoController,
                     onChanged: _editor.setLyrics,
                     maxLines: null,
                     expands: true,
                     textAlignVertical: TextAlignVertical.top,
                     keyboardType: TextInputType.multiline,
                     textCapitalization: TextCapitalization.sentences,
+                    style: TextStyle(
+                      fontFamily: ref.watch(lyricFontProvider).family,
+                    ),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
                       hintText:
@@ -170,6 +224,42 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
   void _addCustomChord(String chord) {
     _editor.addCustomChord(chord);
     _insertChord(chord);
+  }
+
+  /// Steps the lyrics back one edit. A programmatic change like this does not
+  /// fire `onChanged`, so the draft is synced by hand and focus is returned to
+  /// the field.
+  void _undo() {
+    _undoController.undo();
+    _editor.setLyrics(_lyricsController.text);
+    _lyricsFocus.requestFocus();
+  }
+
+  /// Steps the lyrics forward one edit (the reverse of [_undo]).
+  void _redo() {
+    _undoController.redo();
+    _editor.setLyrics(_lyricsController.text);
+    _lyricsFocus.requestFocus();
+  }
+
+  /// Saves the current draft as a brand-new song, leaving the original as it
+  /// was. Handy for building an arrangement variant (e.g. the same song in a
+  /// different key).
+  Future<void> _saveAsCopy() async {
+    setState(() => _saving = true);
+    try {
+      final id = await _editor.saveAsCopy();
+      if (!mounted) return;
+      // On a tablet the list stays visible, so open the new copy in the pane.
+      ref.read(selectedSongIdProvider.notifier).select(id);
+      _leave();
+    } on AppException catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   Future<void> _save() async {

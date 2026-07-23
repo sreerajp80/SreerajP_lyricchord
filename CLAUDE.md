@@ -85,22 +85,25 @@ below for the full detail; do not duplicate that detail here.
 ```bash
 flutter pub get                        # install dependencies
 dart run build_runner build --delete-conflicting-outputs   # generate drift code
-flutter run                            # run (single flavor — no --flavor needed)
+flutter run --flavor dev               # daily development run
+flutter run --flavor prod              # production config, debug tooling
 flutter analyze                        # static analysis (must be clean)
 flutter test                           # run all tests
 dart format .                          # format before committing
 
 # Production release APK (split per ABI)
-flutter build apk --release \
+flutter build apk --flavor prod --release \
   --obfuscate --split-debug-info=build/symbols/android-prod/ --split-per-abi
 
 # Production Play Store bundle
-flutter build appbundle --release \
+flutter build appbundle --flavor prod --release \
   --obfuscate --split-debug-info=build/symbols/android-prod/
 ```
 
-> No flavors are defined yet, so a bare `flutter run` works. If a dev/prod split
-> is added later, follow
+> Android defines `dev` and `prod` flavors (dimension `environment`). The `dev`
+> flavor installs as `in.sreerajp.lyriccord.dev` ("LyricCord Dev") so it can sit
+> next to the prod app. iOS has no flavor schemes yet — run iOS without
+> `--flavor` until they are set up on a Mac. Details:
 > [docs/guidelines/flutter_build_flavors_guide.md](docs/guidelines/flutter_build_flavors_guide.md).
 
 ---

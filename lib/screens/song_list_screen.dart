@@ -10,7 +10,6 @@ import 'package:lyriccord/widgets/empty_songbook.dart';
 import 'package:lyriccord/widgets/song_card.dart';
 import 'package:lyriccord/widgets/song_filter_row.dart';
 import 'package:lyriccord/widgets/song_search_field.dart';
-import 'package:lyriccord/widgets/theme_mode_menu.dart';
 
 /// The songbook: search, All/Starred filter, and the list of song cards.
 ///
@@ -44,7 +43,13 @@ class SongListScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [_OverflowMenu()],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'New song',
@@ -76,6 +81,7 @@ class SongListScreen extends ConsumerWidget {
                           onTap: () => _openSong(context, ref, song),
                           onToggleFavorite: () =>
                               _toggleFavorite(context, ref, song),
+                          onDuplicate: () => _duplicate(context, ref, song),
                           onDelete: () => _confirmDelete(context, ref, song),
                         );
                       },
@@ -102,6 +108,25 @@ class SongListScreen extends ConsumerWidget {
   ) async {
     try {
       await ref.read(songRepositoryProvider).toggleFavorite(song);
+    } on AppException catch (e) {
+      if (context.mounted) _showError(context, e.message);
+    }
+  }
+
+  Future<void> _duplicate(
+    BuildContext context,
+    WidgetRef ref,
+    SongNote song,
+  ) async {
+    try {
+      final newId = await ref.read(songRepositoryProvider).duplicate(song);
+      // On a tablet the list stays visible, so open the new copy in the pane.
+      ref.read(selectedSongIdProvider.notifier).select(newId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Copied "${song.title}".')));
+      }
     } on AppException catch (e) {
       if (context.mounted) _showError(context, e.message);
     }
@@ -151,42 +176,5 @@ class SongListScreen extends ConsumerWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-}
-
-/// The top-bar overflow menu: Import ChordPro (Phase 7), theme choices, About.
-class _OverflowMenu extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return PopupMenuButton<VoidCallback>(
-      tooltip: 'More options',
-      onSelected: (action) => action(),
-      itemBuilder: (menuContext) => [
-        const PopupMenuItem<VoidCallback>(
-          // Import is wired up in Phase 7; shown now so the menu matches the
-          // Android app.
-          enabled: false,
-          child: ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.file_open_outlined),
-            title: Text('Import ChordPro'),
-            subtitle: Text('Coming soon'),
-          ),
-        ),
-        const PopupMenuDivider(),
-        ...buildThemeMenuItems(ref),
-        const PopupMenuDivider(),
-        PopupMenuItem<VoidCallback>(
-          value: () => context.push('/about'),
-          child: const ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.info_outline),
-            title: Text('About'),
-          ),
-        ),
-      ],
-    );
   }
 }
