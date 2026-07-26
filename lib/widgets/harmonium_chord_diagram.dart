@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lyriccord/services/chord_shape_service.dart';
+import 'package:lyricchord/services/chord_shape_service.dart';
 
 /// Draws one chord on a harmonium/piano keyboard.
 ///

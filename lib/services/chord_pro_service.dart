@@ -9,8 +9,8 @@
 /// imported file is the one untrusted input, so parsing must never crash.
 library;
 
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/services/chord_transposer.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/services/chord_transposer.dart';
 
 /// A `{name: value}` directive line pulled from a ChordPro file.
 class _Directive {
@@ -120,6 +120,114 @@ class ChordProService {
     out.writeln();
     out.write(lyrics);
     return out.toString();
+  }
+
+  /// Reads ChordPro [content] that may contain multiple songs separated by
+  /// `{new_song}` / `{ns}` directives or separate `{title}` headers.
+  List<SongNote> parseMultiple(String content) {
+    final normalized = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final lines = normalized.split('\n');
+    final songs = <SongNote>[];
+
+    var currentTitle = <String>[];
+    var currentArtist = <String>[];
+    var currentKey = <String>[];
+    int? currentBpm;
+    var currentLyricLines = <String>[];
+    var hasSongData = false;
+
+    void flushCurrentSong() {
+      if (!hasSongData && currentLyricLines.isEmpty && currentTitle.isEmpty) {
+        return;
+      }
+      while (currentLyricLines.isNotEmpty &&
+          currentLyricLines.first.trim().isEmpty) {
+        currentLyricLines.removeAt(0);
+      }
+      while (currentLyricLines.isNotEmpty &&
+          currentLyricLines.last.trim().isEmpty) {
+        currentLyricLines.removeLast();
+      }
+      final titleStr = currentTitle.isNotEmpty ? currentTitle.last.trim() : '';
+      final artistStr = currentArtist.isNotEmpty
+          ? currentArtist.last.trim()
+          : '';
+      final keyStr = currentKey.isNotEmpty ? currentKey.last.trim() : '';
+
+      songs.add(
+        SongNote(
+          title: titleStr.isEmpty ? 'Untitled Song' : titleStr,
+          artist: artistStr,
+          lyrics: currentLyricLines.join('\n'),
+          key: keyStr.isEmpty ? 'C' : keyStr,
+          bpm: currentBpm ?? 120,
+          timestamp: 0,
+        ),
+      );
+
+      currentTitle = <String>[];
+      currentArtist = <String>[];
+      currentKey = <String>[];
+      currentBpm = null;
+      currentLyricLines = <String>[];
+      hasSongData = false;
+    }
+
+    for (final line in lines) {
+      final directive = _matchDirective(line);
+      if (directive == null) {
+        if (line.trim().isNotEmpty) {
+          hasSongData = true;
+        }
+        currentLyricLines.add(line);
+        continue;
+      }
+
+      switch (directive.name) {
+        case 'new_song':
+        case 'ns':
+          flushCurrentSong();
+        case 'title':
+        case 't':
+          if (hasSongData ||
+              currentLyricLines.any((l) => l.trim().isNotEmpty) ||
+              currentTitle.isNotEmpty) {
+            flushCurrentSong();
+          }
+          currentTitle.add(directive.value);
+          hasSongData = true;
+        case 'artist':
+        case 'a':
+          currentArtist.add(directive.value);
+          hasSongData = true;
+        case 'key':
+        case 'k':
+          currentKey.add(directive.value);
+          hasSongData = true;
+        case 'bpm':
+        case 'tempo':
+          currentBpm = int.tryParse(directive.value.trim()) ?? currentBpm;
+          hasSongData = true;
+        case 'comment':
+        case 'c':
+          currentLyricLines.add(directive.value);
+          hasSongData = true;
+        default:
+          break;
+      }
+    }
+
+    flushCurrentSong();
+
+    return songs.isEmpty ? [parse(content)] : songs;
+  }
+
+  /// Formats multiple [songs] into a single ChordPro text bundle.
+  String formatMultiple(List<SongNote> songs, {int semitones = 0}) {
+    if (songs.isEmpty) return '';
+    return songs
+        .map((song) => format(song, semitones: semitones))
+        .join('\n\n{new_song}\n\n');
   }
 
   /// Reads one `{name: value}` directive, or `null` for a normal lyric line.

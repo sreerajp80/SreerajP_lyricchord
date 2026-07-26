@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/core/constants/app_constants.dart';
-import 'package:lyriccord/providers/song_list_provider.dart';
-import 'package:lyriccord/screens/song_list_screen.dart';
-import 'package:lyriccord/screens/song_performance_screen.dart';
+import 'package:lyricchord/core/constants/app_constants.dart';
+import 'package:lyricchord/providers/song_list_provider.dart';
+import 'package:lyricchord/screens/song_list_screen.dart';
+import 'package:lyricchord/screens/song_performance_screen.dart';
 
 /// Chooses the layout for the songbook.
 ///

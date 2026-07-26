@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:lyriccord/core/utils/song_copy.dart';
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/repositories/song_repository.dart';
+import 'package:lyricchord/core/utils/song_copy.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/repositories/song_repository.dart';
 
 /// An in-memory stand-in for [SongRepository], used by widget tests.
 ///
@@ -76,6 +76,9 @@ class FakeSongRepository implements SongRepository {
       controller.onCancel = sub.cancel;
     });
   }
+
+  @override
+  Future<List<SongNote>> getAllSongs() async => _sorted;
 
   @override
   Stream<SongNote?> watchSongById(int id) {

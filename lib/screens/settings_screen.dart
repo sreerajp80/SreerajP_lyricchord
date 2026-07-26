@@ -40,6 +40,12 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => context.push('/settings/fonts'),
           ),
           _SettingsCard(
+            icon: Icons.help_outline,
+            title: 'Help',
+            subtitle: 'How to use setlists, metronome, export and more',
+            onTap: () => context.push('/settings/help'),
+          ),
+          _SettingsCard(
             icon: Icons.info_outline,
             title: 'About',
             subtitle: 'App version, author, and licenses',

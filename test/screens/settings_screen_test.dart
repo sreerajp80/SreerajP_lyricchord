@@ -4,14 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:lyriccord/providers/theme_mode_provider.dart';
-import 'package:lyriccord/screens/chord_settings_screen.dart';
-import 'package:lyriccord/screens/font_settings_screen.dart';
-import 'package:lyriccord/screens/general_settings_screen.dart';
-import 'package:lyriccord/screens/import_export_screen.dart';
-import 'package:lyriccord/screens/metronome_settings_screen.dart';
-import 'package:lyriccord/screens/settings_screen.dart';
-import 'package:lyriccord/screens/theme_settings_screen.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/screens/chord_settings_screen.dart';
+import 'package:lyricchord/screens/font_settings_screen.dart';
+import 'package:lyricchord/screens/general_settings_screen.dart';
+import 'package:lyricchord/screens/help/help_detail_screen.dart';
+import 'package:lyricchord/screens/help/help_screen.dart';
+import 'package:lyricchord/screens/import_export_screen.dart';
+import 'package:lyricchord/screens/metronome_settings_screen.dart';
+import 'package:lyricchord/screens/settings_screen.dart';
+import 'package:lyricchord/screens/theme_settings_screen.dart';
 
 void main() {
   Future<void> pumpSettings(WidgetTester tester) async {
@@ -53,6 +55,18 @@ void main() {
               path: 'fonts',
               builder: (context, state) => const FontSettingsScreen(),
             ),
+            GoRoute(
+              path: 'help',
+              builder: (context, state) => const HelpScreen(),
+              routes: [
+                GoRoute(
+                  path: ':topicId',
+                  builder: (context, state) => HelpDetailScreen(
+                    topicId: state.pathParameters['topicId'] ?? '',
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         GoRoute(
@@ -71,7 +85,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('shows the five settings cards', (tester) async {
+  testWidgets('shows the six settings cards', (tester) async {
     await pumpSettings(tester);
 
     expect(find.text('Settings'), findsOneWidget);
@@ -79,8 +93,37 @@ void main() {
     expect(find.text('Themes'), findsOneWidget);
     expect(find.text('Chords'), findsOneWidget);
     expect(find.text('Fonts'), findsOneWidget);
+    expect(find.text('Help'), findsOneWidget);
     expect(find.text('About'), findsOneWidget);
-    expect(find.byType(Card), findsNWidgets(5));
+    expect(find.byType(Card), findsNWidgets(6));
+  });
+
+  testWidgets('the Help card opens the Help hub with its topic cards', (
+    tester,
+  ) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.text('Help'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HelpScreen), findsOneWidget);
+    expect(find.text('Setlists'), findsOneWidget);
+    expect(find.text('Metronome'), findsOneWidget);
+    expect(find.text('Select Songs'), findsOneWidget);
+    expect(find.text('Export'), findsOneWidget);
+    expect(find.text('Import'), findsOneWidget);
+  });
+
+  testWidgets('a Help topic card opens its detail page', (tester) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.text('Help'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Setlists'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HelpDetailScreen), findsOneWidget);
+    expect(find.text('Create a setlist'), findsOneWidget);
   });
 
   testWidgets('the General card opens the General screen', (tester) async {
@@ -103,7 +146,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ImportExportScreen), findsOneWidget);
-    expect(find.text('Import ChordPro file'), findsOneWidget);
+    expect(find.text('Import ChordPro file(s)'), findsOneWidget);
   });
 
   testWidgets('General → Metronome opens the metronome screen', (tester) async {

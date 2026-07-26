@@ -3,8 +3,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/metronome_provider.dart';
-import 'package:lyriccord/services/metronome_calculator.dart';
+import 'package:lyricchord/providers/metronome_provider.dart';
+import 'package:lyricchord/services/metronome_calculator.dart';
 
 /// The round metronome button in the performance controls header.
 ///
@@ -130,8 +130,8 @@ class _MetronomeBeatState extends ConsumerState<MetronomeBeat>
       background = scheme.primary;
       foreground = scheme.onPrimary;
     } else if (_running) {
-      background = scheme.primaryContainer;
-      foreground = scheme.onPrimaryContainer;
+      background = scheme.surfaceContainerHighest;
+      foreground = scheme.primary;
     } else {
       background = scheme.surfaceContainerHighest;
       foreground = scheme.primary;
@@ -152,17 +152,25 @@ class _MetronomeBeatState extends ConsumerState<MetronomeBeat>
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: enabled ? _toggle : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: background,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _running ? Icons.stop : Icons.av_timer,
-                size: 22,
-                color: foreground,
+            child: AnimatedScale(
+              scale: _flashOn ? 1.15 : 1.0,
+              duration: _flashOn
+                  ? Duration.zero
+                  : const Duration(milliseconds: 90),
+              child: AnimatedContainer(
+                duration: _flashOn
+                    ? Duration.zero
+                    : const Duration(milliseconds: 90),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: background,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _running ? Icons.stop : Icons.av_timer,
+                  size: 22,
+                  color: foreground,
+                ),
               ),
             ),
           ),

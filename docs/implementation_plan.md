@@ -1,4 +1,4 @@
-# Implementation Plan — SreerajP_lyriccord
+# Implementation Plan — SreerajP_lyricchord
 
 The phase-by-phase build plan for the LyricCord Flutter app. Read it to know
 what to build next and when a phase is "done". Each phase should end with
@@ -25,7 +25,7 @@ A running, empty LyricCord Flutter app with the fixed conventions in place.
 
 ### Action steps
 
-- Create the Flutter app with application id / namespace `in.sreerajp.lyriccord`
+- Create the Flutter app with application id / namespace `in.sreerajp.lyricchord`
   (Flutter 3.41.9, Dart 3.11.5).
 - Add the baseline `lib/` folders from [architecture.md](architecture.md) §4.
 - Add the About-screen config exactly as

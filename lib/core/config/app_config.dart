@@ -18,7 +18,7 @@ class AppConfig {
   /// Safe built-in value used when the config file is missing or malformed,
   /// so the app never crashes on a bad config.
   static const AppConfig fallback = AppConfig(
-    appName: 'LyricCord',
+    appName: 'LyricChord',
     description: 'A lyrics & chords notebook for musicians.',
     version: '0.0.0',
     build: '0',

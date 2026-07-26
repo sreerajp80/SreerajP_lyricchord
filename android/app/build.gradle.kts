@@ -20,7 +20,7 @@ if (hasReleaseSigning) {
 }
 
 android {
-    namespace = "in.sreerajp.lyriccord"
+    namespace = "in.sreerajp.lyricchord"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -35,7 +35,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "in.sreerajp.lyriccord"
+        applicationId = "in.sreerajp.lyricchord"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -61,11 +61,11 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            resValue("string", "app_name", "LyricCord Dev")
+            resValue("string", "app_name", "LyricChord Dev")
         }
         create("prod") {
             dimension = "environment"
-            resValue("string", "app_name", "LyricCord")
+            resValue("string", "app_name", "LyricChord")
         }
     }
 

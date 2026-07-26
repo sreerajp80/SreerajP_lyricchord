@@ -6,7 +6,7 @@ class AppConstants {
   AppConstants._();
 
   /// drift (SQLite) database file name.
-  static const String databaseName = 'lyriccord.db';
+  static const String databaseName = 'lyricchord.db';
 
   /// shared_preferences key for the saved theme mode.
   static const String prefThemeMode = 'theme_mode';
@@ -25,6 +25,9 @@ class AppConstants {
 
   /// shared_preferences key for whether the metronome clicks on each beat.
   static const String prefMetronomeClick = 'metronome_click';
+
+  /// shared_preferences key for import duplicate strategy.
+  static const String prefImportDuplicateStrategy = 'import_duplicate_strategy';
 
   /// Width (in logical pixels) at and above which the tablet dual-pane
   /// layout is used; below this a single-pane phone layout is used.

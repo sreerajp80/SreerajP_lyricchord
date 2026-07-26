@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/services/chord_pro_service.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/services/chord_pro_service.dart';
 
 void main() {
   const service = ChordProService();
@@ -179,5 +179,89 @@ void main() {
         ),
       );
     });
+  });
+
+  group('multi-song parseMultiple and formatMultiple', () {
+    test('parses multiple songs separated by {new_song}', () {
+      const text = '''
+{title: Song One}
+{key: C}
+[C]Line 1
+
+{new_song}
+
+{title: Song Two}
+{key: G}
+[G]Line 2
+''';
+
+      final songs = service.parseMultiple(text);
+
+      expect(songs.length, 2);
+      expect(songs[0].title, 'Song One');
+      expect(songs[0].key, 'C');
+      expect(songs[0].lyrics, '[C]Line 1');
+
+      expect(songs[1].title, 'Song Two');
+      expect(songs[1].key, 'G');
+      expect(songs[1].lyrics, '[G]Line 2');
+    });
+
+    test(
+      'parses multiple songs separated by title headers without explicit new_song',
+      () {
+        const text = '''
+{title: Song A}
+[D]Line A
+
+{t: Song B}
+[E]Line B
+''';
+
+        final songs = service.parseMultiple(text);
+
+        expect(songs.length, 2);
+        expect(songs[0].title, 'Song A');
+        expect(songs[0].lyrics, '[D]Line A');
+        expect(songs[1].title, 'Song B');
+        expect(songs[1].lyrics, '[E]Line B');
+      },
+    );
+
+    test(
+      'formatMultiple formats multiple songs into bundle text and survives round-trip',
+      () {
+        const songs = [
+          SongNote(
+            title: 'Song 1',
+            artist: 'Artist 1',
+            lyrics: '[C]First',
+            key: 'C',
+            bpm: 120,
+            timestamp: 0,
+          ),
+          SongNote(
+            title: 'Song 2',
+            artist: 'Artist 2',
+            lyrics: '[G]Second',
+            key: 'G',
+            bpm: 100,
+            timestamp: 0,
+          ),
+        ];
+
+        final text = service.formatMultiple(songs);
+        expect(text.contains('{new_song}'), isTrue);
+
+        final parsedBack = service.parseMultiple(text);
+        expect(parsedBack.length, 2);
+        expect(parsedBack[0].title, songs[0].title);
+        expect(parsedBack[0].artist, songs[0].artist);
+        expect(parsedBack[0].lyrics, songs[0].lyrics);
+        expect(parsedBack[1].title, songs[1].title);
+        expect(parsedBack[1].artist, songs[1].artist);
+        expect(parsedBack[1].lyrics, songs[1].lyrics);
+      },
+    );
   });
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lyriccord/theme/app_colors.dart';
+import 'package:lyricchord/theme/app_colors.dart';
 
 /// Builds the Material 3 light and dark themes from the violet "High Density"
 /// palette, mirroring the role mapping in the Android app's `Theme.kt`.
@@ -23,8 +23,8 @@ class AppTheme {
     brightness: Brightness.light,
     primary: AppColors.lightPrimary,
     onPrimary: Colors.white,
-    secondary: AppColors.lightSecondaryContainer,
-    onSecondary: AppColors.lightOnSecondaryContainer,
+    secondary: AppColors.lightPrimary,
+    onSecondary: Colors.white,
     secondaryContainer: AppColors.lightSecondaryContainer,
     onSecondaryContainer: AppColors.lightOnSecondaryContainer,
     tertiary: AppColors.lightFabBg,
@@ -42,8 +42,8 @@ class AppTheme {
     brightness: Brightness.dark,
     primary: AppColors.darkPrimary,
     onPrimary: AppColors.darkFabText,
-    secondary: AppColors.darkSecondaryContainer,
-    onSecondary: AppColors.darkOnSecondaryContainer,
+    secondary: AppColors.darkPrimary,
+    onSecondary: AppColors.darkFabText,
     secondaryContainer: AppColors.darkSecondaryContainer,
     onSecondaryContainer: AppColors.darkOnSecondaryContainer,
     tertiary: AppColors.darkFabBg,

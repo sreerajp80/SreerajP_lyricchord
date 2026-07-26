@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:lyriccord/main.dart';
-import 'package:lyriccord/providers/database_provider.dart';
-import 'package:lyriccord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/main.dart';
+import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
 
 import 'helpers/fake_song_repository.dart';
 
@@ -31,12 +31,12 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           songRepositoryProvider.overrideWithValue(repo),
         ],
-        child: const LyricCordApp(),
+        child: const LyricChordApp(),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('LyricCord'), findsOneWidget);
+    expect(find.text('LyricChord'), findsOneWidget);
     expect(find.text('Lyrics & Chords Notebook'), findsOneWidget);
     expect(find.text('Amazing Grace'), findsOneWidget);
   });

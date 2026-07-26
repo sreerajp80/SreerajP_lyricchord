@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/providers/performance_provider.dart';
+import 'package:lyricchord/providers/performance_provider.dart';
 
 void main() {
   late ProviderContainer container;

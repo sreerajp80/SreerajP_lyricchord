@@ -1,4 +1,4 @@
-# lyriccord
+# LyricChord
 
 A lyrics & chords notebook for musicians
 

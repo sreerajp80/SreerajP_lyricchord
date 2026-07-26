@@ -1,4 +1,4 @@
-# Architecture — SreerajP_lyriccord
+# Architecture — SreerajP_lyricchord
 
 This document describes the technical design of the LyricCord Flutter app. Read
 it before adding or changing app structure, state, storage, or navigation, so
@@ -22,8 +22,8 @@ product intent lives in the idea doc; this file is the "how".
 
 ## 1. Scope
 
-- **Product:** LyricCord
-- **Application id / namespace:** `in.sreerajp.lyriccord`
+- **Product:** LyricChord
+- **Application id / namespace:** `in.sreerajp.lyricchord`
 - **Repository type:** application
 - **Toolchain:** Flutter 3.41.9 (stable), Dart 3.11.5
 - **Engineering standard profiles in force:**

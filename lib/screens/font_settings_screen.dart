@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/models/lyric_font.dart';
-import 'package:lyriccord/providers/lyric_font_provider.dart';
+import 'package:lyricchord/models/lyric_font.dart';
+import 'package:lyricchord/providers/lyric_font_provider.dart';
 
 /// Settings → Fonts: pick the font used for lyric text.
 ///

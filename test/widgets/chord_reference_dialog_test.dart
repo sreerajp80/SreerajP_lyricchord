@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/widgets/chord_reference_dialog.dart';
-import 'package:lyriccord/widgets/guitar_chord_diagram.dart';
-import 'package:lyriccord/widgets/harmonium_chord_diagram.dart';
+import 'package:lyricchord/widgets/chord_reference_dialog.dart';
+import 'package:lyricchord/widgets/guitar_chord_diagram.dart';
+import 'package:lyricchord/widgets/harmonium_chord_diagram.dart';
 
 /// Pumps [dialog] on its own so the tabs and diagrams can be inspected.
 Future<void> _pump(WidgetTester tester, Widget dialog) {

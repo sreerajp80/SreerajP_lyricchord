@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/auto_scroll_provider.dart';
-import 'package:lyriccord/services/auto_scroll_calculator.dart';
+import 'package:lyricchord/providers/auto_scroll_provider.dart';
+import 'package:lyricchord/services/auto_scroll_calculator.dart';
 
 /// The compact auto-scroll controls row shown under the app bar.
 ///

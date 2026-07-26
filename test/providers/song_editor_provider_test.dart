@@ -2,9 +2,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/core/utils/chord_insert.dart';
-import 'package:lyriccord/providers/database_provider.dart';
-import 'package:lyriccord/providers/song_editor_provider.dart';
+import 'package:lyricchord/core/utils/chord_insert.dart';
+import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/providers/song_editor_provider.dart';
 
 import '../helpers/fake_song_repository.dart';
 

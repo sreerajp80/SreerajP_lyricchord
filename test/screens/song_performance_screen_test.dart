@@ -3,13 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/providers/auto_scroll_provider.dart';
-import 'package:lyriccord/providers/database_provider.dart';
-import 'package:lyriccord/providers/theme_mode_provider.dart';
-import 'package:lyriccord/screens/song_performance_screen.dart';
-import 'package:lyriccord/widgets/chord_sheet_view.dart';
-import 'package:lyriccord/widgets/performance_controls.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/providers/auto_scroll_provider.dart';
+import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/screens/song_performance_screen.dart';
+import 'package:lyricchord/widgets/chord_sheet_view.dart';
+import 'package:lyricchord/widgets/performance_controls.dart';
 
 import '../helpers/fake_song_repository.dart';
 
@@ -313,4 +313,48 @@ void main() {
     await tester.pump();
     expect(container.read(autoScrollProvider).isPlaying, isFalse);
   });
+
+  testWidgets('vertical drag over lyrics locks out horizontal page swipe', (
+    tester,
+  ) async {
+    await pumpPerformance(tester);
+    expect(find.text('Amazing Grace'), findsOneWidget);
+
+    final sheetFinder = find.byType(ChordSheetView);
+    final startLocation = tester.getCenter(sheetFinder);
+
+    // Simulate vertical drag with minor horizontal drift (dy > dx)
+    await tester.dragFrom(startLocation, const Offset(5, -150));
+    await tester.pumpAndSettle();
+
+    // Should remain on Amazing Grace and NOT swipe to another song
+    expect(find.text('Amazing Grace'), findsOneWidget);
+  });
+
+  testWidgets(
+    'two-finger pinch zoom on multi-song pager stays on current song',
+    (tester) async {
+      await pumpPerformance(tester);
+      expect(find.text('Amazing Grace'), findsOneWidget);
+      final startSize = sheet(tester).fontSize;
+
+      final center = tester.getCenter(find.byType(ChordSheetView));
+      final finger1 = await tester.startGesture(center - const Offset(10, 40));
+      final finger2 = await tester.startGesture(center + const Offset(10, 40));
+      await tester.pump();
+
+      // Move fingers apart vertically and slightly horizontally
+      await finger1.moveBy(const Offset(-15, -60));
+      await finger2.moveBy(const Offset(15, 60));
+      await tester.pump();
+
+      await finger1.up();
+      await finger2.up();
+      await tester.pumpAndSettle();
+
+      // Font size should increase and current song must remain Amazing Grace
+      expect(sheet(tester).fontSize, greaterThan(startSize));
+      expect(find.text('Amazing Grace'), findsOneWidget);
+    },
+  );
 }

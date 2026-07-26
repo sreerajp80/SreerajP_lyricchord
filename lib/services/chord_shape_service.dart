@@ -11,7 +11,7 @@
 /// CLAUDE.md hard rule 4 — never crash on odd input.
 library;
 
-import 'package:lyriccord/services/chord_suggestion_service.dart';
+import 'package:lyricchord/services/chord_suggestion_service.dart';
 
 /// A guitar chord as fret numbers, one per string.
 ///

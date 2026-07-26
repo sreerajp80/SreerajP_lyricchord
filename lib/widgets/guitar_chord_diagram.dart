@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lyriccord/services/chord_shape_service.dart';
+import 'package:lyricchord/services/chord_shape_service.dart';
 
 /// Draws one guitar chord as a fretboard diagram.
 ///

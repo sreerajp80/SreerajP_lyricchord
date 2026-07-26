@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/performance_provider.dart';
-import 'package:lyriccord/services/chord_transposer.dart';
+import 'package:lyricchord/providers/performance_provider.dart';
+import 'package:lyricchord/services/chord_transposer.dart';
 
 /// Opens the Performance-controls bottom sheet: transpose and show-chords.
 ///

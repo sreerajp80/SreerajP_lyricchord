@@ -22,6 +22,12 @@ class GeneralSettingsScreen extends StatelessWidget {
             onTap: () => context.push('/settings/general/import'),
           ),
           _GeneralCard(
+            icon: Icons.tune,
+            title: 'Import Settings',
+            subtitle: 'Configure duplicate song handling for ChordPro files',
+            onTap: () => context.push('/settings/general/import-settings'),
+          ),
+          _GeneralCard(
             icon: Icons.av_timer,
             title: 'Metronome',
             subtitle: 'Turn the beat on or off',

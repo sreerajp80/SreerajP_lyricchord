@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/core/constants/app_constants.dart';
-import 'package:lyriccord/models/lyric_font.dart';
-import 'package:lyriccord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/core/constants/app_constants.dart';
+import 'package:lyricchord/models/lyric_font.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
 
 /// Holds the chosen lyric font and saves changes to `shared_preferences`.
 ///

@@ -10,10 +10,10 @@ below for the full detail; do not duplicate that detail here.
 
 | Field | Value |
 |-------|-------|
-| App name | LyricCord |
+| App name | LyricChord |
 | Type | A lyrics & chords notebook for musicians — write chord sheets, transpose, and auto-scroll while performing |
 | Platform(s) | Android and iOS (min SDK 24 / Android 7; iOS minimum confirmed at setup). Desktop is a possible later target, not built now |
-| Package / org id | `in.sreerajp.lyriccord` |
+| Package / org id | `in.sreerajp.lyricchord` |
 | Flutter SDK | 3.41.9 (stable) |
 | Dart SDK | 3.11.5 |
 | State management | Riverpod (`flutter_riverpod`) |
@@ -101,7 +101,7 @@ flutter build appbundle --flavor prod --release \
 ```
 
 > Android defines `dev` and `prod` flavors (dimension `environment`). The `dev`
-> flavor installs as `in.sreerajp.lyriccord.dev` ("LyricCord Dev") so it can sit
+> flavor installs as `in.sreerajp.lyricchord.dev` ("LyricChord Dev") so it can sit
 > next to the prod app. iOS has no flavor schemes yet — run iOS without
 > `--flavor` until they are set up on a Mac. Details:
 > [docs/guidelines/flutter_build_flavors_guide.md](docs/guidelines/flutter_build_flavors_guide.md).

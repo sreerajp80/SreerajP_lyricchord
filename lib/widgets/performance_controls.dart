@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/auto_scroll_provider.dart';
-import 'package:lyriccord/providers/metronome_provider.dart';
-import 'package:lyriccord/providers/performance_provider.dart';
-import 'package:lyriccord/services/auto_scroll_calculator.dart';
-import 'package:lyriccord/widgets/auto_scroll_controls.dart';
-import 'package:lyriccord/widgets/metronome_beat.dart';
+import 'package:lyricchord/providers/auto_scroll_provider.dart';
+import 'package:lyricchord/providers/metronome_provider.dart';
+import 'package:lyricchord/providers/performance_provider.dart';
+import 'package:lyricchord/services/auto_scroll_calculator.dart';
+import 'package:lyricchord/widgets/auto_scroll_controls.dart';
+import 'package:lyricchord/widgets/metronome_beat.dart';
 
 /// The compact, always-visible auto-scroll header shown above the chord sheet.
 ///

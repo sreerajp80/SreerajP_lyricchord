@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/metronome_provider.dart';
+import 'package:lyricchord/providers/metronome_provider.dart';
 
 /// Settings → General → Metronome: turn the metronome on, and pick whether each
 /// beat flashes and/or clicks.

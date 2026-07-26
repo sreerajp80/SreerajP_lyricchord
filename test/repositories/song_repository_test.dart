@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lyriccord/data/app_database.dart';
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/repositories/song_repository.dart';
+import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/repositories/song_repository.dart';
 
 import '../helpers/test_database.dart';
 

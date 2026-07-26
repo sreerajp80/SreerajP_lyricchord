@@ -7,11 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:lyriccord/core/constants/app_constants.dart';
-import 'package:lyriccord/providers/database_provider.dart';
-import 'package:lyriccord/providers/theme_mode_provider.dart';
-import 'package:lyriccord/screens/song_editor_screen.dart';
-import 'package:lyriccord/widgets/chord_inserter_bar.dart';
+import 'package:lyricchord/core/constants/app_constants.dart';
+import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/screens/song_editor_screen.dart';
+import 'package:lyricchord/widgets/chord_inserter_bar.dart';
 
 import '../helpers/fake_song_repository.dart';
 
@@ -231,6 +231,28 @@ void main() {
 
     final field = tester.widget<TextField>(lyricsField());
     expect(field.controller!.text, '');
+  });
+
+  testWidgets('focusing the lyrics field folds the meta fields away', (
+    tester,
+  ) async {
+    await pumpEditor(tester, songId: 1);
+
+    // The meta fields show at first.
+    expect(find.widgetWithText(TextField, 'Amazing Grace'), findsOneWidget);
+
+    // Focusing the lyrics collapses them into a summary row.
+    await tester.tap(lyricsField());
+    await settle(tester);
+
+    expect(find.widgetWithText(TextField, 'Amazing Grace'), findsNothing);
+    expect(find.byIcon(Icons.expand_more), findsOneWidget);
+
+    // Tapping the summary opens the fields back up.
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await settle(tester);
+
+    expect(find.widgetWithText(TextField, 'Amazing Grace'), findsOneWidget);
   });
 
   testWidgets('cancel asks before throwing edits away', (tester) async {

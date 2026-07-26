@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/data/app_database.dart';
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/providers/database_provider.dart';
-import 'package:lyriccord/providers/song_list_provider.dart';
+import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/providers/song_list_provider.dart';
 
 import '../helpers/test_database.dart';
 

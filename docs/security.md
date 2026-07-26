@@ -1,8 +1,8 @@
-# Security — SreerajP_lyriccord
+# Security — SreerajP_lyricchord
 
-This is a short security posture for LyricCord. Read it before adding any
+This is a short security posture for LyricChord. Read it before adding any
 permission, package, or feature that touches the network, the file system, or
-device data. LyricCord is a fully offline, local-only app, so its security story
+device data. LyricChord is a fully offline, local-only app, so its security story
 is small — this file records the rules that keep it that way.
 
 **Read first**
@@ -15,7 +15,7 @@ is small — this file records the rules that keep it that way.
 
 ## 1. Applicability
 
-The `Sensitive Data Extension` **does not apply** to LyricCord. The app stores
+The `Sensitive Data Extension` **does not apply** to LyricChord. The app stores
 only user-written song sheets (title, artist, lyrics, key, BPM, favorite flag)
 in a local database. There are no secrets, credentials, PII, health, or finance
 data, and no encryption requirement. So the full blueprint in
@@ -40,7 +40,7 @@ sensitive data, fill in that blueprint at that time.
   The output must not list `android.permission.INTERNET`.
 
 > **Rule:** any change that would add a network permission or a networking
-> package is a security change. Stop and reconsider — LyricCord has no feature
+> package is a security change. Stop and reconsider — LyricChord has no feature
 > that needs the network.
 
 ---

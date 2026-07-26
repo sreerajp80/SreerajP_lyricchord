@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/custom_chords_provider.dart';
+import 'package:lyricchord/providers/custom_chords_provider.dart';
 
 /// Settings → Chords: the user's own chord notations.
 ///

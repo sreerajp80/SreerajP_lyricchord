@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/song_list_provider.dart';
+import 'package:lyricchord/providers/song_list_provider.dart';
 
 /// The songbook search box. Typing updates [searchQueryProvider], which the
 /// list watches; the filtering itself happens in the provider layer.

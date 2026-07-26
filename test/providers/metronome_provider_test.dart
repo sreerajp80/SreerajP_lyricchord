@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:lyriccord/providers/metronome_provider.dart';
-import 'package:lyriccord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/providers/metronome_provider.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
 
 void main() {
   Future<ProviderContainer> makeContainer(

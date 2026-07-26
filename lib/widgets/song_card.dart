@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lyriccord/models/song_note.dart';
+import 'package:lyricchord/models/song_note.dart';
 
 /// One song in the songbook list: title, artist, a key badge, a BPM badge, a
 /// star toggle and a delete button.
@@ -16,12 +16,15 @@ class SongCard extends StatelessWidget {
     required this.onDuplicate,
     required this.onDelete,
     this.selected = false,
+    this.isSelectionMode = false,
+    this.isChecked = false,
+    this.onLongPress,
   });
 
   /// The song to show.
   final SongNote song;
 
-  /// Called when the card body is tapped (open the song).
+  /// Called when the card body is tapped (open the song or toggle selection).
   final VoidCallback onTap;
 
   /// Called when the star button is tapped.
@@ -36,6 +39,15 @@ class SongCard extends StatelessWidget {
   /// Whether this card is the one open in the tablet detail pane.
   final bool selected;
 
+  /// Whether multi-selection mode is active.
+  final bool isSelectionMode;
+
+  /// Whether this card is selected in multi-selection mode.
+  final bool isChecked;
+
+  /// Called when the card is long pressed.
+  final VoidCallback? onLongPress;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -43,15 +55,22 @@ class SongCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      color: selected ? theme.colorScheme.primaryContainer : null,
+      color: isChecked
+          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
+          : (selected ? theme.colorScheme.primaryContainer : null),
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              if (isSelectionMode) ...[
+                Checkbox(value: isChecked, onChanged: (_) => onTap()),
+                const SizedBox(width: 8),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,24 +110,26 @@ class SongCard extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(song.favorite ? Icons.star : Icons.star_border),
-                color: song.favorite ? theme.colorScheme.primary : null,
-                tooltip: song.favorite
-                    ? 'Remove from starred'
-                    : 'Add to starred',
-                onPressed: onToggleFavorite,
-              ),
-              IconButton(
-                icon: const Icon(Icons.content_copy_outlined),
-                tooltip: 'Duplicate song',
-                onPressed: onDuplicate,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                tooltip: 'Delete song',
-                onPressed: onDelete,
-              ),
+              if (!isSelectionMode) ...[
+                IconButton(
+                  icon: Icon(song.favorite ? Icons.star : Icons.star_border),
+                  color: song.favorite ? theme.colorScheme.primary : null,
+                  tooltip: song.favorite
+                      ? 'Remove from starred'
+                      : 'Add to starred',
+                  onPressed: onToggleFavorite,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.content_copy_outlined),
+                  tooltip: 'Duplicate song',
+                  onPressed: onDuplicate,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Delete song',
+                  onPressed: onDelete,
+                ),
+              ],
             ],
           ),
         ),

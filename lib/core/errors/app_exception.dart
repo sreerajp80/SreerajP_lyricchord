@@ -1,4 +1,4 @@
-/// Domain exception hierarchy for LyricCord (architecture §10).
+/// Domain exception hierarchy for LyricChord (architecture §10).
 ///
 /// These are thrown by the data and service layers and are meant to be caught
 /// at the UI edge and shown as a `SnackBar` — they must never crash the app.

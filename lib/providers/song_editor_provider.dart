@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/core/utils/song_copy.dart';
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/providers/database_provider.dart';
-import 'package:lyriccord/services/chord_suggestion_service.dart';
+import 'package:lyricchord/core/utils/song_copy.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/services/chord_suggestion_service.dart';
 
 /// The song being written in the editor, before it is saved.
 ///

@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart';
 
-import 'package:lyriccord/core/errors/app_exception.dart';
-import 'package:lyriccord/core/utils/song_copy.dart';
-import 'package:lyriccord/data/app_database.dart';
-import 'package:lyriccord/models/song_note.dart';
+import 'package:lyricchord/core/errors/app_exception.dart';
+import 'package:lyricchord/core/utils/song_copy.dart';
+import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/models/song_note.dart';
 
 /// Data access for songs. Wraps the drift [AppDatabase] and exposes only pure
 /// [SongNote] models and streams, so callers never see drift row types.
@@ -20,6 +20,16 @@ class SongRepository {
     return _db.watchAllSongs().map(
       (rows) => rows.map(_toModel).toList(growable: false),
     );
+  }
+
+  /// All songs read once, newest activity first.
+  Future<List<SongNote>> getAllSongs() async {
+    try {
+      final rows = await _db.getAllSongs();
+      return rows.map(_toModel).toList(growable: false);
+    } catch (e) {
+      throw StorageException('Could not load songs.', cause: e);
+    }
   }
 
   /// A single song by id as a live stream; emits `null` if it does not exist.
@@ -39,6 +49,16 @@ class SongRepository {
       return row == null ? null : _toModel(row);
     } catch (e) {
       throw StorageException('Could not open the song.', cause: e);
+    }
+  }
+
+  /// One song matching [title] (case-insensitive), read once. Returns `null` if not found.
+  Future<SongNote?> findByTitle(String title) async {
+    try {
+      final row = await _db.findSongByTitle(title);
+      return row == null ? null : _toModel(row);
+    } catch (e) {
+      throw StorageException('Could not search for song by title.', cause: e);
     }
   }
 

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lyriccord/core/utils/song_copy.dart';
+import 'package:lyricchord/core/utils/song_copy.dart';
 
 void main() {
   group('copiedTitle', () {

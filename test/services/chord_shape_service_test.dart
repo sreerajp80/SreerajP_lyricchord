@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/services/chord_shape_service.dart';
+import 'package:lyricchord/services/chord_shape_service.dart';
 
 void main() {
   const service = ChordShapeService();

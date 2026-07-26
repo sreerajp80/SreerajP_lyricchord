@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/services/auto_scroll_calculator.dart';
+import 'package:lyricchord/services/auto_scroll_calculator.dart';
 
 void main() {
   const calc = AutoScrollCalculator();

@@ -1,4 +1,4 @@
-"""Generate the LyricCord app icon.
+"""Generate the LyricChord app icon.
 
 Draws a guitar chord diagram (fretboard + finger dots) with an eighth note on a
 rounded violet gradient background, matching the app palette in

@@ -1,44 +1,51 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:printing/printing.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import 'package:lyriccord/models/lyric_font.dart';
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/providers/auto_scroll_provider.dart';
-import 'package:lyriccord/providers/lyric_font_provider.dart';
-import 'package:lyriccord/providers/performance_provider.dart';
-import 'package:lyriccord/providers/song_list_provider.dart';
-import 'package:lyriccord/services/auto_scroll_calculator.dart';
-import 'package:lyriccord/services/chord_pro_service.dart';
-import 'package:lyriccord/services/chord_sheet_parser.dart';
-import 'package:lyriccord/services/chord_transposer.dart';
-import 'package:lyriccord/services/pdf_export_service.dart';
-import 'package:lyriccord/widgets/chord_reference_dialog.dart';
-import 'package:lyriccord/widgets/chord_sheet_view.dart';
-import 'package:lyriccord/widgets/performance_controls.dart';
-import 'package:lyriccord/widgets/transpose_sheet.dart';
+import 'package:lyricchord/core/utils/safe_file_name.dart';
+import 'package:lyricchord/models/setlist.dart';
+import 'package:lyricchord/models/lyric_font.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/providers/auto_scroll_provider.dart';
+import 'package:lyricchord/providers/lyric_font_provider.dart';
+import 'package:lyricchord/providers/performance_provider.dart';
+import 'package:lyricchord/providers/setlist_provider.dart';
+import 'package:lyricchord/providers/song_list_provider.dart';
+import 'package:lyricchord/services/auto_scroll_calculator.dart';
+import 'package:lyricchord/services/chord_pro_service.dart';
+import 'package:lyricchord/services/chord_sheet_parser.dart';
+import 'package:lyricchord/services/chord_transposer.dart';
+import 'package:lyricchord/services/html_pdf_service.dart';
+import 'package:lyricchord/services/pdf_export_service.dart';
+import 'package:lyricchord/widgets/chord_reference_dialog.dart';
+import 'package:lyricchord/widgets/chord_sheet_view.dart';
+import 'package:lyricchord/widgets/performance_controls.dart';
+import 'package:lyricchord/widgets/transpose_sheet.dart';
 
 /// Read and perform a song: the chord sheet plus the Performance Controls.
 ///
-/// Swiping left or right moves to the next or previous song in the list as it
-/// is currently filtered, which is why the pager reads
-/// [filteredSongsProvider] rather than the whole songbook.
+/// Swiping left or right moves to the next or previous song in the setlist or
+/// songbook list.
 class SongPerformanceScreen extends ConsumerStatefulWidget {
   const SongPerformanceScreen({
     super.key,
     required this.songId,
+    this.setlistId,
     this.embedded = false,
   });
 
   /// The song to open. `null` means the link had no usable id.
   final int? songId;
+
+  /// Optional setlist ID if opened from a setlist context.
+  final int? setlistId;
 
   /// True when shown as the tablet's right pane, where the list is still on
   /// screen so there is nothing to go back to.
@@ -59,6 +66,20 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
   /// The song order the pager was built from. Kept so a list change (a delete,
   /// a new search) can rebuild the pager instead of leaving it on a stale page.
   List<int> _pagerIds = const [];
+
+  /// Track fingers currently touching the screen.
+  int _pointersDown = 0;
+
+  /// True when the user is allowed to swipe left/right to change songs.
+  /// Set to false during multi-finger pinch zoom or vertical lyric scrolling.
+  bool _allowPageSwipe = true;
+
+  /// True once the direction of the current touch drag (vertical vs horizontal)
+  /// or gesture mode (multi-finger pinch) has been determined.
+  bool _gestureLocked = false;
+
+  /// Touch position when the first finger touched down.
+  Offset? _startPosition;
 
   @override
   void initState() {
@@ -99,40 +120,90 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
     super.dispose();
   }
 
+  void _onPointerDown(PointerDownEvent event) {
+    _pointersDown++;
+    if (_pointersDown >= 2) {
+      if (_allowPageSwipe) {
+        setState(() {
+          _allowPageSwipe = false;
+          _gestureLocked = true;
+        });
+      }
+    } else if (_pointersDown == 1) {
+      _startPosition = event.position;
+      _gestureLocked = false;
+    }
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (_pointersDown == 1 && !_gestureLocked && _startPosition != null) {
+      final dx = (event.position.dx - _startPosition!.dx).abs();
+      final dy = (event.position.dy - _startPosition!.dy).abs();
+      if (dx > 8 || dy > 8) {
+        _gestureLocked = true;
+        final isVertical = dy >= dx;
+        if (isVertical && _allowPageSwipe) {
+          setState(() => _allowPageSwipe = false);
+        }
+      }
+    }
+  }
+
+  void _onPointerEnded() {
+    if (_pointersDown > 0) _pointersDown--;
+    if (_pointersDown == 0) {
+      _startPosition = null;
+      _gestureLocked = false;
+      if (!_allowPageSwipe) {
+        setState(() => _allowPageSwipe = true);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final songs = ref.watch(filteredSongsProvider);
-    final ids = songs.map((s) => s.id).toList(growable: false);
+    final setlistId = widget.setlistId ?? ref.watch(activeSetlistIdProvider);
+    final setlist = setlistId != null
+        ? ref.watch(setlistByIdProvider(setlistId)).value
+        : null;
+
+    final List<int> ids;
+    if (setlist != null && setlist.songs.isNotEmpty) {
+      ids = setlist.songs.map((s) => s.id).toList(growable: false);
+    } else {
+      final songs = ref.watch(filteredSongsProvider);
+      ids = songs.map((s) => s.id).toList(growable: false);
+    }
+
     _syncPager(ids);
 
     final id = _currentId;
     if (id == null) return _shell(context, body: const _MissingSong());
 
     final index = ids.indexOf(id);
-    // A song that is not in the current list (deep link, or filtered out) still
-    // opens — it just cannot be swiped away from.
     final body = index < 0
         ? _SongPage(songId: id, active: true)
-        : PageView.builder(
-            controller: _controller,
-            itemCount: ids.length,
-            onPageChanged: _onPageChanged,
-            // Only the song on screen drives auto-scroll; the pre-built
-            // neighbours stay put until they become current.
-            itemBuilder: (context, i) =>
-                _SongPage(songId: ids[i], active: ids[i] == _currentId),
+        : Listener(
+            onPointerDown: _onPointerDown,
+            onPointerMove: _onPointerMove,
+            onPointerUp: (_) => _onPointerEnded(),
+            onPointerCancel: (_) => _onPointerEnded(),
+            child: PageView.builder(
+              physics: _allowPageSwipe
+                  ? const PageScrollPhysics()
+                  : const NeverScrollableScrollPhysics(),
+              controller: _controller,
+              itemCount: ids.length,
+              onPageChanged: _onPageChanged,
+              itemBuilder: (context, i) =>
+                  _SongPage(songId: ids[i], active: ids[i] == _currentId),
+            ),
           );
 
-    return _shell(context, body: body);
+    return _shell(context, body: body, setlist: setlist, ids: ids);
   }
 
   /// Keeps the pager and the list agreeing about which song is where.
-  ///
-  /// When the list order changes under a live pager (saving a song bumps its
-  /// timestamp and moves it to the top), the scroll position does not move on
-  /// its own — the pager would keep showing whatever song now sits at the old
-  /// index. So after the frame settles, jump back to the current song's new
-  /// index.
   void _syncPager(List<int> ids) {
     if (_controller != null && _listEquals(ids, _pagerIds)) return;
 
@@ -161,11 +232,8 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
     if (id == _currentId) return;
 
     setState(() => _currentId = id);
-    // A new song starts in its own key, at the default size, and paused at the
-    // top.
     ref.read(performanceSettingsProvider.notifier).resetAll();
     ref.read(autoScrollProvider.notifier).resetAll();
-    // Keep the tablet list highlight on the song being performed.
     ref.read(selectedSongIdProvider.notifier).select(id);
   }
 
@@ -179,14 +247,56 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
   }
 
   /// The screen frame: top bar plus [body].
-  Widget _shell(BuildContext context, {required Widget body}) {
+  Widget _shell(
+    BuildContext context, {
+    required Widget body,
+    Setlist? setlist,
+    List<int>? ids,
+  }) {
     final id = _currentId;
+    final currentIndex = (ids != null && id != null) ? ids.indexOf(id) : -1;
+    final totalSongs = ids?.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: !widget.embedded,
-        title: id == null ? const Text('Song') : _AppBarTitle(songId: id),
+        title: id == null
+            ? const Text('Song')
+            : _AppBarTitle(
+                songId: id,
+                setlist: setlist,
+                index: currentIndex,
+                total: totalSongs,
+              ),
         actions: [
+          if (setlist != null && setlist.songs.isNotEmpty) ...[
+            IconButton(
+              tooltip: 'Previous song',
+              icon: const Icon(Icons.skip_previous),
+              onPressed: currentIndex > 0
+                  ? () => _controller?.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    )
+                  : null,
+            ),
+            IconButton(
+              tooltip: 'Next song',
+              icon: const Icon(Icons.skip_next),
+              onPressed: currentIndex >= 0 && currentIndex < totalSongs - 1
+                  ? () => _controller?.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    )
+                  : null,
+            ),
+            IconButton(
+              tooltip: 'Setlist songs',
+              icon: const Icon(Icons.queue_music),
+              onPressed: () =>
+                  _showQuickSetlistSheet(context, setlist, currentIndex),
+            ),
+          ],
           if (id != null)
             IconButton(
               tooltip: 'Edit song',
@@ -197,6 +307,100 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
         ],
       ),
       body: body,
+    );
+  }
+
+  void _showQuickSetlistSheet(
+    BuildContext context,
+    Setlist setlist,
+    int currentIndex,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.playlist_play),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      setlist.name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${setlist.songCount} songs',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: setlist.songs.length,
+                itemBuilder: (context, idx) {
+                  final song = setlist.songs[idx];
+                  final isCurrent = idx == currentIndex;
+                  final theme = Theme.of(context);
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: isCurrent
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.surfaceContainerHighest,
+                      child: Text(
+                        '${idx + 1}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isCurrent
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      song.title,
+                      style: TextStyle(
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: song.artist.isNotEmpty ? Text(song.artist) : null,
+                    trailing: Text(
+                      song.key,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    selected: isCurrent,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _controller?.animateToPage(
+                        idx,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -211,23 +415,35 @@ bool _listEquals(List<int> a, List<int> b) {
 
 /// Title and artist in the top bar, kept live so an edit shows straight away.
 class _AppBarTitle extends ConsumerWidget {
-  const _AppBarTitle({required this.songId});
+  const _AppBarTitle({
+    required this.songId,
+    this.setlist,
+    this.index = -1,
+    this.total = 0,
+  });
 
   final int songId;
+  final Setlist? setlist;
+  final int index;
+  final int total;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(songByIdProvider(songId)).value;
     if (song == null) return const Text('Song');
 
+    final String subtitle = (setlist != null && index >= 0 && total > 0)
+        ? '${setlist!.name} (${index + 1}/$total)'
+        : song.artist;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(song.title, overflow: TextOverflow.ellipsis),
-        if (song.artist.trim().isNotEmpty)
+        if (subtitle.trim().isNotEmpty)
           Text(
-            song.artist,
+            subtitle,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelSmall,
           ),
@@ -585,25 +801,89 @@ class _OverflowMenu extends ConsumerWidget {
 
   /// Builds the PDF for [song] (with the live transpose) and opens the system
   /// share sheet. Sharing is offline — no network is used.
+  ///
+  /// Rendering goes through [HtmlPdfService], a native on-window web view that
+  /// shapes Malayalam correctly and keeps the text selectable. (The old
+  /// `Printing.convertHtml` used an unattached web view that hangs forever on
+  /// newer Android.) A progress dialog shows while it works, the render is timed
+  /// out, and the outcome always surfaces as a SnackBar. The real error is
+  /// printed to the debug log only.
   Future<void> _exportPdf(
     BuildContext context,
     SongNote song,
     int semitones,
     LyricFont font,
   ) async {
+    // Capture these before any await so we never touch a stale context.
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    var dialogOpen = true;
+    void closeDialog() {
+      if (dialogOpen) {
+        dialogOpen = false;
+        navigator.pop();
+      }
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
     try {
       const service = PdfExportService();
-      final bytes = await service.buildPdf(
+      final html = await service.buildHtml(
         song,
         semitones: semitones,
         font: font,
       );
-      await Printing.sharePdf(
+      // The native web view shapes complex scripts (Malayalam chillu,
+      // conjuncts, reordered vowel signs) and keeps the text selectable. The
+      // native side has its own hard timeout; this outer timeout is a backstop
+      // so a stuck render always fails loudly, never hangs silently.
+      const converter = HtmlPdfService();
+      final bytes = await converter
+          .convert(html: html)
+          .timeout(const Duration(seconds: 30));
+      closeDialog();
+
+      if (bytes.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not export the PDF (no pages).')),
+        );
+        return;
+      }
+
+      // Save through the system "Save" dialog (scoped storage, no permission).
+      // This preserves a Unicode file name — the share sheet's content URI
+      // percent-encodes non-ASCII names, so Malayalam titles came out garbled.
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export as PDF',
+        fileName: '${safeFileName(song.title)}.pdf',
         bytes: bytes,
-        filename: '${_safeFileName(song.title)}.pdf',
       );
-    } catch (_) {
-      if (context.mounted) _showSnack(context, 'Could not export the PDF.');
+      if (path != null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Exported "${song.title}".')),
+        );
+      }
+    } on TimeoutException {
+      closeDialog();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('PDF export took too long and was stopped.'),
+        ),
+      );
+    } catch (error, stack) {
+      closeDialog();
+      if (kDebugMode) {
+        debugPrint('PDF export failed: $error\n$stack');
+      }
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not export the PDF.')),
+      );
     }
   }
 
@@ -619,7 +899,7 @@ class _OverflowMenu extends ConsumerWidget {
       final text = service.format(song, semitones: semitones);
       final path = await FilePicker.platform.saveFile(
         dialogTitle: 'Export as ChordPro',
-        fileName: '${_safeFileName(song.title)}.chordpro',
+        fileName: '${safeFileName(song.title)}.chordpro',
         bytes: Uint8List.fromList(utf8.encode(text)),
       );
       if (context.mounted && path != null) {
@@ -630,16 +910,6 @@ class _OverflowMenu extends ConsumerWidget {
         _showSnack(context, 'Could not export the ChordPro file.');
       }
     }
-  }
-
-  /// Makes a title safe to use as a file name, so a stray `/` or `:` never
-  /// breaks the export path.
-  String _safeFileName(String title) {
-    final cleaned = title
-        .trim()
-        .replaceAll(RegExp(r'[^\w\s-]'), '')
-        .replaceAll(RegExp(r'\s+'), '_');
-    return cleaned.isEmpty ? 'song' : cleaned;
   }
 
   void _showSnack(BuildContext context, String message) {

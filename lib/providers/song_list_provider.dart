@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/providers/database_provider.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/providers/database_provider.dart';
 
 /// Which songs the list shows: every song, or only the starred ones.
 enum SongFilter { all, starred }
@@ -106,6 +106,33 @@ class SelectedSongIdNotifier extends Notifier<int?> {
 final selectedSongIdProvider = NotifierProvider<SelectedSongIdNotifier, int?>(
   SelectedSongIdNotifier.new,
 );
+
+/// Multi-selection state for batch song actions (export, delete).
+class MultiSongSelectionNotifier extends Notifier<Set<int>> {
+  @override
+  Set<int> build() => const {};
+
+  void toggle(int id) {
+    if (state.contains(id)) {
+      state = Set.of(state)..remove(id);
+    } else {
+      state = Set.of(state)..add(id);
+    }
+  }
+
+  void selectAll(Iterable<int> ids) {
+    state = Set.of(ids);
+  }
+
+  void clear() {
+    state = const {};
+  }
+}
+
+final multiSongSelectionProvider =
+    NotifierProvider<MultiSongSelectionNotifier, Set<int>>(
+      MultiSongSelectionNotifier.new,
+    );
 
 /// Pure filtering used by [filteredSongsProvider]. Exposed on its own so it can
 /// be unit tested without building a provider container.

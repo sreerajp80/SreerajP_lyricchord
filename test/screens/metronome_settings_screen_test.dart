@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:lyriccord/providers/theme_mode_provider.dart';
-import 'package:lyriccord/screens/metronome_settings_screen.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/screens/metronome_settings_screen.dart';
 
 void main() {
   Future<void> pumpScreen(

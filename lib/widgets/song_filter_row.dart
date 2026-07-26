@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/song_list_provider.dart';
+import 'package:lyricchord/providers/song_list_provider.dart';
 
 /// The "All Songs" / "Starred" chips with live counts. The counts come from
 /// [songCountsProvider], so they update as songs are added, starred, or

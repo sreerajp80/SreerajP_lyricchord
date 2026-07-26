@@ -15,8 +15,8 @@
 /// notation — is returned exactly as it came in (CLAUDE.md hard rule 4).
 library;
 
-import 'package:lyriccord/services/chord_sheet_parser.dart';
-import 'package:lyriccord/services/chord_suggestion_service.dart';
+import 'package:lyricchord/services/chord_sheet_parser.dart';
+import 'package:lyricchord/services/chord_suggestion_service.dart';
 
 /// Transposes single chords, whole lyric bodies, and keys.
 class ChordTransposer {

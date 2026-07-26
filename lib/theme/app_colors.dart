@@ -10,7 +10,7 @@ class AppColors {
   static const Color lightBg = Color(0xFFFDF8FD);
   static const Color lightText = Color(0xFF1C1B1F);
   static const Color lightSubtext = Color(0xFF49454F);
-  static const Color lightPrimary = Color(0xFF6750A4);
+  static const Color lightPrimary = Color(0xFF0052CC);
   static const Color lightSecondaryContainer = Color(0xFFEADDFF);
   static const Color lightOnSecondaryContainer = Color(0xFF21005D);
   static const Color lightBorder = Color(0xFFCAC4D0);
@@ -21,7 +21,7 @@ class AppColors {
   // Dark mode.
   static const Color darkBg = Color(0xFF141218);
   static const Color darkSurface = Color(0xFF1C1B1F);
-  static const Color darkPrimary = Color(0xFFD0BCFF);
+  static const Color darkPrimary = Color(0xFFFFD54F);
   static const Color darkSecondaryContainer = Color(0xFF4F378B);
   static const Color darkOnSecondaryContainer = Color(0xFFEADDFF);
   static const Color darkText = Color(0xFFE6E1E5);

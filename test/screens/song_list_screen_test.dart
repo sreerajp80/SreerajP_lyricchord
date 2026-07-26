@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:lyriccord/providers/database_provider.dart';
-import 'package:lyriccord/providers/theme_mode_provider.dart';
-import 'package:lyriccord/screens/home_shell.dart';
-import 'package:lyriccord/widgets/song_card.dart';
+import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/screens/home_shell.dart';
+import 'package:lyricchord/widgets/song_card.dart';
 
 import '../helpers/fake_song_repository.dart';
 
@@ -215,4 +215,51 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('long press enters selection mode and toggles selection', (
+    tester,
+  ) async {
+    await pumpSongbook(tester);
+
+    await tester.longPress(find.text('Amazing Grace'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 selected'), findsOneWidget);
+    expect(find.byType(Checkbox), findsNWidgets(3));
+
+    // Tap another song to select it
+    await tester.tap(find.text('Jingle Bells'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 selected'), findsOneWidget);
+
+    // Tap close to cancel selection mode
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 selected'), findsNothing);
+    expect(find.byType(Checkbox), findsNothing);
+  });
+
+  testWidgets(
+    'select all and deselect all button toggles selection of all songs',
+    (tester) async {
+      await pumpSongbook(tester);
+
+      await tester.longPress(find.text('Amazing Grace'));
+      await tester.pumpAndSettle();
+
+      // Tap select all button
+      await tester.tap(find.byIcon(Icons.select_all));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 selected'), findsOneWidget);
+
+      // Tap deselect all button
+      await tester.tap(find.byIcon(Icons.deselect));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 selected'), findsNothing);
+    },
+  );
 }

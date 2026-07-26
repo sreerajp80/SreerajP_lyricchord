@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lyriccord/services/chord_sheet_parser.dart';
+import 'package:lyricchord/services/chord_sheet_parser.dart';
 
 /// Draws the lyric sheet with chord badges above the words.
 ///
@@ -50,7 +50,7 @@ class ChordSheetView extends StatelessWidget {
       fontFamily: 'monospace',
       fontWeight: FontWeight.bold,
       height: 1.1,
-      color: theme.colorScheme.secondary,
+      color: theme.colorScheme.primary,
     );
 
     if (lines.isEmpty) {

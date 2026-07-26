@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/services/metronome_calculator.dart';
+import 'package:lyricchord/services/metronome_calculator.dart';
 
 void main() {
   const calc = MetronomeCalculator();

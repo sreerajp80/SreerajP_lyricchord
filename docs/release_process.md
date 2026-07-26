@@ -1,6 +1,6 @@
-# Release Process — LyricCord
+# Release Process — LyricChord
 
-This is the app-specific release process for LyricCord. It fills in the shared
+This is the app-specific release process for LyricChord. It fills in the shared
 template at [guidelines/release_process.md](guidelines/release_process.md) with the
 real values for this app. The local copy wins over the template (CLAUDE.md).
 
@@ -14,7 +14,7 @@ Read alongside:
 
 ## 1. Release scope
 
-- App: **LyricCord** (`in.sreerajp.lyriccord`)
+- App: **LyricChord** (`in.sreerajp.lyricchord`)
 - Release profile: **not yet shipping** (preparing the first release)
 - Supported release platforms: **Android** (iOS later)
 - Fully **offline**: no INTERNET permission, no network packages (hard rule 1).

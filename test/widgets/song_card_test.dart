@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/models/song_note.dart';
-import 'package:lyriccord/widgets/song_card.dart';
+import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/widgets/song_card.dart';
 
 void main() {
   Future<void> pumpCard(

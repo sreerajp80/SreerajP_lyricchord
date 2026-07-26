@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/services/chord_shape_service.dart';
-import 'package:lyriccord/widgets/guitar_chord_diagram.dart';
-import 'package:lyriccord/widgets/harmonium_chord_diagram.dart';
+import 'package:lyricchord/services/chord_shape_service.dart';
+import 'package:lyricchord/widgets/guitar_chord_diagram.dart';
+import 'package:lyricchord/widgets/harmonium_chord_diagram.dart';
 
 /// The painted chord diagrams are invisible to a screen reader, so each one
 /// carries a `Semantics` image label naming its chord (accessibility pass,

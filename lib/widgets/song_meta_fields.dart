@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:lyricchord/models/setlist.dart';
+
 /// The editor's Title / Artist / Key / BPM block.
 ///
 /// Pure UI: it holds no state of its own and knows nothing about storage. The
@@ -16,6 +18,9 @@ class SongMetaFields extends StatelessWidget {
     required this.onArtistChanged,
     required this.onKeyChanged,
     required this.onBpmChanged,
+    this.selectedSetlistId,
+    this.availableSetlists = const [],
+    this.onSetlistChanged,
   });
 
   final TextEditingController titleController;
@@ -27,6 +32,10 @@ class SongMetaFields extends StatelessWidget {
   final ValueChanged<String> onArtistChanged;
   final ValueChanged<String> onKeyChanged;
   final ValueChanged<String> onBpmChanged;
+
+  final int? selectedSetlistId;
+  final List<Setlist> availableSetlists;
+  final ValueChanged<int?>? onSetlistChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +101,30 @@ class SongMetaFields extends StatelessWidget {
               ),
             ],
           ),
+          if (availableSetlists.isNotEmpty && onSetlistChanged != null) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<int?>(
+              initialValue: selectedSetlistId,
+              decoration: const InputDecoration(
+                labelText: 'Add to Setlist (Optional)',
+                prefixIcon: Icon(Icons.queue_music),
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('None (Do not add)'),
+                ),
+                ...availableSetlists.map(
+                  (setlist) => DropdownMenuItem<int?>(
+                    value: setlist.id,
+                    child: Text(setlist.name),
+                  ),
+                ),
+              ],
+              onChanged: onSetlistChanged,
+            ),
+          ],
         ],
       ),
     );

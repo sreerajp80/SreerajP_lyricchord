@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:lyriccord/services/chord_sheet_parser.dart';
+import 'package:lyricchord/services/chord_sheet_parser.dart';
 
 void main() {
   const parser = ChordSheetParser();

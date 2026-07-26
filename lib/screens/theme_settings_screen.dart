@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lyriccord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
 
 /// Settings → Themes: pick System, Light, or Dark.
 ///

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:lyriccord/providers/theme_mode_provider.dart';
-import 'package:lyriccord/widgets/metronome_beat.dart';
+import 'package:lyricchord/providers/theme_mode_provider.dart';
+import 'package:lyricchord/widgets/metronome_beat.dart';
 
 void main() {
   Future<void> pumpButton(

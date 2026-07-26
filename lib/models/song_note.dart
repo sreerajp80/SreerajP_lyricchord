@@ -1,4 +1,4 @@
-/// One song sheet — the single domain entity of LyricCord.
+/// One song sheet — the single domain entity of LyricChord.
 ///
 /// Ported 1:1 from the Android Room `SongNote` entity. Immutable: use
 /// [copyWith] to make a changed copy instead of mutating in place. This model
