@@ -16,6 +16,8 @@ library;
 
 import 'package:flutter/services.dart';
 
+import 'package:lyricchord/services/pdf_fit_action.dart';
+
 /// Thrown when the native renderer cannot produce a PDF (including when the
 /// platform has no implementation, such as iOS today).
 class HtmlPdfException implements Exception {
@@ -36,11 +38,17 @@ class HtmlPdfService {
     'in.sreerajp.lyricchord/html_pdf',
   );
 
-  /// A4 page size and margin in PostScript points (1/72 inch), matching the
-  /// `@page` size used by [PdfExportService].
-  static const double _a4WidthPts = 595.28;
-  static const double _a4HeightPts = 841.89;
-  static const double _marginPts = 32.0;
+  /// Page limits and margin in PostScript points (1/72 inch).
+  ///
+  /// The page width is **not** fixed: the native side measures the song's
+  /// longest line and picks a width between [_minWidthPts] and [_maxWidthPts].
+  /// A song with short lines then gets a narrow, tall page, which fills a phone
+  /// screen when the viewer fits the page — that is what makes the lyrics look
+  /// big. The page is never wider than A4, so it still prints on paper.
+  static const double _maxWidthPts = 595.28; // A4 width
+  static const double _minWidthPts = 300.0; // room for the title and Key/BPM
+  static const double _heightPts = 841.89; // A4 height
+  static const double _marginPts = 20.0;
 
   /// Renders [html] to PDF bytes. Throws [HtmlPdfException] on any failure
   /// (bad render, empty result, or an unsupported platform).
@@ -55,15 +63,18 @@ class HtmlPdfService {
       final bytes = await _channel
           .invokeMethod<Uint8List>('convertHtml', <String, dynamic>{
             'html': html,
-            'widthPts': _a4WidthPts,
-            'heightPts': _a4HeightPts,
+            'widthPts': _maxWidthPts,
+            'minWidthPts': _minWidthPts,
+            'heightPts': _heightPts,
             'marginPts': _marginPts,
             'timeoutMs': timeout.inMilliseconds,
           });
       if (bytes == null || bytes.isEmpty) {
         throw const HtmlPdfException('The PDF renderer returned no data.');
       }
-      return bytes;
+      // Ask viewers to open the file zoomed so the page fits. Returns the
+      // bytes untouched if the hint cannot be added safely.
+      return addFitToPageAction(bytes);
     } on MissingPluginException {
       // No native implementation on this platform (iOS today).
       throw const HtmlPdfException(

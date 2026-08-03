@@ -28,14 +28,18 @@ class MainActivity : FlutterActivity() {
                             result.error("bad_args", "html is required", null)
                             return@setMethodCallHandler
                         }
+                        // widthPts is the widest the page may be; the real
+                        // width is picked from the song's longest line.
                         val widthPts = call.argument<Double>("widthPts") ?: 595.28
+                        val minWidthPts = call.argument<Double>("minWidthPts") ?: widthPts
                         val heightPts = call.argument<Double>("heightPts") ?: 841.89
-                        val marginPts = call.argument<Double>("marginPts") ?: 32.0
+                        val marginPts = call.argument<Double>("marginPts") ?: 20.0
                         val timeoutMs = (call.argument<Int>("timeoutMs") ?: 20000).toLong()
 
                         LcHtmlToPdf(this).convert(
                             html,
                             widthPts,
+                            minWidthPts,
                             heightPts,
                             marginPts,
                             timeoutMs,

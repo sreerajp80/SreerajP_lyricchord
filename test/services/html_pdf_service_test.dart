@@ -28,7 +28,11 @@ void main() {
     expect(seen?.method, 'convertHtml');
     final args = seen!.arguments as Map;
     expect(args['html'], '<html></html>');
+    // widthPts is the widest the page may be; the native side narrows it to
+    // the song, but never below minWidthPts.
     expect(args['widthPts'], isA<double>());
+    expect(args['minWidthPts'], isA<double>());
+    expect(args['minWidthPts'] as double, lessThan(args['widthPts'] as double));
     expect(args['heightPts'], isA<double>());
     expect(args['marginPts'], isA<double>());
     expect(args['timeoutMs'], isA<int>());

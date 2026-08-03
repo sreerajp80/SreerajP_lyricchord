@@ -40,20 +40,33 @@ class LcHtmlToPdf(private val activity: Activity) {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    /**
+     * Renders [html] to a PDF.
+     *
+     * [maxWidthPts] is the widest the page may be (a sheet of paper);
+     * [minWidthPts] the narrowest. The real page width is chosen between them
+     * from the widest line in the sheet, so a song with short lines gets a
+     * narrow page that fills a phone screen when the viewer fits it. The page
+     * height is always [heightPts].
+     */
     fun convert(
         html: String,
-        widthPts: Double,
+        maxWidthPts: Double,
+        minWidthPts: Double,
         heightPts: Double,
         marginPts: Double,
         timeoutMs: Long,
         callback: Callback,
     ) {
-        mainHandler.post { start(html, widthPts, heightPts, marginPts, timeoutMs, callback) }
+        mainHandler.post {
+            start(html, maxWidthPts, minWidthPts, heightPts, marginPts, timeoutMs, callback)
+        }
     }
 
     private fun start(
         html: String,
-        widthPts: Double,
+        maxWidthPts: Double,
+        minWidthPts: Double,
         heightPts: Double,
         marginPts: Double,
         timeoutMs: Long,
@@ -92,20 +105,37 @@ class LcHtmlToPdf(private val activity: Activity) {
             callback.onResult(bytes, error)
         }
 
-        // Attach off-screen so the WebView lays out but never appears on screen.
-        val widthPx = ceil(widthPts * 96.0 / 72.0).toInt().coerceAtLeast(1)
+        // Attach off-screen so the WebView lays out but never appears on
+        // screen. This size does not decide the layout: the sheet sets its own
+        // width in points (see lcApplyWidth), so measuring never depends on the
+        // screen.
+        val widthPx = ceil(maxWidthPts * 96.0 / 72.0).toInt().coerceAtLeast(1)
         val heightPx = ceil(heightPts * 96.0 / 72.0).toInt().coerceAtLeast(1)
         val params = FrameLayout.LayoutParams(widthPx, heightPx)
         webView.translationX = 100000f
         root.addView(webView, params)
 
-        // JavaScript calls this once the embedded fonts are ready to draw.
+        var measured = false
+
+        // JavaScript calls this once the fonts are ready and the widest line
+        // has been measured. The width comes as a string so a bad value can
+        // never break the bridge — it simply falls back to a full-width page.
         webView.addJavascriptInterface(
             object {
                 @JavascriptInterface
-                fun onReady() {
+                fun onMeasured(widestLinePt: String?) {
                     mainHandler.post {
-                        render(webView, widthPts, heightPts, marginPts, ::finish)
+                        if (measured || finished) return@post
+                        measured = true
+                        applyWidthAndRender(
+                            webView,
+                            widestLinePt?.trim('"')?.toDoubleOrNull() ?: 0.0,
+                            maxWidthPts,
+                            minWidthPts,
+                            heightPts,
+                            marginPts,
+                            ::finish,
+                        )
                     }
                 }
             },
@@ -115,11 +145,16 @@ class LcHtmlToPdf(private val activity: Activity) {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
-                // Wait for the embedded @font-face fonts before printing, so
-                // Malayalam is shaped correctly and not with fallback glyphs.
+                // Wait for the embedded @font-face fonts before measuring, so
+                // Malayalam is shaped correctly and the widths are real.
+                //
+                // lcMeasure() reports the widest lyric line, which decides the
+                // page width. The guard keeps older HTML (without the script)
+                // working: it reports 0 and the page stays full width.
                 view.evaluateJavascript(
                     "document.fonts.ready.then(function(){" +
-                        "window.AndroidPdf.onReady();});",
+                        "var w = window.lcMeasure ? window.lcMeasure() : 0;" +
+                        "window.AndroidPdf.onMeasured(String(w));});",
                     null,
                 )
             }
@@ -129,6 +164,38 @@ class LcHtmlToPdf(private val activity: Activity) {
         mainHandler.postDelayed(timeoutRunnable, timeoutMs)
 
         webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+    }
+
+    /**
+     * Chooses the page width from [widestLinePt], tells the sheet to lay out
+     * at that width, and prints once it has.
+     *
+     * A song with short lines gets a narrow page, so the lyrics fill the width
+     * when a viewer fits the page to the screen. A wide song is capped at
+     * [maxWidthPts] and its longest lines shrink themselves instead.
+     */
+    private fun applyWidthAndRender(
+        webView: WebView,
+        widestLinePt: Double,
+        maxWidthPts: Double,
+        minWidthPts: Double,
+        heightPts: Double,
+        marginPts: Double,
+        finish: (ByteArray?, String?) -> Unit,
+    ) {
+        val wanted = if (widestLinePt > 0) widestLinePt + 2 * marginPts else maxWidthPts
+        val pageWidthPts = wanted.coerceIn(minWidthPts.coerceAtMost(maxWidthPts), maxWidthPts)
+        val contentWidthPts = pageWidthPts - 2 * marginPts
+
+        // Lay the sheet out at exactly the width it will be printed at, then
+        // print. Waiting for the callback means the new width is in place
+        // before the print pass reads the page.
+        webView.evaluateJavascript(
+            "if(window.lcApplyWidth){window.lcApplyWidth($contentWidthPts);}",
+            {
+                render(webView, pageWidthPts, heightPts, marginPts, finish)
+            },
+        )
     }
 
     private fun render(

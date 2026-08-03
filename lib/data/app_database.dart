@@ -24,6 +24,15 @@ class SongNotes extends Table {
   IntColumn get bpm => integer().withDefault(const Constant(120))();
   BoolColumn get favorite => boolean().withDefault(const Constant(false))();
   IntColumn get timestamp => integer()();
+
+  /// Manual auto-scroll speed the user last set for this song (schema
+  /// version 3). Saved per song so a sheet opens at the speed it was performed
+  /// at last time.
+  RealColumn get scrollSpeed => real().withDefault(const Constant(1.0))();
+
+  /// Tempo-Auto length in measures the user last set for this song (schema
+  /// version 3).
+  IntColumn get scrollMeasures => integer().withDefault(const Constant(32))();
 }
 
 /// The `setlists` table (schema version 2).
@@ -64,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -77,6 +86,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         await m.createTable(setlists);
         await m.createTable(setlistItems);
+      }
+      if (from < 3) {
+        // Existing songs take the column defaults (1.0x, 32 measures), so an
+        // upgrade never changes how a song already scrolls.
+        await m.addColumn(songNotes, songNotes.scrollSpeed);
+        await m.addColumn(songNotes, songNotes.scrollMeasures);
       }
     },
     beforeOpen: (details) async {
@@ -127,6 +142,20 @@ class AppDatabase extends _$AppDatabase {
   /// Updates a song by primary key. Returns true if a row was changed.
   Future<bool> updateSong(SongNotesCompanion song) {
     return update(songNotes).replace(song);
+  }
+
+  /// Writes only the auto-scroll columns of one song.
+  ///
+  /// Deliberately not a `replace()`: the songbook is ordered by `timestamp`, so
+  /// a speed change must leave `timestamp` (and every other column) alone —
+  /// setting a scroll speed is not editing the song.
+  Future<void> updateScrollSettings(int id, double speed, int measures) async {
+    await (update(songNotes)..where((t) => t.id.equals(id))).write(
+      SongNotesCompanion(
+        scrollSpeed: Value(speed),
+        scrollMeasures: Value(measures),
+      ),
+    );
   }
 
   /// Deletes a song by id. Returns the number of rows removed.

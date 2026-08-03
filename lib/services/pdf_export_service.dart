@@ -39,6 +39,20 @@ class PdfExportService {
   /// CSS family name used for the always-attached Malayalam fallback font.
   static const String _malayalamFamily = 'LcMalayalamFallback';
 
+  /// Lyric size a line starts at, in points. Chords are sized from this, so one
+  /// number scales a whole line.
+  static const double _lyricPt = 15;
+
+  /// Smallest lyric size the auto-fit script may shrink a line to. Below this
+  /// the line wraps instead, because it would stop being readable.
+  static const double _minLyricPt = 9;
+
+  /// How much the auto-fit script shrinks a line per step, in points.
+  static const double _fitStepPt = 0.5;
+
+  /// Chord size as a share of the lyric size on the same line.
+  static const double _chordEm = 0.73;
+
   /// Builds the HTML sheet for [song], applying [semitones] of transpose.
   ///
   /// [font] is the lyric font the user picked. That font is used for all text;
@@ -72,7 +86,42 @@ class PdfExportService {
     return '<!DOCTYPE html>'
         '<html><head><meta charset="utf-8">'
         '<style>$css</style></head>'
-        '<body>$body</body></html>';
+        '<body>$body${_fitScript()}</body></html>';
+  }
+
+  /// Builds the HTML sheet for multiple [songs].
+  ///
+  /// Each song is wrapped in a container that breaks pages after it, ensuring
+  /// each song starts on a clean A4 page in the PDF.
+  Future<String> buildHtmlForMultiple(
+    List<SongNote> songs, {
+    LyricFont font = LyricFont.fallback,
+  }) async {
+    if (songs.isEmpty) {
+      return '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body></body></html>';
+    }
+    if (songs.length == 1) {
+      return buildHtml(songs.first, font: font);
+    }
+
+    final css = await _buildCss(font);
+    final body = StringBuffer();
+
+    for (var i = 0; i < songs.length; i++) {
+      final song = songs[i];
+      final lines = _parser.parse(song.lyrics);
+
+      body.write('<div class="song-container">');
+      body.write(_header(song, song.key));
+      body.write('<hr class="rule">');
+      body.write(_lyricsBlock(lines));
+      body.write('</div>');
+    }
+
+    return '<!DOCTYPE html>'
+        '<html><head><meta charset="utf-8">'
+        '<style>$css</style></head>'
+        '<body>$body${_fitScript()}</body></html>';
   }
 
   // --- Fonts / CSS ----------------------------------------------------------
@@ -115,25 +164,128 @@ class PdfExportService {
 
     return '''
 $faces
-@page { size: A4; margin: 32pt; }
+/* The page size and the margins come only from the native print attributes
+   (see HtmlPdfService / LcHtmlToPdf), because the page width is chosen from
+   the song itself. Setting them here as well would apply them twice. */
+@page { margin: 0; }
 html, body { margin: 0; padding: 0; }
-body { font-family: $stack; color: #000; line-height: 1.35; }
-.title { font-size: 22pt; font-weight: 700; color: $_accent; margin: 0; }
-.artist { font-size: 12pt; color: $_grey700; margin: 2pt 0 0 0; }
-.meta { font-size: 11pt; margin: 4pt 0 0 0; }
+body { font-family: $stack; color: #000; line-height: 1.30; }
+.song-container { page-break-after: always; }
+.song-container:last-child { page-break-after: avoid; }
+.title { font-size: 26pt; font-weight: 700; color: $_accent; margin: 0; }
+.artist { font-size: 13pt; color: $_grey700; margin: 2pt 0 0 0; }
+.meta { font-size: 12pt; margin: 4pt 0 0 0; }
 .rule { border: none; border-top: 0.5pt solid #bdbdbd; margin: 8pt 0; }
+/* One font size per line drives both the words and their chords, so the
+   auto-fit script can shrink a whole line by setting a single value. Lines
+   never wrap on their own; only a line the script could not fit gets the
+   "wrapped" class back. */
 .line {
-  display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 0 2pt 0;
+  display: flex; flex-wrap: nowrap; align-items: flex-end; margin: 0 0 3pt 0;
+  font-size: ${_lyricPt}pt;
 }
-.blank { height: 10pt; }
+.line.wrapped { flex-wrap: wrap; }
+.blank { height: 13pt; }
 .piece { display: flex; flex-direction: column; align-items: flex-start; }
 .piece .chord {
-  height: 11pt; font-size: 8pt; font-weight: 700; color: $_accent;
+  height: 1.28em; font-size: ${_chordEm}em; font-weight: 700; color: $_accent;
   white-space: pre;
 }
-.piece .word { font-size: 11pt; white-space: pre; }
+.piece .word { font-size: 1em; white-space: pre; }
 ''';
   }
+
+  // --- Measure / fit script -------------------------------------------------
+
+  /// Extra width kept as a safety allowance, so a rounding difference between
+  /// measuring and printing can never push a line over the page edge.
+  static const double _fitSlack = 1.02;
+
+  /// The script that sizes the page to the song and keeps every lyric line on
+  /// a single line.
+  ///
+  /// It defines two functions the native renderer calls in order, once the
+  /// embedded fonts have loaded (measuring before that would give wrong
+  /// widths) — see `LcHtmlToPdf`:
+  ///
+  /// * `lcMeasure()` widens the sheet far past any real page so no line can
+  ///   wrap, measures the true width of every lyric line, and returns the
+  ///   widest one **in points**. The native side turns that into the page
+  ///   width. It returns `0` if nothing could be measured, which tells the
+  ///   native side to fall back to a full-width page.
+  /// * `lcApplyWidth(pt)` sets the sheet to the chosen content width and then
+  ///   shrinks any line that still does not fit — only possible for a song so
+  ///   wide that the page hit its maximum. A line shrinks step by step down to
+  ///   [_minLyricPt]; chords shrink with the words because they are sized in
+  ///   `em`, so a chord always stays over its own word. A line that still does
+  ///   not fit at the smallest size is allowed to wrap, which is better than
+  ///   running off the edge of the page.
+  ///
+  /// Fixing the width in points is what makes this correct: all measuring is
+  /// then in page units, so the device screen size cannot affect the result,
+  /// and the layout measured here is exactly the layout that gets printed.
+  ///
+  /// Plain inline JavaScript with no URL and no library, so the sheet stays
+  /// self-contained and offline (CLAUDE.md hard rule 1). It never throws: any
+  /// problem simply leaves the sheet at its normal size.
+  static String _fitScript() =>
+      '''
+<script>
+(function () {
+  var START = $_lyricPt, MIN = $_minLyricPt, STEP = $_fitStepPt;
+
+  // Width of the real content of a line, in CSS pixels.
+  function contentWidth(line) {
+    var kids = line.children, left = null, right = null;
+    for (var j = 0; j < kids.length; j++) {
+      var box = kids[j].getBoundingClientRect();
+      if (left === null || box.left < left) left = box.left;
+      if (right === null || box.right > right) right = box.right;
+    }
+    return right === null ? 0 : right - left;
+  }
+
+  window.lcMeasure = function () {
+    try {
+      // Far wider than any page, so every line lies out at its natural width.
+      document.body.style.width = '5000pt';
+      var lines = document.querySelectorAll('.line');
+      var widest = 0;
+      for (var i = 0; i < lines.length; i++) {
+        var w = contentWidth(lines[i]);
+        if (w > widest) widest = w;
+      }
+      // CSS pixels are 1/96 inch, points are 1/72 inch.
+      return Math.ceil(widest * 72 / 96 * $_fitSlack);
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  window.lcApplyWidth = function (widthPt) {
+    try {
+      if (widthPt > 0) document.body.style.width = widthPt + 'pt';
+      var lines = document.querySelectorAll('.line');
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var limit = line.clientWidth;
+        if (!limit) continue;
+        var size = START;
+        line.style.fontSize = size + 'pt';
+        while (contentWidth(line) > limit + 0.5 && size > MIN) {
+          size -= STEP;
+          line.style.fontSize = size + 'pt';
+        }
+        if (contentWidth(line) > limit + 0.5) {
+          line.className = 'line wrapped';
+        }
+      }
+    } catch (e) {
+      /* Never block the export because a line could not be measured. */
+    }
+  };
+})();
+</script>''';
 
   /// Loads a bundled `.ttf` [asset] and returns an `@font-face` rule that embeds
   /// it as a base64 data URI under [family].

@@ -203,6 +203,22 @@ void main() {
       expect(all, hasLength(3));
     });
 
+    test('saving an edit keeps the song\'s saved scroll speed', () async {
+      // The speed is set in the performance view, not the editor, so an edit
+      // must carry it through untouched.
+      await repo.saveScrollSettings(1, speed: 0.45, measures: 16);
+
+      await open(1);
+      final editor = container.read(songEditorProvider(1).notifier);
+      editor.setTitle('Amazing Grace (slow)');
+      await editor.save();
+
+      final saved = await repo.watchSongById(1).first;
+      expect(saved!.title, 'Amazing Grace (slow)');
+      expect(saved.scrollSpeed, closeTo(0.45, 1e-9));
+      expect(saved.scrollMeasures, 16);
+    });
+
     test('saving without a title still works', () async {
       await open(0);
       final editor = container.read(songEditorProvider(0).notifier);

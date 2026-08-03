@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/database_provider.dart';
@@ -261,8 +262,143 @@ void main() {
     // The mode toggle uses single-letter labels (M / T) to save width.
     expect(find.text('M'), findsOneWidget);
     expect(find.text('T'), findsOneWidget);
-    // Manual mode by default: the speed chips are there.
-    expect(find.text('1x'), findsOneWidget);
+    // Manual mode by default: the speed stepper starts at 1.00x.
+    expect(find.text('1.00x'), findsOneWidget);
+  });
+
+  testWidgets('the controls row fits on a narrow phone', (tester) async {
+    // 360 dp is the common small-phone width. The row is tight — mode toggle,
+    // play, full screen and the stepper — so this guards against an overflow
+    // if any of them grows again. The metronome is switched on because that is
+    // the widest the row ever gets.
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    SharedPreferences.setMockInitialValues({
+      AppConstants.prefMetronomeEnabled: true,
+    });
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          songRepositoryProvider.overrideWithValue(repo),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+        child: const MaterialApp(home: SongPerformanceScreen(songId: 1)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byTooltip('Full screen'), findsOneWidget);
+    expect(find.text('1.00x'), findsOneWidget);
+  });
+
+  testWidgets('the speed stepper changes the manual speed', (tester) async {
+    await pumpPerformance(tester);
+
+    await tester.tap(find.byTooltip('Faster'));
+    await tester.pumpAndSettle();
+    expect(find.text('1.05x'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Slower'));
+    await tester.tap(find.byTooltip('Slower'));
+    await tester.pumpAndSettle();
+    expect(find.text('0.95x'), findsOneWidget);
+  });
+
+  testWidgets('a song opens at the speed saved for it', (tester) async {
+    repo = FakeSongRepository([
+      const SongNote(
+        id: 1,
+        title: 'Slow One',
+        lyrics: '[G]Take it easy',
+        key: 'G',
+        bpm: 80,
+        timestamp: 1,
+        scrollSpeed: 0.60,
+        scrollMeasures: 48,
+      ),
+    ]);
+
+    await pumpPerformance(tester);
+
+    expect(find.text('0.60x'), findsOneWidget);
+    expect(find.text('1.00x'), findsNothing);
+  });
+
+  testWidgets('changing the speed saves it against the song', (tester) async {
+    await pumpPerformance(tester);
+
+    await tester.tap(find.byTooltip('Faster'));
+    await tester.pumpAndSettle();
+
+    // Wait past the debounce so the write goes through. (That the write waits
+    // for the debounce is checked in the auto-scroll provider test.)
+    await tester.pump(AutoScrollNotifier.saveDebounce);
+    await tester.pumpAndSettle();
+
+    final saved = repo.currentSongs.firstWhere((s) => s.id == 1);
+    expect(saved.scrollSpeed, closeTo(1.05, 1e-9));
+    expect(saved.timestamp, 1, reason: 'saving a speed is not an edit');
+  });
+
+  group('Stage Mode', () {
+    testWidgets('the full screen button hides the top bar and shows the HUD', (
+      tester,
+    ) async {
+      await pumpPerformance(tester);
+      expect(find.byType(AppBar), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Full screen'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppBar), findsNothing);
+      // The HUD opens with it, so the way back out is on screen at once.
+      expect(find.byTooltip('Exit full screen'), findsOneWidget);
+      // The normal controls header is gone — the lyrics have the whole screen.
+      expect(find.byType(PerformanceControls), findsNothing);
+    });
+
+    testWidgets('the exit button brings the top bar back', (tester) async {
+      await pumpPerformance(tester);
+
+      await tester.tap(find.byTooltip('Full screen'));
+      await tester.pumpAndSettle();
+      // Dismiss the one-time gesture guide first.
+      await tester.tap(find.text('Tap anywhere to start'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Exit full screen'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppBar), findsOneWidget);
+      expect(find.byType(PerformanceControls), findsOneWidget);
+    });
+
+    testWidgets('the gesture guide is shown once and then remembered', (
+      tester,
+    ) async {
+      await pumpPerformance(tester);
+
+      await tester.tap(find.byTooltip('Full screen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tap anywhere to start'), findsOneWidget);
+
+      await tester.tap(find.text('Tap anywhere to start'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tap anywhere to start'), findsNothing);
+
+      // Leaving and coming back does not show it again.
+      await tester.tap(find.byTooltip('Exit full screen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Full screen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tap anywhere to start'), findsNothing);
+    });
   });
 
   testWidgets('switching to Tempo mode shows the measures stepper', (

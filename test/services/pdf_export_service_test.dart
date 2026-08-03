@@ -132,4 +132,110 @@ void main() {
     // The chosen font family name is present in the font stack.
     expect(html.contains('Manjari'), isTrue);
   });
+
+  test('builds HTML for multiple songs with page breaks', () async {
+    const song1 = SongNote(
+      title: 'Song One',
+      artist: 'Artist One',
+      lyrics: '[C]First song lyrics',
+      key: 'C',
+      bpm: 100,
+      timestamp: 0,
+    );
+    const song2 = SongNote(
+      title: 'Song Two',
+      artist: 'Artist Two',
+      lyrics: '[G]Second song lyrics',
+      key: 'G',
+      bpm: 120,
+      timestamp: 0,
+    );
+
+    final html = await service.buildHtmlForMultiple([song1, song2]);
+    expectIsSelfContainedHtml(html);
+    expect(html.contains('Song One'), isTrue);
+    expect(html.contains('Song Two'), isTrue);
+    expect(html.contains('class="song-container"'), isTrue);
+    expect(html.contains('page-break-after: always;'), isTrue);
+  });
+
+  test('uses the bigger reading sizes and the narrower margin', () async {
+    const song = SongNote(
+      title: 'Sizes',
+      lyrics: '[C]big enough to read',
+      key: 'C',
+      bpm: 100,
+      timestamp: 0,
+    );
+
+    final html = await service.buildHtml(song);
+    // Lyrics drive the line size; chords are sized from it, so a chord always
+    // shrinks together with its own word.
+    expect(html.contains('font-size: 15.0pt;'), isTrue);
+    expect(html.contains('font-size: 0.73em;'), isTrue);
+    expect(html.contains('.piece .word { font-size: 1em;'), isTrue);
+    // The page size and margins come only from the native print attributes,
+    // because the page width is chosen from the song.
+    expect(html.contains('@page { margin: 0; }'), isTrue);
+    expect(html.contains('size: A4'), isFalse);
+    // The old small sizes are gone.
+    expect(html.contains('font-size: 11pt; white-space: pre;'), isFalse);
+    expect(html.contains('font-size: 8pt;'), isFalse);
+  });
+
+  test(
+    'lyric lines do not wrap, and the auto-fit script is included',
+    () async {
+      const song = SongNote(
+        title: 'Long Line',
+        lyrics:
+            '[C]a very long lyric line that would normally not fit across the '
+            'width of an A4 page at fifteen points',
+        key: 'C',
+        bpm: 100,
+        timestamp: 0,
+      );
+
+      final html = await service.buildHtml(song);
+      expectIsSelfContainedHtml(html);
+      // Lines never break by themselves...
+      expect(html.contains('flex-wrap: nowrap;'), isTrue);
+      // ...only a line the script gave up on wraps.
+      expect(html.contains('.line.wrapped { flex-wrap: wrap; }'), isTrue);
+      // The script is inline (offline) and the native renderer calls both
+      // functions by name: measure the widest line, then lay out at the page
+      // width it picked.
+      expect(html.contains('window.lcMeasure = function'), isTrue);
+      expect(html.contains('window.lcApplyWidth = function'), isTrue);
+      expect(html.contains('<script src'), isFalse);
+      // It shrinks down to the 9 pt floor before giving up.
+      expect(html.contains('MIN = 9.0'), isTrue);
+    },
+  );
+
+  test('multi-song HTML also carries the auto-fit script', () async {
+    const song1 = SongNote(
+      title: 'One',
+      lyrics: '[C]first',
+      key: 'C',
+      bpm: 100,
+      timestamp: 0,
+    );
+    const song2 = SongNote(
+      title: 'Two',
+      lyrics: '[G]second',
+      key: 'G',
+      bpm: 100,
+      timestamp: 0,
+    );
+
+    final html = await service.buildHtmlForMultiple([song1, song2]);
+    expect(html.contains('window.lcMeasure = function'), isTrue);
+    expect(html.contains('window.lcApplyWidth = function'), isTrue);
+  });
+
+  test('builds HTML for empty list of songs', () async {
+    final html = await service.buildHtmlForMultiple([]);
+    expect(html.contains('<!DOCTYPE html>'), isTrue);
+  });
 }

@@ -26,6 +26,10 @@ class AppConstants {
   /// shared_preferences key for whether the metronome clicks on each beat.
   static const String prefMetronomeClick = 'metronome_click';
 
+  /// shared_preferences key for whether the one-time Stage Mode gesture guide
+  /// has already been shown.
+  static const String prefStageHelpSeen = 'stage_help_seen';
+
   /// shared_preferences key for import duplicate strategy.
   static const String prefImportDuplicateStrategy = 'import_duplicate_strategy';
 

@@ -26,6 +26,13 @@ class SongDraft {
   /// Whether the song is starred. Carried through so saving does not lose it.
   final bool favorite;
 
+  /// The song's saved auto-scroll speed. Not editable here — carried through so
+  /// saving an edit does not throw away the speed set in the performance view.
+  final double scrollSpeed;
+
+  /// The song's saved Tempo-Auto measures, carried through like [scrollSpeed].
+  final int scrollMeasures;
+
   /// Chords the user added by hand this session, shown after the suggestions.
   final List<String> customChords;
 
@@ -40,6 +47,8 @@ class SongDraft {
     this.bpmText = '$defaultBpm',
     this.lyrics = '',
     this.favorite = false,
+    this.scrollSpeed = 1.0,
+    this.scrollMeasures = 32,
     this.customChords = const [],
     this.original,
   });
@@ -63,6 +72,8 @@ class SongDraft {
       bpmText: '${song.bpm}',
       lyrics: song.lyrics,
       favorite: song.favorite,
+      scrollSpeed: song.scrollSpeed,
+      scrollMeasures: song.scrollMeasures,
     );
     return draft.copyWith(original: draft);
   }
@@ -75,6 +86,8 @@ class SongDraft {
     String? bpmText,
     String? lyrics,
     bool? favorite,
+    double? scrollSpeed,
+    int? scrollMeasures,
     List<String>? customChords,
     SongDraft? original,
   }) {
@@ -86,6 +99,8 @@ class SongDraft {
       bpmText: bpmText ?? this.bpmText,
       lyrics: lyrics ?? this.lyrics,
       favorite: favorite ?? this.favorite,
+      scrollSpeed: scrollSpeed ?? this.scrollSpeed,
+      scrollMeasures: scrollMeasures ?? this.scrollMeasures,
       customChords: customChords ?? this.customChords,
       original: original ?? this.original,
     );
@@ -144,6 +159,8 @@ class SongDraft {
       bpm: bpm,
       favorite: favorite,
       timestamp: timestamp,
+      scrollSpeed: scrollSpeed,
+      scrollMeasures: scrollMeasures,
     );
   }
 }

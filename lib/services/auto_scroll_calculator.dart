@@ -8,8 +8,8 @@
 class AutoScrollCalculator {
   const AutoScrollCalculator();
 
-  /// Speed of Manual mode at `1x`, in logical pixels per second. `0.5x` and
-  /// `2x` are this scaled by the multiplier.
+  /// Speed of Manual mode at `1.00x`, in logical pixels per second. Every other
+  /// step (`0.10x` up to `2.00x`) is this scaled by the multiplier.
   static const double baseManualPixelsPerSecond = 40;
 
   /// Beats in one measure. The app assumes common time (4/4); the Android app
@@ -49,8 +49,9 @@ class AutoScrollCalculator {
     return contentExtent / seconds;
   }
 
-  /// Manual-mode speed: the base speed scaled by the chosen multiplier
-  /// (`0.5 / 1 / 2`).
+  /// Manual-mode speed: the base speed scaled by the chosen multiplier. The
+  /// caller (the provider) keeps the multiplier inside its allowed range; this
+  /// only guards against a non-positive value.
   double manualPixelsPerSecond(double speedMultiplier) {
     if (speedMultiplier <= 0) return 0;
     return baseManualPixelsPerSecond * speedMultiplier;

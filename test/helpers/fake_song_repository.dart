@@ -107,6 +107,28 @@ class FakeSongRepository implements SongRepository {
   }
 
   @override
+  Future<void> saveScrollSettings(
+    int songId, {
+    required double speed,
+    required int measures,
+  }) async {
+    final index = _songs.indexWhere((s) => s.id == songId);
+    if (index < 0) return;
+    // Like the real repository: only the two scroll columns change, so the
+    // song keeps its timestamp and its place in the list.
+    _songs[index] = _songs[index].copyWith(
+      scrollSpeed: speed,
+      scrollMeasures: measures,
+    );
+    savedScrollCalls++;
+    _emit();
+  }
+
+  /// How many times [saveScrollSettings] ran — lets a test check the debounce
+  /// collapses a burst of taps into one write.
+  int savedScrollCalls = 0;
+
+  @override
   Future<void> toggleFavorite(SongNote song) {
     return update(song.copyWith(favorite: !song.favorite));
   }

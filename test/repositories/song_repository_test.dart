@@ -137,6 +137,57 @@ void main() {
     });
   });
 
+  group('scroll settings', () {
+    test('a new song starts at the default speed and measures', () async {
+      final id = await repo.insert(_newSong(title: 'Fresh'));
+      final song = await repo.findById(id);
+
+      expect(song!.scrollSpeed, 1.0);
+      expect(song.scrollMeasures, 32);
+    });
+
+    test('saveScrollSettings stores the speed and measures', () async {
+      final id = await repo.insert(_newSong(title: 'Speedy'));
+
+      await repo.saveScrollSettings(id, speed: 0.65, measures: 64);
+
+      final song = await repo.findById(id);
+      expect(song!.scrollSpeed, closeTo(0.65, 1e-9));
+      expect(song.scrollMeasures, 64);
+    });
+
+    test('saveScrollSettings leaves the rest of the song alone', () async {
+      final original = _newSong(title: 'Untouched');
+      final id = await repo.insert(original);
+      final before = await repo.findById(id);
+
+      await repo.saveScrollSettings(id, speed: 1.85, measures: 8);
+
+      final after = await repo.findById(id);
+      // The songbook is ordered by timestamp, so a speed change must not move
+      // the song to the top of the list.
+      expect(after!.timestamp, before!.timestamp);
+      expect(after.title, before.title);
+      expect(after.lyrics, before.lyrics);
+      expect(after.key, before.key);
+      expect(after.bpm, before.bpm);
+      expect(after.favorite, before.favorite);
+    });
+
+    test('an ordinary update keeps the saved scroll settings', () async {
+      final id = await repo.insert(_newSong(title: 'Edited'));
+      await repo.saveScrollSettings(id, speed: 0.55, measures: 12);
+
+      final song = await repo.findById(id);
+      await repo.update(song!.copyWith(title: 'Edited again'));
+
+      final after = await repo.findById(id);
+      expect(after!.title, 'Edited again');
+      expect(after.scrollSpeed, closeTo(0.55, 1e-9));
+      expect(after.scrollMeasures, 12);
+    });
+  });
+
   group('reactive streams', () {
     test('watchAllSongs emits again after an insert', () async {
       final emissions = <int>[];

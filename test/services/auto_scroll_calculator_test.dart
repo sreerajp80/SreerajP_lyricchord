@@ -62,6 +62,12 @@ void main() {
       expect(calc.manualPixelsPerSecond(2.0), base * 2);
     });
 
+    test('handles a fine step from the stepper', () {
+      const base = AutoScrollCalculator.baseManualPixelsPerSecond;
+      expect(calc.manualPixelsPerSecond(0.15), closeTo(base * 0.15, 1e-9));
+      expect(calc.manualPixelsPerSecond(0.10), closeTo(base * 0.10, 1e-9));
+    });
+
     test('returns zero for a non-positive multiplier', () {
       expect(calc.manualPixelsPerSecond(0), 0);
       expect(calc.manualPixelsPerSecond(-1), 0);

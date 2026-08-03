@@ -80,6 +80,22 @@ class SongRepository {
     }
   }
 
+  /// Saves the auto-scroll speed and measures for one song.
+  ///
+  /// Writes only those two columns, so `timestamp` stays as it was and the song
+  /// keeps its place in the songbook order.
+  Future<void> saveScrollSettings(
+    int songId, {
+    required double speed,
+    required int measures,
+  }) async {
+    try {
+      await _db.updateScrollSettings(songId, speed, measures);
+    } catch (e) {
+      throw StorageException('Could not save the scroll speed.', cause: e);
+    }
+  }
+
   /// Flips the starred flag on [song] and saves it.
   ///
   /// Kept here so widgets never have to build a changed copy themselves.
@@ -121,6 +137,8 @@ class SongRepository {
     bpm: row.bpm,
     favorite: row.favorite,
     timestamp: row.timestamp,
+    scrollSpeed: row.scrollSpeed,
+    scrollMeasures: row.scrollMeasures,
   );
 
   /// For inserts: omit `id` so the database assigns it.
@@ -133,6 +151,8 @@ class SongRepository {
         bpm: Value(song.bpm),
         favorite: Value(song.favorite),
         timestamp: song.timestamp,
+        scrollSpeed: Value(song.scrollSpeed),
+        scrollMeasures: Value(song.scrollMeasures),
       );
 
   /// For updates/replace: include the `id` so drift matches the right row.
@@ -145,5 +165,7 @@ class SongRepository {
     bpm: Value(song.bpm),
     favorite: Value(song.favorite),
     timestamp: Value(song.timestamp),
+    scrollSpeed: Value(song.scrollSpeed),
+    scrollMeasures: Value(song.scrollMeasures),
   );
 }

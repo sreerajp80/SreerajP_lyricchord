@@ -5,14 +5,18 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:printing/printing.dart';
 
 import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/core/utils/safe_file_name.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/providers/lyric_font_provider.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
 import 'package:lyricchord/screens/setlist_list_screen.dart';
 import 'package:lyricchord/services/chord_pro_service.dart';
+import 'package:lyricchord/services/html_pdf_service.dart';
+import 'package:lyricchord/services/pdf_export_service.dart';
 import 'package:lyricchord/widgets/empty_songbook.dart';
 import 'package:lyricchord/widgets/song_card.dart';
 import 'package:lyricchord/widgets/song_filter_row.dart';
@@ -71,6 +75,11 @@ class SongListScreen extends ConsumerWidget {
                     tooltip: 'Export selected (ChordPro)',
                     onPressed: () =>
                         _exportSelectedChordPro(context, ref, songs),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined),
+                    tooltip: 'Share selected',
+                    onPressed: () => _shareSelected(context, ref, songs),
                   ),
                   IconButton(
                     icon: Icon(
@@ -224,6 +233,158 @@ class SongListScreen extends ConsumerWidget {
       if (context.mounted) {
         _showError(context, 'Could not export selected songs.');
       }
+    }
+  }
+
+  Future<void> _shareSelected(
+    BuildContext context,
+    WidgetRef ref,
+    List<SongNote> allVisibleSongs,
+  ) async {
+    final selectedIds = ref.read(multiSongSelectionProvider);
+    final selectedSongs = allVisibleSongs
+        .where((s) => selectedIds.contains(s.id))
+        .toList();
+
+    if (selectedSongs.isEmpty) return;
+
+    String chosenFormat = 'chordpro';
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Share ${selectedSongs.length} selected song(s)'),
+              content: RadioGroup<String>(
+                groupValue: chosenFormat,
+                onChanged: (val) {
+                  if (val != null) {
+                    setDialogState(() => chosenFormat = val);
+                  }
+                },
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text('ChordPro (.chordpro)'),
+                      value: 'chordpro',
+                    ),
+                    RadioListTile<String>(
+                      title: Text('PDF (.pdf)'),
+                      value: 'pdf',
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(dialogContext).pop(chosenFormat),
+                  child: const Text('Share'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null) return;
+
+    if (!context.mounted) return;
+
+    if (result == 'chordpro') {
+      await _shareChordPro(context, ref, selectedSongs);
+    } else if (result == 'pdf') {
+      await _sharePdf(context, ref, selectedSongs);
+    }
+  }
+
+  Future<void> _shareChordPro(
+    BuildContext context,
+    WidgetRef ref,
+    List<SongNote> selectedSongs,
+  ) async {
+    try {
+      const service = ChordProService();
+      final text = service.formatMultiple(selectedSongs);
+      final fileName = selectedSongs.length == 1
+          ? '${safeFileName(selectedSongs.first.title)}.chordpro'
+          : 'selected_songs.chordpro';
+
+      final bytes = Uint8List.fromList(utf8.encode(text));
+      await Printing.sharePdf(bytes: bytes, filename: fileName);
+      if (context.mounted) {
+        ref.read(multiSongSelectionProvider.notifier).clear();
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showError(context, 'Could not share selected songs.');
+      }
+    }
+  }
+
+  Future<void> _sharePdf(
+    BuildContext context,
+    WidgetRef ref,
+    List<SongNote> selectedSongs,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    var dialogOpen = true;
+    void closeDialog() {
+      if (dialogOpen) {
+        dialogOpen = false;
+        navigator.pop();
+      }
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      const service = PdfExportService();
+      final font = ref.read(lyricFontProvider);
+      final html = await service.buildHtmlForMultiple(
+        selectedSongs,
+        font: font,
+      );
+      const converter = HtmlPdfService();
+      final bytes = await converter
+          .convert(html: html)
+          .timeout(const Duration(seconds: 30));
+      closeDialog();
+
+      if (bytes.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not generate PDF.')),
+        );
+        return;
+      }
+
+      final fileName = selectedSongs.length == 1
+          ? '${safeFileName(selectedSongs.first.title)}.pdf'
+          : 'selected_songs.pdf';
+
+      await Printing.sharePdf(bytes: bytes, filename: fileName);
+      if (context.mounted) {
+        ref.read(multiSongSelectionProvider.notifier).clear();
+      }
+    } catch (_) {
+      closeDialog();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not share selected songs as PDF.')),
+      );
     }
   }
 

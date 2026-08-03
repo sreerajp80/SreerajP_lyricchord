@@ -7,9 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:printing/printing.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:lyricchord/core/utils/safe_file_name.dart';
+import 'package:lyricchord/core/utils/system_ui.dart';
 import 'package:lyricchord/models/setlist.dart';
 import 'package:lyricchord/models/lyric_font.dart';
 import 'package:lyricchord/models/song_note.dart';
@@ -18,6 +20,7 @@ import 'package:lyricchord/providers/lyric_font_provider.dart';
 import 'package:lyricchord/providers/performance_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
+import 'package:lyricchord/providers/stage_mode_provider.dart';
 import 'package:lyricchord/services/auto_scroll_calculator.dart';
 import 'package:lyricchord/services/chord_pro_service.dart';
 import 'package:lyricchord/services/chord_sheet_parser.dart';
@@ -27,6 +30,9 @@ import 'package:lyricchord/services/pdf_export_service.dart';
 import 'package:lyricchord/widgets/chord_reference_dialog.dart';
 import 'package:lyricchord/widgets/chord_sheet_view.dart';
 import 'package:lyricchord/widgets/performance_controls.dart';
+import 'package:lyricchord/widgets/stage_gesture_layer.dart';
+import 'package:lyricchord/widgets/stage_help_overlay.dart';
+import 'package:lyricchord/widgets/stage_hud.dart';
 import 'package:lyricchord/widgets/transpose_sheet.dart';
 
 /// Read and perform a song: the chord sheet plus the Performance Controls.
@@ -81,10 +87,18 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
   /// Touch position when the first finger touched down.
   Offset? _startPosition;
 
+  /// Hides the Stage Mode control bar after a few idle seconds.
+  Timer? _hudTimer;
+
+  /// Kept from `initState` so [dispose] can flush a pending scroll-speed save
+  /// without touching `ref`, which is no longer safe to use by then.
+  late final AutoScrollNotifier _autoScroll;
+
   @override
   void initState() {
     super.initState();
     _currentId = widget.songId;
+    _autoScroll = ref.read(autoScrollProvider.notifier);
     // Keep the screen on while a song is open to perform, so the phone does not
     // dim or lock mid-song. Released again in [dispose].
     WidgetsBinding.instance.addObserver(this);
@@ -98,6 +112,13 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
     // re-enable it on resume while this screen is still on show.
     if (state == AppLifecycleState.resumed) {
       WakelockPlus.enable();
+      if (ref.read(stageModeProvider).enabled) SystemUi.enterImmersive();
+    } else if (state == AppLifecycleState.paused) {
+      // Never leave another app — or the launcher — with our hidden system
+      // bars. They are put back on the way out and restored on resume.
+      SystemUi.exitImmersive();
+      // The app may not come back, so write a pending scroll speed now.
+      ref.read(autoScrollProvider.notifier).flushSave();
     }
   }
 
@@ -113,11 +134,45 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
 
   @override
   void dispose() {
+    // Leaving the screen must not lose a speed still waiting on the debounce.
+    _autoScroll.flushSave();
     WidgetsBinding.instance.removeObserver(this);
     // Give the screen back to the phone's normal timeout when leaving.
     WakelockPlus.disable();
+    // Whatever route we left by, the system bars must come back.
+    SystemUi.exitImmersive();
+    _hudTimer?.cancel();
     _controller?.dispose();
     super.dispose();
+  }
+
+  /// Keeps the phone's chrome and the HUD timer in step with Stage Mode.
+  ///
+  /// Called from `build` through `ref.listen`, so every change goes through one
+  /// place and the bars can never be left hidden.
+  void _onStageModeChanged(StageModeState? before, StageModeState now) {
+    if (before?.enabled != now.enabled) {
+      if (now.enabled) {
+        SystemUi.enterImmersive();
+      } else {
+        SystemUi.exitImmersive();
+      }
+    }
+
+    _hudTimer?.cancel();
+    if (now.enabled && now.hudVisible) {
+      _hudTimer = Timer(StageModeState.hudTimeout, () {
+        if (!mounted) return;
+        ref.read(stageModeProvider.notifier).hideHud();
+      });
+    }
+  }
+
+  /// Back in Stage Mode leaves Stage Mode, not the song. A second Back then
+  /// goes to the songbook as usual.
+  void _onBack(bool didPop, Object? result) {
+    if (didPop) return;
+    ref.read(stageModeProvider.notifier).exit();
   }
 
   void _onPointerDown(PointerDownEvent event) {
@@ -162,6 +217,9 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(stageModeProvider, _onStageModeChanged);
+    final stage = ref.watch(stageModeProvider);
+
     final setlistId = widget.setlistId ?? ref.watch(activeSetlistIdProvider);
     final setlist = setlistId != null
         ? ref.watch(setlistByIdProvider(setlistId)).value
@@ -181,26 +239,39 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
     if (id == null) return _shell(context, body: const _MissingSong());
 
     final index = ids.indexOf(id);
+    final embedded = widget.embedded;
     final body = index < 0
-        ? _SongPage(songId: id, active: true)
+        ? _SongPage(songId: id, active: true, embedded: embedded)
         : Listener(
             onPointerDown: _onPointerDown,
             onPointerMove: _onPointerMove,
             onPointerUp: (_) => _onPointerEnded(),
             onPointerCancel: (_) => _onPointerEnded(),
             child: PageView.builder(
-              physics: _allowPageSwipe
+              // In Stage Mode a stray sideways swipe would throw the wrong song
+              // on screen mid-performance, so song changing is off there — use
+              // the HUD or leave Stage Mode.
+              physics: (_allowPageSwipe && !stage.enabled)
                   ? const PageScrollPhysics()
                   : const NeverScrollableScrollPhysics(),
               controller: _controller,
               itemCount: ids.length,
               onPageChanged: _onPageChanged,
-              itemBuilder: (context, i) =>
-                  _SongPage(songId: ids[i], active: ids[i] == _currentId),
+              itemBuilder: (context, i) => _SongPage(
+                songId: ids[i],
+                active: ids[i] == _currentId,
+                embedded: embedded,
+              ),
             ),
           );
 
-    return _shell(context, body: body, setlist: setlist, ids: ids);
+    return _shell(
+      context,
+      body: body,
+      setlist: setlist,
+      ids: ids,
+      stageMode: stage.enabled,
+    );
   }
 
   /// Keeps the pager and the list agreeing about which song is where.
@@ -231,9 +302,12 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
     final id = _pagerIds[index];
     if (id == _currentId) return;
 
+    // Save the speed of the song we are leaving before the new song loads its
+    // own; after that the new page seeds the settings from its song row.
+    ref.read(autoScrollProvider.notifier).flushSave();
+
     setState(() => _currentId = id);
     ref.read(performanceSettingsProvider.notifier).resetAll();
-    ref.read(autoScrollProvider.notifier).resetAll();
     ref.read(selectedSongIdProvider.notifier).select(id);
   }
 
@@ -241,18 +315,31 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
     final index = _currentId == null ? -1 : _pagerIds.indexOf(_currentId!);
     final controller = _controller;
     if (index < 0 || controller == null || !controller.hasClients) return;
+    ref.read(autoScrollProvider.notifier).flushSave();
     controller.jumpToPage(index);
     ref.read(performanceSettingsProvider.notifier).resetAll();
-    ref.read(autoScrollProvider.notifier).resetAll();
   }
 
   /// The screen frame: top bar plus [body].
+  ///
+  /// In Stage Mode there is no top bar at all — the lyrics get the whole
+  /// window, and the way back out is the HUD's exit button or the Back gesture,
+  /// which [PopScope] turns into "leave Stage Mode".
   Widget _shell(
     BuildContext context, {
     required Widget body,
     Setlist? setlist,
     List<int>? ids,
+    bool stageMode = false,
   }) {
+    if (stageMode) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: _onBack,
+        child: Scaffold(body: body),
+      );
+    }
+
     final id = _currentId;
     final currentIndex = (ids != null && id != null) ? ids.indexOf(id) : -1;
     final totalSongs = ids?.length ?? 0;
@@ -460,13 +547,21 @@ class _AppBarTitle extends ConsumerWidget {
 /// the scroll offset each frame at the speed the calculator works out, and it
 /// stops itself at the bottom.
 class _SongPage extends ConsumerStatefulWidget {
-  const _SongPage({required this.songId, required this.active});
+  const _SongPage({
+    required this.songId,
+    required this.active,
+    this.embedded = false,
+  });
 
   final int songId;
 
   /// True when this is the song on screen. Pre-built neighbours in the pager
   /// are inactive, so they never scroll or report their length.
   final bool active;
+
+  /// True in the tablet's split view, where Stage Mode is not offered because
+  /// it would only fill the pane, not the screen.
+  final bool embedded;
 
   @override
   ConsumerState<_SongPage> createState() => _SongPageState();
@@ -561,6 +656,25 @@ class _SongPageState extends ConsumerState<_SongPage>
     });
   }
 
+  /// Gives the auto-scroll notifier this song's saved speed and measures.
+  ///
+  /// Done after the frame because a provider must not be changed while widgets
+  /// are building. Only the song on screen does this — pre-built neighbours in
+  /// the pager must not take over the live settings.
+  void _loadScrollSettingsAfterFrame(SongNote song) {
+    if (!widget.active) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.active) return;
+      ref
+          .read(autoScrollProvider.notifier)
+          .loadForSong(
+            song.id,
+            speed: song.scrollSpeed,
+            measures: song.scrollMeasures,
+          );
+    });
+  }
+
   /// Reports the scroll length to the notifier after layout settles, so the
   /// Tempo-Auto read-out (duration + px/s) reflects the real content height.
   void _reportExtentAfterFrame() {
@@ -590,6 +704,7 @@ class _SongPageState extends ConsumerState<_SongPage>
         if (song == null) return const _MissingSong();
 
         _bpm = song.bpm;
+        _loadScrollSettingsAfterFrame(song);
         final lyrics = _transposer.transposeLyrics(
           song.lyrics,
           settings.semitones,
@@ -603,6 +718,18 @@ class _SongPageState extends ConsumerState<_SongPage>
 
         _reportExtentAfterFrame();
 
+        final stage = ref.watch(stageModeProvider);
+        if (stage.enabled) {
+          return _stageBody(
+            context,
+            sheet: _sheet(settings, lines, stageMode: true),
+            title: song.title,
+            currentKey: currentKey,
+            bpm: song.bpm,
+            hudVisible: stage.hudVisible,
+          );
+        }
+
         return Column(
           // Stretch so the scroll view fills the full width. A vertical
           // SingleChildScrollView shrink-wraps its width to its content, and
@@ -615,46 +742,95 @@ class _SongPageState extends ConsumerState<_SongPage>
               currentKey: currentKey,
               bpm: song.bpm,
               active: widget.active,
+              showFullScreenButton: !widget.embedded,
             ),
-            Expanded(
-              // Pinch zoom for the lyric text. One finger scrolls as normal;
-              // as soon as a second finger touches, scrolling is paused
-              // (NeverScrollableScrollPhysics) so the scale gesture owns the
-              // pointers. Any pinch direction works — the scale gesture only
-              // measures the distance between the fingers, wherever they are.
-              child: Listener(
-                onPointerDown: (_) => setState(() => _pointersDown++),
-                onPointerUp: (_) => _releasePointer(),
-                onPointerCancel: (_) => _releasePointer(),
-                child: GestureDetector(
-                  onScaleStart: (_) => _pinchStartFontSize = ref
-                      .read(performanceSettingsProvider)
-                      .fontSize,
-                  onScaleUpdate: (details) {
-                    if (details.pointerCount < 2) return;
-                    ref
-                        .read(performanceSettingsProvider.notifier)
-                        .applyFontScale(_pinchStartFontSize, details.scale);
-                  },
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    physics: _pointersDown >= 2
-                        ? const NeverScrollableScrollPhysics()
-                        : null,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
-                    child: ChordSheetView(
-                      lines: lines,
-                      fontSize: settings.fontSize,
-                      showChords: settings.showChords,
-                      lyricFontFamily: ref.watch(lyricFontProvider).family,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            Expanded(child: _sheet(settings, lines)),
           ],
         );
       },
+    );
+  }
+
+  /// The scrolling chord sheet, with pinch-to-zoom.
+  ///
+  /// One finger scrolls as normal; as soon as a second finger touches,
+  /// scrolling is paused ([NeverScrollableScrollPhysics]) so the scale gesture
+  /// owns the pointers. Any pinch direction works — the scale gesture only
+  /// measures the distance between the fingers, wherever they are.
+  Widget _sheet(
+    PerformanceSettings settings,
+    List<ChordLine> lines, {
+    bool stageMode = false,
+  }) {
+    return Listener(
+      onPointerDown: (_) => setState(() => _pointersDown++),
+      onPointerUp: (_) => _releasePointer(),
+      onPointerCancel: (_) => _releasePointer(),
+      child: GestureDetector(
+        onScaleStart: (_) => _pinchStartFontSize = ref
+            .read(performanceSettingsProvider)
+            .fontSize,
+        onScaleUpdate: (details) {
+          if (details.pointerCount < 2) return;
+          ref
+              .read(performanceSettingsProvider.notifier)
+              .applyFontScale(_pinchStartFontSize, details.scale);
+        },
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          physics: _pointersDown >= 2
+              ? const NeverScrollableScrollPhysics()
+              : null,
+          // In Stage Mode there is no app bar above and the HUD floats over the
+          // bottom, so the sheet keeps clear of both.
+          padding: stageMode
+              ? const EdgeInsets.fromLTRB(16, 32, 16, StageHud.height + 24)
+              : const EdgeInsets.fromLTRB(16, 8, 16, 48),
+          child: ChordSheetView(
+            lines: lines,
+            fontSize: settings.fontSize,
+            showChords: settings.showChords,
+            lyricFontFamily: ref.watch(lyricFontProvider).family,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Stage Mode: lyrics edge to edge, the gesture layer over them, the HUD
+  /// floating at the bottom, and the one-time gesture guide on first use.
+  Widget _stageBody(
+    BuildContext context, {
+    required Widget sheet,
+    required String title,
+    required String currentKey,
+    required int bpm,
+    required bool hudVisible,
+  }) {
+    final helpSeen = ref.watch(stageHelpSeenProvider);
+
+    return Stack(
+      children: [
+        Positioned.fill(child: StageGestureLayer(child: sheet)),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: StageHud(
+            visible: hudVisible,
+            title: title,
+            currentKey: currentKey,
+            bpm: bpm,
+          ),
+        ),
+        if (!helpSeen)
+          Positioned.fill(
+            child: StageHelpOverlay(
+              onDismiss: () =>
+                  ref.read(stageHelpSeenProvider.notifier).markSeen(),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -733,7 +909,7 @@ class _OverflowMenu extends ConsumerWidget {
           enabled: song != null,
           value: song == null
               ? null
-              : () => _exportPdf(
+              : () => _showExportDialog(
                   context,
                   song,
                   semitones,
@@ -742,20 +918,25 @@ class _OverflowMenu extends ConsumerWidget {
           child: const ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.picture_as_pdf_outlined),
-            title: Text('Export as PDF'),
+            leading: Icon(Icons.output_rounded),
+            title: Text('Export'),
           ),
         ),
         PopupMenuItem<VoidCallback>(
           enabled: song != null,
           value: song == null
               ? null
-              : () => _exportChordPro(context, song, semitones),
+              : () => _showShareDialog(
+                  context,
+                  song,
+                  semitones,
+                  ref.read(lyricFontProvider),
+                ),
           child: const ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.save_alt_outlined),
-            title: Text('Export as ChordPro'),
+            leading: Icon(Icons.share_outlined),
+            title: Text('Share'),
           ),
         ),
         const PopupMenuDivider(),
@@ -797,6 +978,211 @@ class _OverflowMenu extends ConsumerWidget {
         title: Text('Chord Reference Guide'),
       ),
     );
+  }
+
+  Future<void> _showExportDialog(
+    BuildContext context,
+    SongNote song,
+    int semitones,
+    LyricFont font,
+  ) async {
+    String chosenFormat = 'chordpro';
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Export song'),
+              content: RadioGroup<String>(
+                groupValue: chosenFormat,
+                onChanged: (val) {
+                  if (val != null) {
+                    setDialogState(() => chosenFormat = val);
+                  }
+                },
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text('ChordPro (.chordpro)'),
+                      value: 'chordpro',
+                    ),
+                    RadioListTile<String>(
+                      title: Text('PDF (.pdf)'),
+                      value: 'pdf',
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(dialogContext).pop(chosenFormat),
+                  child: const Text('Export'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null || !context.mounted) return;
+
+    if (result == 'chordpro') {
+      await _exportChordPro(context, song, semitones);
+    } else if (result == 'pdf') {
+      await _exportPdf(context, song, semitones, font);
+    }
+  }
+
+  Future<void> _showShareDialog(
+    BuildContext context,
+    SongNote song,
+    int semitones,
+    LyricFont font,
+  ) async {
+    String chosenFormat = 'chordpro';
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Share song'),
+              content: RadioGroup<String>(
+                groupValue: chosenFormat,
+                onChanged: (val) {
+                  if (val != null) {
+                    setDialogState(() => chosenFormat = val);
+                  }
+                },
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text('ChordPro (.chordpro)'),
+                      value: 'chordpro',
+                    ),
+                    RadioListTile<String>(
+                      title: Text('PDF (.pdf)'),
+                      value: 'pdf',
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(dialogContext).pop(chosenFormat),
+                  child: const Text('Share'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null || !context.mounted) return;
+
+    if (result == 'chordpro') {
+      await _shareChordPro(context, song, semitones);
+    } else if (result == 'pdf') {
+      await _sharePdf(context, song, semitones, font);
+    }
+  }
+
+  Future<void> _shareChordPro(
+    BuildContext context,
+    SongNote song,
+    int semitones,
+  ) async {
+    try {
+      const service = ChordProService();
+      final text = service.format(song, semitones: semitones);
+      final fileName = '${safeFileName(song.title)}.chordpro';
+      final bytes = Uint8List.fromList(utf8.encode(text));
+      await Printing.sharePdf(bytes: bytes, filename: fileName);
+    } catch (_) {
+      if (context.mounted) {
+        _showSnack(context, 'Could not share the ChordPro file.');
+      }
+    }
+  }
+
+  Future<void> _sharePdf(
+    BuildContext context,
+    SongNote song,
+    int semitones,
+    LyricFont font,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    var dialogOpen = true;
+    void closeDialog() {
+      if (dialogOpen) {
+        dialogOpen = false;
+        navigator.pop();
+      }
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      const service = PdfExportService();
+      final html = await service.buildHtml(
+        song,
+        semitones: semitones,
+        font: font,
+      );
+      const converter = HtmlPdfService();
+      final bytes = await converter
+          .convert(html: html)
+          .timeout(const Duration(seconds: 30));
+      closeDialog();
+
+      if (bytes.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not export the PDF (no pages).')),
+        );
+        return;
+      }
+
+      final fileName = '${safeFileName(song.title)}.pdf';
+      await Printing.sharePdf(bytes: bytes, filename: fileName);
+    } on TimeoutException {
+      closeDialog();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('PDF export took too long and was stopped.'),
+        ),
+      );
+    } catch (error, stack) {
+      closeDialog();
+      if (kDebugMode) {
+        debugPrint('PDF share failed: $error\n$stack');
+      }
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not share the PDF.')),
+      );
+    }
   }
 
   /// Builds the PDF for [song] (with the live transpose) and opens the system

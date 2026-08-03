@@ -97,6 +97,30 @@ class $SongNotesTable extends SongNotes
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _scrollSpeedMeta = const VerificationMeta(
+    'scrollSpeed',
+  );
+  @override
+  late final GeneratedColumn<double> scrollSpeed = GeneratedColumn<double>(
+    'scroll_speed',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
+  static const VerificationMeta _scrollMeasuresMeta = const VerificationMeta(
+    'scrollMeasures',
+  );
+  @override
+  late final GeneratedColumn<int> scrollMeasures = GeneratedColumn<int>(
+    'scroll_measures',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(32),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -107,6 +131,8 @@ class $SongNotesTable extends SongNotes
     bpm,
     favorite,
     timestamp,
+    scrollSpeed,
+    scrollMeasures,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -169,6 +195,24 @@ class $SongNotesTable extends SongNotes
     } else if (isInserting) {
       context.missing(_timestampMeta);
     }
+    if (data.containsKey('scroll_speed')) {
+      context.handle(
+        _scrollSpeedMeta,
+        scrollSpeed.isAcceptableOrUnknown(
+          data['scroll_speed']!,
+          _scrollSpeedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('scroll_measures')) {
+      context.handle(
+        _scrollMeasuresMeta,
+        scrollMeasures.isAcceptableOrUnknown(
+          data['scroll_measures']!,
+          _scrollMeasuresMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -210,6 +254,14 @@ class $SongNotesTable extends SongNotes
         DriftSqlType.int,
         data['${effectivePrefix}timestamp'],
       )!,
+      scrollSpeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}scroll_speed'],
+      )!,
+      scrollMeasures: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}scroll_measures'],
+      )!,
     );
   }
 
@@ -228,6 +280,15 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
   final int bpm;
   final bool favorite;
   final int timestamp;
+
+  /// Manual auto-scroll speed the user last set for this song (schema
+  /// version 3). Saved per song so a sheet opens at the speed it was performed
+  /// at last time.
+  final double scrollSpeed;
+
+  /// Tempo-Auto length in measures the user last set for this song (schema
+  /// version 3).
+  final int scrollMeasures;
   const SongNoteRow({
     required this.id,
     required this.title,
@@ -237,6 +298,8 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     required this.bpm,
     required this.favorite,
     required this.timestamp,
+    required this.scrollSpeed,
+    required this.scrollMeasures,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -249,6 +312,8 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     map['bpm'] = Variable<int>(bpm);
     map['favorite'] = Variable<bool>(favorite);
     map['timestamp'] = Variable<int>(timestamp);
+    map['scroll_speed'] = Variable<double>(scrollSpeed);
+    map['scroll_measures'] = Variable<int>(scrollMeasures);
     return map;
   }
 
@@ -262,6 +327,8 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       bpm: Value(bpm),
       favorite: Value(favorite),
       timestamp: Value(timestamp),
+      scrollSpeed: Value(scrollSpeed),
+      scrollMeasures: Value(scrollMeasures),
     );
   }
 
@@ -279,6 +346,8 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       bpm: serializer.fromJson<int>(json['bpm']),
       favorite: serializer.fromJson<bool>(json['favorite']),
       timestamp: serializer.fromJson<int>(json['timestamp']),
+      scrollSpeed: serializer.fromJson<double>(json['scrollSpeed']),
+      scrollMeasures: serializer.fromJson<int>(json['scrollMeasures']),
     );
   }
   @override
@@ -293,6 +362,8 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       'bpm': serializer.toJson<int>(bpm),
       'favorite': serializer.toJson<bool>(favorite),
       'timestamp': serializer.toJson<int>(timestamp),
+      'scrollSpeed': serializer.toJson<double>(scrollSpeed),
+      'scrollMeasures': serializer.toJson<int>(scrollMeasures),
     };
   }
 
@@ -305,6 +376,8 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     int? bpm,
     bool? favorite,
     int? timestamp,
+    double? scrollSpeed,
+    int? scrollMeasures,
   }) => SongNoteRow(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -314,6 +387,8 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     bpm: bpm ?? this.bpm,
     favorite: favorite ?? this.favorite,
     timestamp: timestamp ?? this.timestamp,
+    scrollSpeed: scrollSpeed ?? this.scrollSpeed,
+    scrollMeasures: scrollMeasures ?? this.scrollMeasures,
   );
   SongNoteRow copyWithCompanion(SongNotesCompanion data) {
     return SongNoteRow(
@@ -325,6 +400,12 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       bpm: data.bpm.present ? data.bpm.value : this.bpm,
       favorite: data.favorite.present ? data.favorite.value : this.favorite,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      scrollSpeed: data.scrollSpeed.present
+          ? data.scrollSpeed.value
+          : this.scrollSpeed,
+      scrollMeasures: data.scrollMeasures.present
+          ? data.scrollMeasures.value
+          : this.scrollMeasures,
     );
   }
 
@@ -338,14 +419,26 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
           ..write('key: $key, ')
           ..write('bpm: $bpm, ')
           ..write('favorite: $favorite, ')
-          ..write('timestamp: $timestamp')
+          ..write('timestamp: $timestamp, ')
+          ..write('scrollSpeed: $scrollSpeed, ')
+          ..write('scrollMeasures: $scrollMeasures')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, title, artist, lyrics, key, bpm, favorite, timestamp);
+  int get hashCode => Object.hash(
+    id,
+    title,
+    artist,
+    lyrics,
+    key,
+    bpm,
+    favorite,
+    timestamp,
+    scrollSpeed,
+    scrollMeasures,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -357,7 +450,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
           other.key == this.key &&
           other.bpm == this.bpm &&
           other.favorite == this.favorite &&
-          other.timestamp == this.timestamp);
+          other.timestamp == this.timestamp &&
+          other.scrollSpeed == this.scrollSpeed &&
+          other.scrollMeasures == this.scrollMeasures);
 }
 
 class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
@@ -369,6 +464,8 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
   final Value<int> bpm;
   final Value<bool> favorite;
   final Value<int> timestamp;
+  final Value<double> scrollSpeed;
+  final Value<int> scrollMeasures;
   const SongNotesCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -378,6 +475,8 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     this.bpm = const Value.absent(),
     this.favorite = const Value.absent(),
     this.timestamp = const Value.absent(),
+    this.scrollSpeed = const Value.absent(),
+    this.scrollMeasures = const Value.absent(),
   });
   SongNotesCompanion.insert({
     this.id = const Value.absent(),
@@ -388,6 +487,8 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     this.bpm = const Value.absent(),
     this.favorite = const Value.absent(),
     required int timestamp,
+    this.scrollSpeed = const Value.absent(),
+    this.scrollMeasures = const Value.absent(),
   }) : title = Value(title),
        timestamp = Value(timestamp);
   static Insertable<SongNoteRow> custom({
@@ -399,6 +500,8 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     Expression<int>? bpm,
     Expression<bool>? favorite,
     Expression<int>? timestamp,
+    Expression<double>? scrollSpeed,
+    Expression<int>? scrollMeasures,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -409,6 +512,8 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
       if (bpm != null) 'bpm': bpm,
       if (favorite != null) 'favorite': favorite,
       if (timestamp != null) 'timestamp': timestamp,
+      if (scrollSpeed != null) 'scroll_speed': scrollSpeed,
+      if (scrollMeasures != null) 'scroll_measures': scrollMeasures,
     });
   }
 
@@ -421,6 +526,8 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     Value<int>? bpm,
     Value<bool>? favorite,
     Value<int>? timestamp,
+    Value<double>? scrollSpeed,
+    Value<int>? scrollMeasures,
   }) {
     return SongNotesCompanion(
       id: id ?? this.id,
@@ -431,6 +538,8 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
       bpm: bpm ?? this.bpm,
       favorite: favorite ?? this.favorite,
       timestamp: timestamp ?? this.timestamp,
+      scrollSpeed: scrollSpeed ?? this.scrollSpeed,
+      scrollMeasures: scrollMeasures ?? this.scrollMeasures,
     );
   }
 
@@ -461,6 +570,12 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     if (timestamp.present) {
       map['timestamp'] = Variable<int>(timestamp.value);
     }
+    if (scrollSpeed.present) {
+      map['scroll_speed'] = Variable<double>(scrollSpeed.value);
+    }
+    if (scrollMeasures.present) {
+      map['scroll_measures'] = Variable<int>(scrollMeasures.value);
+    }
     return map;
   }
 
@@ -474,7 +589,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
           ..write('key: $key, ')
           ..write('bpm: $bpm, ')
           ..write('favorite: $favorite, ')
-          ..write('timestamp: $timestamp')
+          ..write('timestamp: $timestamp, ')
+          ..write('scrollSpeed: $scrollSpeed, ')
+          ..write('scrollMeasures: $scrollMeasures')
           ..write(')'))
         .toString();
   }
@@ -862,7 +979,7 @@ class $SetlistItemsTable extends SetlistItems
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
-    $customConstraints: 'REFERENCES setlists(id) ON DELETE CASCADE',
+    $customConstraints: 'NOT NULL REFERENCES setlists(id) ON DELETE CASCADE',
   );
   static const VerificationMeta _songIdMeta = const VerificationMeta('songId');
   @override
@@ -872,7 +989,7 @@ class $SetlistItemsTable extends SetlistItems
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
-    $customConstraints: 'REFERENCES song_notes(id) ON DELETE CASCADE',
+    $customConstraints: 'NOT NULL REFERENCES song_notes(id) ON DELETE CASCADE',
   );
   static const VerificationMeta _sortOrderMeta = const VerificationMeta(
     'sortOrder',
@@ -1177,6 +1294,8 @@ typedef $$SongNotesTableCreateCompanionBuilder =
       Value<int> bpm,
       Value<bool> favorite,
       required int timestamp,
+      Value<double> scrollSpeed,
+      Value<int> scrollMeasures,
     });
 typedef $$SongNotesTableUpdateCompanionBuilder =
     SongNotesCompanion Function({
@@ -1188,6 +1307,8 @@ typedef $$SongNotesTableUpdateCompanionBuilder =
       Value<int> bpm,
       Value<bool> favorite,
       Value<int> timestamp,
+      Value<double> scrollSpeed,
+      Value<int> scrollMeasures,
     });
 
 final class $$SongNotesTableReferences
@@ -1259,6 +1380,16 @@ class $$SongNotesTableFilterComposer
 
   ColumnFilters<int> get timestamp => $composableBuilder(
     column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get scrollSpeed => $composableBuilder(
+    column: $table.scrollSpeed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get scrollMeasures => $composableBuilder(
+    column: $table.scrollMeasures,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1336,6 +1467,16 @@ class $$SongNotesTableOrderingComposer
     column: $table.timestamp,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get scrollSpeed => $composableBuilder(
+    column: $table.scrollSpeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get scrollMeasures => $composableBuilder(
+    column: $table.scrollMeasures,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SongNotesTableAnnotationComposer
@@ -1370,6 +1511,16 @@ class $$SongNotesTableAnnotationComposer
 
   GeneratedColumn<int> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<double> get scrollSpeed => $composableBuilder(
+    column: $table.scrollSpeed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get scrollMeasures => $composableBuilder(
+    column: $table.scrollMeasures,
+    builder: (column) => column,
+  );
 
   Expression<T> setlistItemsRefs<T extends Object>(
     Expression<T> Function($$SetlistItemsTableAnnotationComposer a) f,
@@ -1433,6 +1584,8 @@ class $$SongNotesTableTableManager
                 Value<int> bpm = const Value.absent(),
                 Value<bool> favorite = const Value.absent(),
                 Value<int> timestamp = const Value.absent(),
+                Value<double> scrollSpeed = const Value.absent(),
+                Value<int> scrollMeasures = const Value.absent(),
               }) => SongNotesCompanion(
                 id: id,
                 title: title,
@@ -1442,6 +1595,8 @@ class $$SongNotesTableTableManager
                 bpm: bpm,
                 favorite: favorite,
                 timestamp: timestamp,
+                scrollSpeed: scrollSpeed,
+                scrollMeasures: scrollMeasures,
               ),
           createCompanionCallback:
               ({
@@ -1453,6 +1608,8 @@ class $$SongNotesTableTableManager
                 Value<int> bpm = const Value.absent(),
                 Value<bool> favorite = const Value.absent(),
                 required int timestamp,
+                Value<double> scrollSpeed = const Value.absent(),
+                Value<int> scrollMeasures = const Value.absent(),
               }) => SongNotesCompanion.insert(
                 id: id,
                 title: title,
@@ -1462,6 +1619,8 @@ class $$SongNotesTableTableManager
                 bpm: bpm,
                 favorite: favorite,
                 timestamp: timestamp,
+                scrollSpeed: scrollSpeed,
+                scrollMeasures: scrollMeasures,
               ),
           withReferenceMapper: (p0) => p0
               .map(

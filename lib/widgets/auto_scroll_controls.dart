@@ -2,21 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
+import 'package:lyricchord/providers/stage_mode_provider.dart';
 import 'package:lyricchord/services/auto_scroll_calculator.dart';
 
 /// The compact auto-scroll controls row shown under the app bar.
 ///
 /// One row: a round Manual / Tempo (M / T) toggle, a round play button, and the
-/// chosen mode's control on the right — Manual shows the 0.5x / 1x / 2x speed
-/// chips, Tempo shows the `− count +` measures stepper. It only reads and sets
+/// chosen mode's control on the right — Manual shows the `− 1.00x +` speed
+/// stepper, Tempo shows the `− count +` measures stepper. It only reads and sets
 /// [autoScrollProvider]; the actual scrolling is driven by the performance
 /// screen, which listens to the same provider. The one-line status text
 /// (`Auto-scroll · Key … · … BPM`) lives in the parent header, not here.
 class AutoScrollControls extends ConsumerWidget {
-  const AutoScrollControls({super.key, required this.bpm});
+  const AutoScrollControls({
+    super.key,
+    required this.bpm,
+    this.showFullScreenButton = true,
+  });
 
   /// The song's tempo, used to disable Tempo play until it has a length.
   final int bpm;
+
+  /// Whether to offer the Stage Mode (full screen) button. Hidden in the
+  /// tablet's split view, where full screen would only fill the pane.
+  final bool showFullScreenButton;
 
   static const AutoScrollCalculator _calc = AutoScrollCalculator();
 
@@ -31,20 +40,50 @@ class AutoScrollControls extends ConsumerWidget {
         _calc.tempoDuration(bpm, settings.measures) != Duration.zero;
     final canPlay = !isTempo || tempoReady;
 
-    return Row(
+    // A Wrap, not a Row, so the row cannot overflow. On a normal phone both
+    // groups sit on one line with the stepper pushed right, exactly as before.
+    // On a narrow phone with the metronome also showing there is not enough
+    // width for both, and the stepper drops to a second line instead of
+    // spilling off the edge. Wrapping is better than shrinking here: these are
+    // already 40 dp targets, and a musician taps them mid-song.
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 4,
       children: [
-        _ModeToggle(mode: settings.mode, onChanged: controls.setMode),
-        const SizedBox(width: 12),
-        _PlayButton(
-          isPlaying: settings.isPlaying,
-          onPressed: canPlay ? controls.togglePlay : null,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ModeToggle(mode: settings.mode, onChanged: controls.setMode),
+            const SizedBox(width: 12),
+            _PlayButton(
+              isPlaying: settings.isPlaying,
+              onPressed: canPlay ? controls.togglePlay : null,
+            ),
+            if (showFullScreenButton) ...[
+              const SizedBox(width: 8),
+              // Same 40 dp circle as the M / T buttons, so the four controls
+              // read as one set. Tonal rather than filled: going full screen is
+              // a normal action, not the main one — play keeps that.
+              SizedBox(
+                width: _CircleToggle.size,
+                height: _CircleToggle.size,
+                child: IconButton.filledTonal(
+                  tooltip: 'Full screen',
+                  onPressed: ref.read(stageModeProvider.notifier).enter,
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.fullscreen),
+                ),
+              ),
+            ],
+          ],
         ),
-        const Spacer(),
         // The mode's own control, right-aligned like the mockup.
         if (isTempo)
           _MeasuresStepper(measures: settings.measures, controls: controls)
         else
-          _SpeedChips(speed: settings.speed, controls: controls),
+          _SpeedStepper(speed: settings.speed, controls: controls),
       ],
     );
   }
@@ -97,8 +136,9 @@ class _CircleToggle extends StatelessWidget {
   final VoidCallback onPressed;
 
   /// Diameter of the button — kept an easy tap target even though the label is
-  /// a single letter.
-  static const double _size = 40;
+  /// a single letter. Shared with the full screen button so the whole row of
+  /// round controls is one size.
+  static const double size = 40;
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +154,8 @@ class _CircleToggle extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: SizedBox(
-        width: _size,
-        height: _size,
+        width: size,
+        height: size,
         child: selected
             ? IconButton.filled(
                 onPressed: onPressed,
@@ -148,33 +188,57 @@ class _PlayButton extends StatelessWidget {
   }
 }
 
-/// Manual mode: the 0.5x / 1x / 2x speed chips.
-class _SpeedChips extends StatelessWidget {
-  const _SpeedChips({required this.speed, required this.controls});
+/// The Manual-mode speed as it is shown to the user: always two decimals plus
+/// an `x`, so `0.10x`, `1.00x`, `2.00x`.
+///
+/// Fixed width on purpose — in a stepper the number changes every tap, and a
+/// varying width would make the row jump about. Shared with Stage Mode, which
+/// flashes the same label when a gesture changes the speed.
+String formatSpeedLabel(double speed) => '${speed.toStringAsFixed(2)}x';
+
+/// Manual mode: the `− 1.00x +` speed stepper.
+///
+/// Built to match [_MeasuresStepper] so the two modes feel like one control
+/// that swaps its middle value. The buttons switch off at the ends of the
+/// allowed range instead of silently doing nothing.
+class _SpeedStepper extends StatelessWidget {
+  const _SpeedStepper({required this.speed, required this.controls});
 
   final double speed;
   final AutoScrollNotifier controls;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
+    final theme = Theme.of(context);
+    final canSlow = speed > AutoScrollSettings.minSpeed;
+    final canSpeedUp = speed < AutoScrollSettings.maxSpeed;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        for (final choice in AutoScrollSettings.speedChoices)
-          ChoiceChip(
-            label: Text(_speedLabel(choice)),
-            showCheckmark: false,
-            selected: speed == choice,
-            onSelected: (_) => controls.setSpeed(choice),
+        IconButton.filledTonal(
+          tooltip: 'Slower',
+          onPressed: canSlow ? controls.decreaseSpeed : null,
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.remove),
+        ),
+        SizedBox(
+          // Wider than the measures box: `1.00x` is five characters.
+          width: 56,
+          child: Text(
+            formatSpeedLabel(speed),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium,
           ),
+        ),
+        IconButton.filledTonal(
+          tooltip: 'Faster',
+          onPressed: canSpeedUp ? controls.increaseSpeed : null,
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.add),
+        ),
       ],
     );
-  }
-
-  /// `0.5x` / `1x` / `2x` — drops a trailing `.0`.
-  String _speedLabel(double speed) {
-    final text = speed == speed.roundToDouble() ? '${speed.round()}' : '$speed';
-    return '${text}x';
   }
 }
 
@@ -196,6 +260,7 @@ class _MeasuresStepper extends StatelessWidget {
         IconButton.filledTonal(
           tooltip: 'Fewer measures',
           onPressed: controls.decreaseMeasures,
+          visualDensity: VisualDensity.compact,
           icon: const Icon(Icons.remove),
         ),
         SizedBox(
@@ -209,6 +274,7 @@ class _MeasuresStepper extends StatelessWidget {
         IconButton.filledTonal(
           tooltip: 'More measures',
           onPressed: controls.increaseMeasures,
+          visualDensity: VisualDensity.compact,
           icon: const Icon(Icons.add),
         ),
       ],

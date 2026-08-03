@@ -29,6 +29,12 @@ class SongNote {
   /// Last-modified time, in milliseconds since the Unix epoch.
   final int timestamp;
 
+  /// Manual auto-scroll speed last used for this song, as a multiplier.
+  final double scrollSpeed;
+
+  /// Tempo-Auto length in measures last used for this song.
+  final int scrollMeasures;
+
   const SongNote({
     this.id = 0,
     required this.title,
@@ -38,6 +44,8 @@ class SongNote {
     this.bpm = 120,
     this.favorite = false,
     required this.timestamp,
+    this.scrollSpeed = 1.0,
+    this.scrollMeasures = 32,
   });
 
   SongNote copyWith({
@@ -49,6 +57,8 @@ class SongNote {
     int? bpm,
     bool? favorite,
     int? timestamp,
+    double? scrollSpeed,
+    int? scrollMeasures,
   }) {
     return SongNote(
       id: id ?? this.id,
@@ -59,6 +69,8 @@ class SongNote {
       bpm: bpm ?? this.bpm,
       favorite: favorite ?? this.favorite,
       timestamp: timestamp ?? this.timestamp,
+      scrollSpeed: scrollSpeed ?? this.scrollSpeed,
+      scrollMeasures: scrollMeasures ?? this.scrollMeasures,
     );
   }
 
@@ -73,12 +85,24 @@ class SongNote {
         other.key == key &&
         other.bpm == bpm &&
         other.favorite == favorite &&
-        other.timestamp == timestamp;
+        other.timestamp == timestamp &&
+        other.scrollSpeed == scrollSpeed &&
+        other.scrollMeasures == scrollMeasures;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, title, artist, lyrics, key, bpm, favorite, timestamp);
+  int get hashCode => Object.hash(
+    id,
+    title,
+    artist,
+    lyrics,
+    key,
+    bpm,
+    favorite,
+    timestamp,
+    scrollSpeed,
+    scrollMeasures,
+  );
 
   @override
   String toString() =>

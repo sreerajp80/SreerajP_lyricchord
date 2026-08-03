@@ -23,6 +23,7 @@ class PerformanceControls extends ConsumerWidget {
     required this.currentKey,
     required this.bpm,
     required this.active,
+    this.showFullScreenButton = true,
   });
 
   /// The key the sheet sounds in right now — already transposed.
@@ -34,6 +35,9 @@ class PerformanceControls extends ConsumerWidget {
   /// True when this is the song on screen. Passed to the metronome so a
   /// swiped-away page's beat stops.
   final bool active;
+
+  /// Whether to offer the Stage Mode button — hidden in the tablet split view.
+  final bool showFullScreenButton;
 
   static const AutoScrollCalculator _calc = AutoScrollCalculator();
 
@@ -52,7 +56,12 @@ class PerformanceControls extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Expanded(child: AutoScrollControls(bpm: bpm)),
+              Expanded(
+                child: AutoScrollControls(
+                  bpm: bpm,
+                  showFullScreenButton: showFullScreenButton,
+                ),
+              ),
               if (metronomeEnabled) ...[
                 const SizedBox(width: 12),
                 MetronomeBeat(bpm: bpm, active: active),

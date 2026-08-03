@@ -1,8 +1,8 @@
 {
   "appName": "LyricChord",
   "description": "A lyrics & chords notebook for musicians — write chord sheets, transpose, and auto-scroll while performing.",
-  "version": "2.3.12",
-  "build": "17",
+  "version": "2.5.13",
+  "build": "19",
   "details": {
     "Author": "Sreeraj P",
     "Email": "sreerajp@zohomail.in",

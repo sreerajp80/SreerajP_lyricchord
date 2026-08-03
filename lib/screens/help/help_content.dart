@@ -131,7 +131,8 @@ const List<HelpTopic> helpTopics = [
       HelpSection(
         heading: 'Two modes',
         points: [
-          'Manual scrolls at a fixed speed you pick: 0.5x, 1x, or 2x.',
+          'Manual scrolls at a steady speed you set yourself, from 0.10x up to '
+              '2.00x. Use the − and + buttons; each tap changes it by 0.05x.',
           'Tempo works out how long the song lasts and paces the scroll to '
               'finish exactly at the end of the song.',
         ],
@@ -161,6 +162,50 @@ const List<HelpTopic> helpTopics = [
         points: [
           'Use play and pause in the performance controls to run the scroll.',
           'In Tempo mode the scroll stops on its own at the end of the song.',
+        ],
+      ),
+    ],
+  ),
+  HelpTopic(
+    id: 'full-screen',
+    title: 'Full screen',
+    icon: Icons.fullscreen,
+    summary: 'Just the words, controlled by taps',
+    intro:
+        'Full screen hides the top bar and the phone\'s own bars, so the song '
+        'fills the whole screen. It is made for playing live, where you look at '
+        'the screen from a stand and touch it as little as possible.',
+    sections: [
+      HelpSection(
+        heading: 'Going full screen',
+        points: [
+          'Tap the full screen button in the auto-scroll row.',
+          'The song, the key, the text size and the scroll position all stay '
+              'as they were.',
+          'The screen still stays awake, as it does in the normal song view.',
+        ],
+      ),
+      HelpSection(
+        heading: 'The gestures',
+        points: [
+          'Tap once to show or hide the control bar. It slides away again '
+              'after a few seconds.',
+          'Double-tap the upper half to go faster; double-tap the lower half '
+              'to go slower. The new value flashes big on the screen.',
+          'In Tempo mode those same double-taps add or remove bars, because '
+              'bars are what set the speed there.',
+          'Tap with two fingers to play or pause.',
+          'Pinch to change the text size, the same as usual.',
+        ],
+      ),
+      HelpSection(
+        heading: 'Getting back',
+        points: [
+          'Press Back, or tap once and use the exit button in the control bar.',
+          'That leaves full screen only — you are still on the same song. '
+              'Press Back again to return to your songbook.',
+          'Swiping sideways does not change the song while you are full '
+              'screen, so a stray touch cannot throw the wrong song up mid-song.',
         ],
       ),
     ],
