@@ -8,14 +8,19 @@ import 'package:lyricchord/services/chord_transposer.dart';
 ///
 /// [writtenKey] is the key the song is stored in; the sheet shows the live
 /// transposed key while it is open.
+///
+/// Pass `showTranspose: false` for a song written in swaras. See
+/// [TransposeSheet.showTranspose].
 Future<void> showTransposeSheet(
   BuildContext context, {
   required String writtenKey,
+  bool showTranspose = true,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
-    builder: (_) => TransposeSheet(writtenKey: writtenKey),
+    builder: (_) =>
+        TransposeSheet(writtenKey: writtenKey, showTranspose: showTranspose),
   );
 }
 
@@ -25,10 +30,22 @@ Future<void> showTransposeSheet(
 /// switch stay live while the sheet is open — and the chord sheet behind it
 /// updates at the same time.
 class TransposeSheet extends ConsumerWidget {
-  const TransposeSheet({super.key, required this.writtenKey});
+  const TransposeSheet({
+    super.key,
+    required this.writtenKey,
+    this.showTranspose = true,
+  });
 
   /// The key the song is stored in ("as written").
   final String writtenKey;
+
+  /// False for a song written in swaras, which hides the transpose row.
+  ///
+  /// A swara is already named relative to Sa, so moving Sa moves every swara
+  /// with it and the written notation never changes — the buttons would do
+  /// nothing. Show chords stays, because hiding the swara markers is still
+  /// useful.
+  final bool showTranspose;
 
   static const ChordTransposer _transposer = ChordTransposer();
 
@@ -48,46 +65,47 @@ class TransposeSheet extends ConsumerWidget {
           children: [
             Text('Performance controls', style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              runSpacing: 4,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Text('Transpose', style: theme.textTheme.bodyLarge),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton.filledTonal(
-                      tooltip: 'Transpose down',
-                      onPressed: controls.transposeDown,
-                      icon: const Icon(Icons.remove),
-                    ),
-                    SizedBox(
-                      width: 72,
-                      child: Text(
-                        currentKey,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.titleMedium,
+            if (showTranspose)
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                runSpacing: 4,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Text('Transpose', style: theme.textTheme.bodyLarge),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton.filledTonal(
+                        tooltip: 'Transpose down',
+                        onPressed: controls.transposeDown,
+                        icon: const Icon(Icons.remove),
                       ),
-                    ),
-                    IconButton.filledTonal(
-                      tooltip: 'Transpose up',
-                      onPressed: controls.transposeUp,
-                      icon: const Icon(Icons.add),
-                    ),
-                    TextButton(
-                      onPressed: settings.isTransposed
-                          ? controls.resetTranspose
-                          : null,
-                      child: const Text('Reset'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                      SizedBox(
+                        width: 72,
+                        child: Text(
+                          currentKey,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ),
+                      IconButton.filledTonal(
+                        tooltip: 'Transpose up',
+                        onPressed: controls.transposeUp,
+                        icon: const Icon(Icons.add),
+                      ),
+                      TextButton(
+                        onPressed: settings.isTransposed
+                            ? controls.resetTranspose
+                            : null,
+                        child: const Text('Reset'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Show chords'),

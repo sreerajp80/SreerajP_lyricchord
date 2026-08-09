@@ -112,6 +112,61 @@ void main() {
     });
   });
 
+  group('Indian notation is left alone', () {
+    test('a swara marker survives a transpose unchanged', () {
+      // Swaras are already relative to Sa, so moving the tonic moves them with
+      // it — the written notation must not change.
+      expect(
+        transposer.transposeLyrics('[S]Krishna nee be[M]gane baro', 2, 'E'),
+        '[S]Krishna nee be[M]gane baro',
+      );
+    });
+
+    test('a swaram line is untouched', () {
+      const swaram = 'Sa - Ri - Ga - Ma - | Pa - Dha - Ni - Sa -';
+
+      expect(transposer.transposeLyrics(swaram, 5, 'C'), swaram);
+    });
+
+    test('a raga directive is untouched', () {
+      expect(
+        transposer.transposeLyrics('{raga: Yamunakalyani}', 3, 'E'),
+        '{raga: Yamunakalyani}',
+      );
+    });
+
+    test('Ga and Dha are not mistaken for G and D chords', () {
+      // These two are the trap: a swara token read one letter at a time looks
+      // like a Western chord, and used to come back as `[Aa]` and `[Eha]`.
+      const sheet =
+          '{raga: Yamunakalyani}\n'
+          '[Sa]Varanasyaam Va[Ga]rada Na[Dha]yakham';
+
+      expect(transposer.transposeLyrics(sheet, 2, 'C'), sheet);
+    });
+
+    test('single-letter Ga and Dha markers are safe too', () {
+      const sheet =
+          '{raga: Hamsadhvani}\n[S]Bhoothadi Sam[G]sevitha [D]Charanam';
+
+      expect(transposer.transposeLyrics(sheet, 5, 'C'), sheet);
+    });
+
+    test('chordsUsed returns the swaras as written', () {
+      const sheet =
+          '{raga: Yamunakalyani}\n'
+          '[Sa]Krishna nee be[Ma]gane baro';
+
+      expect(transposer.chordsUsed(sheet, 2, 'E'), ['Sa', 'Ma']);
+    });
+
+    test('a Western song with the same letters still transposes', () {
+      // The song decides, not the token: without a raga, `[G]` and `[D]` are
+      // ordinary chords and must still move.
+      expect(transposer.transposeLyrics('[G]a [D]b', 2, 'G'), '[A]a [E]b');
+    });
+  });
+
   group('useFlatsAfter', () {
     test('is true only for keys normally written with flats', () {
       expect(transposer.useFlatsAfter('G', 1), isTrue); // Ab

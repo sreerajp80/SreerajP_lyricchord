@@ -5,6 +5,7 @@ import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
 import 'package:lyricchord/services/auto_scroll_calculator.dart';
 import 'package:lyricchord/widgets/auto_scroll_controls.dart';
+import 'package:lyricchord/widgets/pitch_drone_controls.dart';
 
 /// The translucent control bar of Stage Mode.
 ///
@@ -23,6 +24,8 @@ class StageHud extends ConsumerWidget {
     required this.title,
     required this.currentKey,
     required this.bpm,
+    this.raga,
+    this.tala,
   });
 
   /// True while the bar should be on screen.
@@ -31,11 +34,18 @@ class StageHud extends ConsumerWidget {
   /// The song on show, for the read-out on the right.
   final String title;
 
-  /// The key the sheet sounds in right now — already transposed.
+  /// The key the sheet sounds in right now — already transposed. Not shown for
+  /// a song that names a raga; see [_readOut].
   final String currentKey;
 
   /// The song's tempo.
   final int bpm;
+
+  /// The song's raga, when it names one in a `{raga: …}` directive.
+  final String? raga;
+
+  /// The song's tala, when it names one in a `{tala: …}` directive.
+  final String? tala;
 
   static const AutoScrollCalculator _calc = AutoScrollCalculator();
 
@@ -52,7 +62,12 @@ class StageHud extends ConsumerWidget {
 
     final isTempo = settings.mode == AutoScrollMode.tempo;
     final tempoReady =
-        _calc.tempoDuration(bpm, settings.measures) != Duration.zero;
+        _calc.tempoDuration(
+          bpm,
+          settings.measures,
+          beatsPerMeasure: settings.beatsPerMeasure,
+        ) !=
+        Duration.zero;
     final canPlay = !isTempo || tempoReady;
 
     return IgnorePointer(
@@ -83,54 +98,89 @@ class StageHud extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            tooltip: 'Exit full screen',
-                            onPressed: stage.exit,
-                            icon: const Icon(Icons.fullscreen_exit),
-                          ),
-                          _ModeButton(
-                            label: 'M',
-                            selected: !isTempo,
-                            onPressed: () =>
-                                controls.setMode(AutoScrollMode.manual),
-                          ),
-                          _ModeButton(
-                            label: 'T',
-                            selected: isTempo,
-                            onPressed: () =>
-                                controls.setMode(AutoScrollMode.tempo),
-                          ),
-                          IconButton.filled(
-                            tooltip: settings.isPlaying ? 'Pause' : 'Play',
-                            onPressed: canPlay ? controls.togglePlay : null,
-                            icon: Icon(
-                              settings.isPlaying
-                                  ? Icons.pause
-                                  : Icons.play_arrow,
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              tooltip: 'Exit full screen',
+                              onPressed: stage.exit,
+                              icon: const Icon(Icons.fullscreen_exit),
                             ),
-                          ),
-                          const Spacer(),
-                          _StepperRow(
-                            label: isTempo
-                                ? '${settings.measures}'
-                                : formatSpeedLabel(settings.speed),
-                            onLess: isTempo
-                                ? controls.decreaseMeasures
-                                : controls.decreaseSpeed,
-                            onMore: isTempo
-                                ? controls.increaseMeasures
-                                : controls.increaseSpeed,
-                            lessTooltip: isTempo ? 'Fewer bars' : 'Slower',
-                            moreTooltip: isTempo ? 'More bars' : 'Faster',
-                          ),
-                        ],
+                            IconButton(
+                              tooltip: 'Lock Stage View',
+                              onPressed: stage.lockStage,
+                              icon: const Icon(Icons.lock_outline),
+                            ),
+                            IconButton(
+                              tooltip: ref.watch(stageModeProvider).isQuietMode
+                                  ? 'Stage Quiet Mode (Active)'
+                                  : 'Stage Quiet Mode (Mute ringer/alerts)',
+                              onPressed: stage.toggleQuietMode,
+                              icon: Icon(
+                                ref.watch(stageModeProvider).isQuietMode
+                                    ? Icons.notifications_off
+                                    : Icons.notifications_active_outlined,
+                                color: ref.watch(stageModeProvider).isQuietMode
+                                    ? theme.colorScheme.error
+                                    : null,
+                              ),
+                            ),
+                            _ModeButton(
+                              label: 'M',
+                              selected: !isTempo,
+                              onPressed: () =>
+                                  controls.setMode(AutoScrollMode.manual),
+                            ),
+                            _ModeButton(
+                              label: 'T',
+                              selected: isTempo,
+                              onPressed: () =>
+                                  controls.setMode(AutoScrollMode.tempo),
+                            ),
+                            IconButton.filled(
+                              tooltip: settings.isPlaying ? 'Pause' : 'Play',
+                              onPressed: canPlay ? controls.togglePlay : null,
+                              icon: Icon(
+                                settings.isPlaying
+                                    ? Icons.pause
+                                    : Icons.play_arrow,
+                              ),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () {
+                                showModalBottomSheet<void>(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (_) => PitchDroneControlsSheet(
+                                    songKey: currentKey,
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.graphic_eq),
+                            ),
+                            const SizedBox(width: 8),
+                            _StepperRow(
+                              label: isTempo
+                                  ? '${settings.measures}'
+                                  : formatSpeedLabel(settings.speed),
+                              onLess: isTempo
+                                  ? controls.decreaseMeasures
+                                  : controls.decreaseSpeed,
+                              onMore: isTempo
+                                  ? controls.increaseMeasures
+                                  : controls.increaseSpeed,
+                              lessTooltip: isTempo ? 'Fewer bars' : 'Slower',
+                              moreTooltip: isTempo ? 'More bars' : 'Faster',
+                            ),
+                          ],
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
                         child: Text(
-                          '$title  ·  Key $currentKey  ·  $bpm BPM',
+                          _readOut,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -147,6 +197,25 @@ class StageHud extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// The one-line read-out under the buttons.
+  ///
+  /// `Jingle Bells · Key G · 120 BPM` for a Western song. A song that names a
+  /// raga shows its raga and tala instead of a key — a Western note letter has
+  /// no place on an Indian sheet, and a swara is already named relative to Sa.
+  String get _readOut {
+    final parts = <String>[title];
+
+    if (raga != null && raga!.isNotEmpty) {
+      parts.add('Raga ${raga!}');
+      if (tala != null && tala!.isNotEmpty) parts.add('Tala ${tala!}');
+    } else {
+      parts.add('Key $currentKey');
+    }
+
+    parts.add('$bpm BPM');
+    return parts.join('  ·  ');
   }
 }
 

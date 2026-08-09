@@ -96,13 +96,28 @@ class ChordTransposer {
   /// Moves every `[Chord]` inside [lyrics], leaving the words alone.
   ///
   /// [originalKey] decides the spelling of the result.
+  ///
+  /// An Indian sheet — one that names a `{raga: …}` — comes back completely
+  /// unchanged. That is right musically: a swara is already named relative to
+  /// Sa, so moving Sa moves every swara with it and the written notation does
+  /// not change. There is nothing for a transpose to do.
+  ///
+  /// It is also necessary. [transposeChord] reads only the first letter, so
+  /// `[Ga]` and `[Dha]` look like a G and a D chord and would be mangled into
+  /// `[Aa]` and `[Eha]`. The song has to decide, not the token: a lone `[D]` in
+  /// a Western song really is a D chord, and nothing about that one token can
+  /// tell the two apart.
   String transposeLyrics(String lyrics, int semitones, String originalKey) {
-    if (semitones % 12 == 0) return lyrics;
+    if (_parser.parseSheet(lyrics).isIndianNotation) return lyrics;
+
     final useFlats = useFlatsAfter(originalKey, semitones);
 
     return lyrics.replaceAllMapped(_chordMarker, (match) {
       final inner = match.group(1) ?? '';
-      return '[${transposeChord(inner, semitones, useFlats: useFlats)}]';
+      final movedChord = semitones % 12 == 0
+          ? inner
+          : transposeChord(inner, semitones, useFlats: useFlats);
+      return '[$movedChord]';
     });
   }
 
@@ -110,7 +125,14 @@ class ChordTransposer {
   ///
   /// Phase 6's chord reference dialog needs the sounding chords, not the
   /// written ones.
+  ///
+  /// An Indian sheet's markers are returned as written, for the same reason as
+  /// in [transposeLyrics].
   List<String> chordsUsed(String lyrics, int semitones, String originalKey) {
+    if (_parser.parseSheet(lyrics).isIndianNotation) {
+      return _parser.chordsUsed(lyrics);
+    }
+
     final useFlats = useFlatsAfter(originalKey, semitones);
     final moved = _parser
         .chordsUsed(lyrics)

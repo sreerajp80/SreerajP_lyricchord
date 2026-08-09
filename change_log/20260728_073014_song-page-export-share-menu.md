@@ -1,6 +1,6 @@
 # Change Log: Song Performance Page Grouped Export & Share Menu
 
-**Plan reference:** [plans/20260728_073014_song-page-export-share-menu.md](file:///l:/Android/SreerajP_lyricchord/plans/20260728_073014_song-page-export-share-menu.md)
+**Plan reference:** [plans/20260728_073014_song-page-export-share-menu.md](../plans/20260728_073014_song-page-export-share-menu.md)
 
 ## Summary
 

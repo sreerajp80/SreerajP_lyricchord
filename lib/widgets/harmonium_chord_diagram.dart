@@ -7,9 +7,6 @@ import 'package:lyricchord/services/chord_shape_service.dart';
 /// Pure UI: it is handed a ready-made [HarmoniumChordShape] and lights up the
 /// keys the chord uses. The root is filled in a stronger shade; a slash-chord
 /// bass note (`C/E`) is outlined so it stands out from the other notes.
-///
-/// The diagram always draws (the service never returns `null` for harmonium),
-/// so there is no "not available" state here.
 class HarmoniumChordDiagram extends StatelessWidget {
   const HarmoniumChordDiagram({
     super.key,

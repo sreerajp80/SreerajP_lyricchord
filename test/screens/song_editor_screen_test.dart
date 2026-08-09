@@ -180,7 +180,7 @@ void main() {
     await settle(tester);
 
     final songs = repo.currentSongs;
-    expect(songs, hasLength(3));
+    expect(songs, hasLength(6));
     expect(songs.map((s) => s.title), contains('Amazing Grace (live)'));
   });
 
@@ -199,7 +199,7 @@ void main() {
     await settle(tester);
 
     final songs = repo.currentSongs;
-    expect(songs, hasLength(4));
+    expect(songs, hasLength(7));
     final copy = songs.firstWhere((s) => s.title == 'Amazing Grace (Copy)');
     expect(copy.key, 'A');
     // The original is untouched.
@@ -271,6 +271,6 @@ void main() {
     await settle(tester);
 
     expect(find.byType(ChordInserterBar), findsOneWidget);
-    expect(repo.currentSongs, hasLength(3));
+    expect(repo.currentSongs, hasLength(6));
   });
 }

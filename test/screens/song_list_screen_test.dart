@@ -53,9 +53,9 @@ void main() {
   testWidgets('lists the seeded songs with their counts', (tester) async {
     await pumpSongbook(tester);
 
-    expect(find.byType(SongCard), findsNWidgets(3));
-    expect(find.text('All Songs (3)'), findsOneWidget);
-    expect(find.text('Starred (1)'), findsOneWidget);
+    expect(find.byType(SongCard), findsNWidgets(6));
+    expect(find.text('All Songs (6)'), findsOneWidget);
+    expect(find.text('Starred (2)'), findsOneWidget);
   });
 
   testWidgets('shows newest activity first', (tester) async {
@@ -66,6 +66,9 @@ void main() {
         .map((card) => card.song.title)
         .toList();
     expect(titles, [
+      'Krishna Nee Begane Baro (Raga Yamunakalyani)',
+      'Raghupati Raghava Raja Ram (Raga Mishra Gara)',
+      'Vathapi Ganapathim (Raga Hamsadhvani)',
       'Jingle Bells',
       'House of the Rising Sun',
       'Amazing Grace',
@@ -84,7 +87,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.clear));
     await tester.pumpAndSettle();
-    expect(find.byType(SongCard), findsNWidgets(3));
+    expect(find.byType(SongCard), findsNWidgets(6));
   });
 
   testWidgets('search also matches the artist and the lyrics', (tester) async {
@@ -115,11 +118,12 @@ void main() {
   testWidgets('the Starred filter shows only starred songs', (tester) async {
     await pumpSongbook(tester);
 
-    await tester.tap(find.text('Starred (1)'));
+    await tester.tap(find.text('Starred (2)'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SongCard), findsOneWidget);
+    expect(find.byType(SongCard), findsNWidgets(2));
     expect(find.text('Amazing Grace'), findsOneWidget);
+    expect(find.text('Vathapi Ganapathim (Raga Hamsadhvani)'), findsOneWidget);
   });
 
   testWidgets('tapping the star updates the starred count live', (
@@ -130,7 +134,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.star_border).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Starred (2)'), findsOneWidget);
+    expect(find.text('Starred (3)'), findsOneWidget);
   });
 
   testWidgets('delete asks first, then removes the song', (tester) async {
@@ -143,7 +147,7 @@ void main() {
     // Cancel keeps the song.
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    expect(find.byType(SongCard), findsNWidgets(3));
+    expect(find.byType(SongCard), findsNWidgets(6));
 
     // Confirming removes it and the counts follow.
     await tester.tap(find.byIcon(Icons.delete_outline).first);
@@ -151,22 +155,28 @@ void main() {
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SongCard), findsNWidgets(2));
-    expect(find.text('All Songs (2)'), findsOneWidget);
+    expect(find.byType(SongCard), findsNWidgets(5));
+    expect(find.text('All Songs (5)'), findsOneWidget);
   });
 
   testWidgets('duplicate adds a copy of the song to the list', (tester) async {
     await pumpSongbook(tester);
 
-    // The list is newest-first, so the first duplicate icon is Jingle Bells.
+    // The list is newest-first, so the first duplicate icon is Krishna Nee Begane Baro.
     await tester.tap(find.byIcon(Icons.content_copy_outlined).first);
     await tester.pumpAndSettle();
 
-    expect(find.byType(SongCard), findsNWidgets(4));
-    expect(find.text('Jingle Bells (Copy)'), findsOneWidget);
-    expect(find.text('All Songs (4)'), findsOneWidget);
+    expect(find.byType(SongCard), findsNWidgets(7));
+    expect(
+      find.text('Krishna Nee Begane Baro (Raga Yamunakalyani) (Copy)'),
+      findsOneWidget,
+    );
+    expect(find.text('All Songs (7)'), findsOneWidget);
     // The original is still there.
-    expect(find.text('Jingle Bells'), findsOneWidget);
+    expect(
+      find.text('Krishna Nee Begane Baro (Raga Yamunakalyani)'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the empty songbook state appears when there are no songs', (
@@ -183,9 +193,12 @@ void main() {
   testWidgets('the Starred filter has its own empty state', (tester) async {
     await pumpSongbook(tester);
 
-    // Unstar the only starred song, then switch to the Starred filter.
-    await tester.tap(find.byIcon(Icons.star));
-    await tester.pumpAndSettle();
+    // Unstar all starred songs, then switch to the Starred filter.
+    while (find.byIcon(Icons.star).evaluate().isNotEmpty) {
+      await tester.tap(find.byIcon(Icons.star).first);
+      await tester.pumpAndSettle();
+    }
+
     await tester.tap(find.text('Starred (0)'));
     await tester.pumpAndSettle();
 
@@ -225,7 +238,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1 selected'), findsOneWidget);
-    expect(find.byType(Checkbox), findsNWidgets(3));
+    expect(find.byType(Checkbox), findsNWidgets(6));
 
     // Tap another song to select it
     await tester.tap(find.text('Jingle Bells'));
@@ -253,13 +266,13 @@ void main() {
       await tester.tap(find.byIcon(Icons.select_all));
       await tester.pumpAndSettle();
 
-      expect(find.text('3 selected'), findsOneWidget);
+      expect(find.text('6 selected'), findsOneWidget);
 
       // Tap deselect all button
       await tester.tap(find.byIcon(Icons.deselect));
       await tester.pumpAndSettle();
 
-      expect(find.text('3 selected'), findsNothing);
+      expect(find.text('6 selected'), findsNothing);
     },
   );
 }

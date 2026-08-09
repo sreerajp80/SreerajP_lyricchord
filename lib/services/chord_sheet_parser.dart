@@ -8,6 +8,8 @@
 /// marker) is kept as plain lyric text, which is CLAUDE.md hard rule 4.
 library;
 
+import 'package:lyricchord/services/swara_notation_service.dart';
+
 /// One chunk of a line: an optional chord sitting above some lyric text.
 ///
 /// `[C]Amazing [F]grace` becomes two segments: (`C`, `Amazing `) and
@@ -36,12 +38,28 @@ class ChordSegment {
   String toString() => 'ChordSegment(chord: $chord, text: "$text")';
 }
 
+/// What a line is, so the renderer can lay it out without knowing any music
+/// syntax itself (architecture §4, layer boundaries).
+enum ChordLineKind {
+  /// Ordinary words, with or without chords above them.
+  lyric,
+
+  /// A swaram passage — only swaras and separators, e.g.
+  /// `Sa - Ri - Ga - Ma - | Pa - Dha - Ni - Sa -`. Drawn in a fixed-width grid
+  /// that does not wrap, because a swaram only reads correctly when the beats
+  /// line up.
+  swaram,
+}
+
 /// One line of the sheet. A blank line has no segments.
 class ChordLine {
   /// The chunks of this line, left to right.
   final List<ChordSegment> segments;
 
-  const ChordLine(this.segments);
+  /// Whether this is lyrics or a swaram passage.
+  final ChordLineKind kind;
+
+  const ChordLine(this.segments, {this.kind = ChordLineKind.lyric});
 
   /// True for a blank line, which the renderer draws as vertical space.
   bool get isBlank => segments.isEmpty;
@@ -50,9 +68,13 @@ class ChordLine {
   Iterable<String> get chords =>
       segments.map((s) => s.chord).whereType<String>();
 
+  /// The plain text of this line, with the chord markers taken out.
+  String get text => segments.map((s) => s.text).join();
+
   @override
   bool operator ==(Object other) {
     if (other is! ChordLine) return false;
+    if (other.kind != kind) return false;
     if (other.segments.length != segments.length) return false;
     for (var i = 0; i < segments.length; i++) {
       if (other.segments[i] != segments[i]) return false;
@@ -61,30 +83,95 @@ class ChordLine {
   }
 
   @override
-  int get hashCode => Object.hashAll(segments);
+  int get hashCode => Object.hash(Object.hashAll(segments), kind);
 
   @override
-  String toString() => 'ChordLine($segments)';
+  String toString() => 'ChordLine($segments, kind: ${kind.name})';
+}
+
+/// A whole sheet: the header directives plus the lines to draw.
+///
+/// `{raga: Yamunakalyani}` and `{tala: Adi}` are song *information*, not lyrics.
+/// They are pulled out here so the screen can show them in the header and the
+/// renderer never draws the curly braces.
+class ParsedSheet {
+  /// Directive name (lower case) to its value, e.g. `{'raga': 'Yamunakalyani'}`.
+  final Map<String, String> directives;
+
+  /// The lines to draw, with directive lines already removed.
+  final List<ChordLine> lines;
+
+  const ParsedSheet({required this.directives, required this.lines});
+
+  /// The raga name, or `null` when the song does not name one.
+  String? get raga => directives['raga'];
+
+  /// The tala name, or `null` when the song does not name one.
+  String? get tala => directives['tala'];
+
+  /// True when the song is written in Indian notation — it names a raga.
+  bool get isIndianNotation => raga != null;
 }
 
 /// Reads lyric text into lines of chord/lyric segments.
 class ChordSheetParser {
   const ChordSheetParser();
 
+  static const SwaraNotation _swara = SwaraNotation();
+
   /// Splits [lyrics] into lines, then each line into [ChordSegment]s.
   ///
   /// Handles `\r\n` and `\n` line endings. A line with only whitespace comes
   /// back blank so the sheet keeps the writer's spacing between verses.
-  List<ChordLine> parse(String lyrics) {
-    if (lyrics.isEmpty) return const [];
+  /// Directive lines such as `{raga: Kalyani}` are left out — use [parseSheet]
+  /// when you also want to read them.
+  List<ChordLine> parse(String lyrics) => parseSheet(lyrics).lines;
 
-    return lyrics
+  /// Reads [lyrics] into its header directives and its drawable lines.
+  ParsedSheet parseSheet(String lyrics) {
+    if (lyrics.isEmpty) {
+      return const ParsedSheet(directives: {}, lines: []);
+    }
+
+    final directives = <String, String>{};
+    final lines = <ChordLine>[];
+
+    final rawLines = lyrics
         .replaceAll('\r\n', '\n')
         .replaceAll('\r', '\n')
-        .split('\n')
-        .map(parseLine)
-        .toList(growable: false);
+        .split('\n');
+
+    for (final raw in rawLines) {
+      final directive = _directive(raw);
+      if (directive != null) {
+        // Last one wins, and an unknown name is simply kept and never drawn.
+        directives[directive.key] = directive.value;
+        continue;
+      }
+      lines.add(parseLine(raw));
+    }
+
+    return ParsedSheet(directives: directives, lines: lines);
   }
+
+  /// Reads a whole-line `{name: value}` directive, or `null` when [line] is not
+  /// one.
+  ///
+  /// Only a line that is *nothing but* a directive counts, so a lyric that
+  /// happens to contain a brace is left alone (hard rule 4).
+  MapEntry<String, String>? _directive(String line) {
+    final match = _directivePattern.firstMatch(line.trim());
+    if (match == null) return null;
+
+    final name = match.group(1)!.trim().toLowerCase();
+    if (name.isEmpty) return null;
+    return MapEntry(name, match.group(2)!.trim());
+  }
+
+  /// `{name: value}` or `{name}` on a line of its own.
+  static final RegExp _directivePattern = RegExp(
+    r'^\{([^:{}]+?)\s*:\s*([^{}]*)\}$',
+  );
 
   /// Splits a single line. Exposed for testing and for reuse by later phases.
   ChordLine parseLine(String line) {
@@ -127,7 +214,20 @@ class ChordSheetParser {
       segments.add(ChordSegment(chord: pendingChord, text: buffer.toString()));
     }
 
-    return ChordLine(segments);
+    return ChordLine(segments, kind: _kindOf(segments));
+  }
+
+  /// A line with no chords whose words are all swaras is a swaram passage.
+  ///
+  /// The chord check matters: `[S]Krishna nee begane baro` is a *lyric* line
+  /// that happens to carry swara markers, and must keep wrapping normally.
+  ChordLineKind _kindOf(List<ChordSegment> segments) {
+    if (segments.any((s) => s.chord != null)) return ChordLineKind.lyric;
+
+    final text = segments.map((s) => s.text).join();
+    return _swara.isSwaramLine(text)
+        ? ChordLineKind.swaram
+        : ChordLineKind.lyric;
   }
 
   /// Every distinct chord used in [lyrics], in the order it first appears.

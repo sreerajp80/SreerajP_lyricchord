@@ -220,17 +220,67 @@ class _StageGestureLayerState extends ConsumerState<StageGestureLayer> {
 
   @override
   Widget build(BuildContext context) {
+    final stageState = ref.watch(stageModeProvider);
+    final isLocked = stageState.isLocked;
+
     return Listener(
-      onPointerDown: _onPointerDown,
-      onPointerMove: _onPointerMove,
-      onPointerUp: _onPointerUp,
-      onPointerCancel: _onPointerCancel,
+      onPointerDown: isLocked ? null : _onPointerDown,
+      onPointerMove: isLocked ? null : _onPointerMove,
+      onPointerUp: isLocked ? null : _onPointerUp,
+      onPointerCancel: isLocked ? null : _onPointerCancel,
       child: Stack(
         children: [
           Positioned.fill(child: widget.child),
-          if (_flashText != null)
+          if (_flashText != null && !isLocked)
             Positioned.fill(
               child: IgnorePointer(child: _ValueFlash(text: _flashText!)),
+            ),
+          if (isLocked)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: SafeArea(
+                child: Material(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.90),
+                  borderRadius: BorderRadius.circular(20),
+                  elevation: 4,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      ref
+                          .read(stageModeProvider.notifier)
+                          .unlockStageWithAuth();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.lock,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Stage Locked',
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
         ],
       ),

@@ -26,7 +26,7 @@ A running, empty LyricCord Flutter app with the fixed conventions in place.
 ### Action steps
 
 - Create the Flutter app with application id / namespace `in.sreerajp.lyricchord`
-  (Flutter 3.41.9, Dart 3.11.5).
+  (Flutter 3.44.8, Dart 3.12.2).
 - Add the baseline `lib/` folders from [architecture.md](architecture.md) §4.
 - Add the About-screen config exactly as
   [guidelines/guideline.md](guidelines/guideline.md) §1 requires:

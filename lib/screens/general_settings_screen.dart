@@ -33,6 +33,13 @@ class GeneralSettingsScreen extends StatelessWidget {
             subtitle: 'Turn the beat on or off',
             onTap: () => context.push('/settings/general/metronome'),
           ),
+          _GeneralCard(
+            icon: Icons.graphic_eq,
+            title: 'Pitch Pipe & Shruti Drone',
+            subtitle:
+                'Synthesized reference pitch tones and continuous Tanpura drone',
+            onTap: () => context.push('/settings/general/pitch-drone'),
+          ),
         ],
       ),
     );

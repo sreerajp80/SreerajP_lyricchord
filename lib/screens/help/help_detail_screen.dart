@@ -54,7 +54,7 @@ class HelpDetailScreen extends StatelessWidget {
   }
 }
 
-/// One heading plus its bullet points.
+/// One heading plus its gesture items and bullet points.
 class _SectionBlock extends StatelessWidget {
   const _SectionBlock({required this.section});
 
@@ -63,6 +63,8 @@ class _SectionBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final gestureItems = section.gestureItems;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -74,9 +76,53 @@ class _SectionBlock extends StatelessWidget {
             color: theme.colorScheme.primary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+        if (gestureItems != null && gestureItems.isNotEmpty) ...[
+          for (final item in gestureItems) _GestureRow(item: item),
+          const SizedBox(height: 4),
+        ],
         for (final point in section.points) _Bullet(text: point),
       ],
+    );
+  }
+}
+
+/// A gesture item row with icon, title, and description.
+class _GestureRow extends StatelessWidget {
+  const _GestureRow({required this.item});
+
+  final GestureHelpItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          Icon(item.icon, color: theme.colorScheme.primary),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  item.description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

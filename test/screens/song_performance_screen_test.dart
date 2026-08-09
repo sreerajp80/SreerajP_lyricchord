@@ -10,6 +10,8 @@ import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/screens/song_performance_screen.dart';
 import 'package:lyricchord/widgets/chord_sheet_view.dart';
+import 'package:lyricchord/widgets/harmonium_chord_diagram.dart';
+import 'package:lyricchord/widgets/swara_keyboard_diagram.dart';
 import 'package:lyricchord/widgets/performance_controls.dart';
 
 import '../helpers/fake_song_repository.dart';
@@ -74,6 +76,54 @@ void main() {
 
     expect(find.text('Amazing Grace'), findsOneWidget);
     expect(sheetChords(tester), ['G']);
+  });
+
+  group('the reference guide follows the song\'s notation', () {
+    testWidgets('a Western song offers the Chord Reference Guide', (
+      tester,
+    ) async {
+      await pumpPerformance(tester);
+
+      await tester.tap(find.byTooltip('More options'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chord Reference Guide'), findsOneWidget);
+      expect(find.text('Swara Reference'), findsNothing);
+    });
+
+    testWidgets('a raga song offers the Swara Reference instead', (
+      tester,
+    ) async {
+      // Song 5 is "Raghupati Raghava Raja Ram", written in swaras.
+      await pumpPerformance(tester, songId: 5);
+
+      await tester.tap(find.byTooltip('More options'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Swara Reference'), findsOneWidget);
+      expect(find.text('Chord Reference Guide'), findsNothing);
+    });
+
+    testWidgets('the Swara Reference draws a keyboard per swara, in pitch '
+        'order', (tester) async {
+      await pumpPerformance(tester, songId: 5);
+
+      await tester.tap(find.byTooltip('More options'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Swara Reference'));
+      await tester.pumpAndSettle();
+
+      // The fixture uses Sa, Pa and Ma. They must be sorted low to high, so a
+      // reference reads like a scale rather than in order of appearance.
+      final labels = tester
+          .widgetList<SwaraKeyboardDiagram>(find.byType(SwaraKeyboardDiagram))
+          .map((d) => d.swara)
+          .toList();
+
+      expect(labels, ['Sa', 'Ma', 'Pa']);
+      // Never a chord shape for a swara — that was the bug.
+      expect(find.byType(HarmoniumChordDiagram), findsNothing);
+    });
   });
 
   testWidgets('transpose up in the controls sheet moves the chords', (

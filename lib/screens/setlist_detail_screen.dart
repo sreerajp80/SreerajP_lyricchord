@@ -8,6 +8,8 @@ import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
 import 'package:lyricchord/widgets/setlist_editor_dialog.dart';
 import 'package:lyricchord/widgets/setlist_song_picker_sheet.dart';
+import 'package:lyricchord/services/chord_pro_service.dart';
+import 'package:lyricchord/screens/air_qr_transmitter_screen.dart';
 
 /// Screen displaying and editing an ordered setlist.
 class SetlistDetailScreen extends ConsumerWidget {
@@ -41,6 +43,11 @@ class SetlistDetailScreen extends ConsumerWidget {
           appBar: AppBar(
             title: Text(setlist.name),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.qr_code_2_rounded),
+                tooltip: 'Share Setlist via AirQR Stream',
+                onPressed: () => _shareSetlistAirQr(context, setlist),
+              ),
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
                 tooltip: 'Edit setlist info',
@@ -350,5 +357,23 @@ class SetlistDetailScreen extends ConsumerWidget {
         ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     }
+  }
+
+  void _shareSetlistAirQr(BuildContext context, Setlist setlist) {
+    if (setlist.songs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No songs in setlist to share.')),
+      );
+      return;
+    }
+    const service = ChordProService();
+    final text = service.formatMultiple(setlist.songs);
+    context.push(
+      '/air-qr-transmit',
+      extra: AirQrTransmitterArgs(
+        title: 'Setlist: ${setlist.name}',
+        chordProPayload: text,
+      ),
+    );
   }
 }

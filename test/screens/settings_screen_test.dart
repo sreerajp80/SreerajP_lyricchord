@@ -109,8 +109,10 @@ void main() {
     expect(find.byType(HelpScreen), findsOneWidget);
     expect(find.text('Setlists'), findsOneWidget);
     expect(find.text('Metronome'), findsOneWidget);
+    expect(find.text('Pitch Pipe & Shruti Drone'), findsOneWidget);
     expect(find.text('Select Songs'), findsOneWidget);
     expect(find.text('Export'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Import'), 200);
     expect(find.text('Import'), findsOneWidget);
   });
 

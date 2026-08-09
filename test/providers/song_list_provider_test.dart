@@ -126,13 +126,13 @@ void main() {
       await primeSongs();
 
       final counts = container.read(songCountsProvider);
-      expect(counts.total, 3);
-      expect(counts.starred, 1);
+      expect(counts.total, 6);
+      expect(counts.starred, 2);
     });
 
     test('changing the search narrows the visible list', () async {
       await primeSongs();
-      expect(container.read(filteredSongsProvider), hasLength(3));
+      expect(container.read(filteredSongsProvider), hasLength(6));
 
       container.read(searchQueryProvider.notifier).setQuery('  JINGLE ');
       expect(
@@ -141,7 +141,7 @@ void main() {
       );
 
       container.read(searchQueryProvider.notifier).clear();
-      expect(container.read(filteredSongsProvider), hasLength(3));
+      expect(container.read(filteredSongsProvider), hasLength(6));
     });
 
     test('switching to the starred filter shows only favorites', () async {
@@ -149,8 +149,8 @@ void main() {
 
       container.read(songFilterProvider.notifier).setFilter(SongFilter.starred);
       expect(
-        container.read(filteredSongsProvider).single.title,
-        'Amazing Grace',
+        container.read(filteredSongsProvider).map((s) => s.title).toSet(),
+        {'Amazing Grace', 'Vathapi Ganapathim (Raga Hamsadhvani)'},
       );
     });
 
@@ -161,9 +161,9 @@ void main() {
           .read(filteredSongsProvider)
           .firstWhere((s) => s.title == 'Jingle Bells');
       await container.read(songRepositoryProvider).toggleFavorite(jingle);
-      await waitUntil(() => container.read(songCountsProvider).starred == 2);
+      await waitUntil(() => container.read(songCountsProvider).starred == 3);
 
-      expect(container.read(songCountsProvider).starred, 2);
+      expect(container.read(songCountsProvider).starred, 3);
     });
 
     test('deleting a song updates the counts live', () async {
@@ -171,9 +171,9 @@ void main() {
 
       final first = container.read(filteredSongsProvider).first;
       await container.read(songRepositoryProvider).delete(first.id);
-      await waitUntil(() => container.read(songCountsProvider).total == 2);
+      await waitUntil(() => container.read(songCountsProvider).total == 5);
 
-      expect(container.read(songCountsProvider).total, 2);
+      expect(container.read(songCountsProvider).total, 5);
     });
 
     test('the selected song id starts empty and can be set and cleared', () {

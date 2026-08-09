@@ -200,7 +200,7 @@ void main() {
       expect(saved.favorite, isTrue);
       // Not a second row.
       final all = await repo.watchAllSongs().first;
-      expect(all, hasLength(3));
+      expect(all, hasLength(6));
     });
 
     test('saving an edit keeps the song\'s saved scroll speed', () async {

@@ -25,7 +25,7 @@ product intent lives in the idea doc; this file is the "how".
 - **Product:** LyricChord
 - **Application id / namespace:** `in.sreerajp.lyricchord`
 - **Repository type:** application
-- **Toolchain:** Flutter 3.41.9 (stable), Dart 3.11.5
+- **Toolchain:** Flutter 3.44.8 (stable), Dart 3.12.2
 - **Engineering standard profiles in force:**
   - `Core Baseline` — always.
   - `Production App Extension` — yes; the app is meant to ship to real users.

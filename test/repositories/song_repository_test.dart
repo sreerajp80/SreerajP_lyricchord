@@ -19,25 +19,31 @@ void main() {
   });
 
   group('first-run seeding', () {
-    test('seeds the three classic songs on first open', () async {
+    test('seeds the classic songs on first open', () async {
       final songs = await repo.watchAllSongs().first;
 
-      expect(songs, hasLength(3));
+      expect(songs, hasLength(6));
       expect(songs.map((s) => s.title).toSet(), {
         'Amazing Grace',
         'House of the Rising Sun',
         'Jingle Bells',
+        'Vathapi Ganapathim (Raga Hamsadhvani)',
+        'Raghupati Raghava Raja Ram (Raga Mishra Gara)',
+        'Krishna Nee Begane Baro (Raga Yamunakalyani)',
       });
     });
 
-    test('Amazing Grace is the only starred seed song', () async {
+    test('starred seed songs are marked favorite', () async {
       final songs = await repo.watchAllSongs().first;
-      final starred = songs.where((s) => s.favorite).toList();
+      final starred = songs
+          .where((s) => s.favorite)
+          .map((s) => s.title)
+          .toSet();
 
-      expect(starred, hasLength(1));
-      expect(starred.single.title, 'Amazing Grace');
-      expect(starred.single.key, 'G');
-      expect(starred.single.bpm, 80);
+      expect(starred, {
+        'Amazing Grace',
+        'Vathapi Ganapathim (Raga Hamsadhvani)',
+      });
     });
 
     test('songs are ordered newest activity first (timestamp desc)', () async {
@@ -51,6 +57,98 @@ void main() {
         );
       }
     });
+
+    test('schema v4 migration populates missing classical songs', () async {
+      final existingBefore = await repo.watchAllSongs().first;
+      expect(existingBefore, hasLength(6));
+
+      // Re-invoking _seedMissingClassicSongs when songs exist does not duplicate them
+      await db.migration.onUpgrade(db.createMigrator(), 3, 4);
+
+      final existingAfter = await repo.watchAllSongs().first;
+      expect(existingAfter, hasLength(6));
+    });
+
+    test(
+      'schema v5 migration updates classical songs with hyphenated swaras',
+      () async {
+        await db.migration.onUpgrade(db.createMigrator(), 4, 5);
+
+        final songs = await repo.watchAllSongs().first;
+        final vathapi = songs.firstWhere((s) => s.title.contains('Vathapi'));
+        expect(vathapi.lyrics, contains('Sa - Ri - Ga -'));
+      },
+    );
+
+    test(
+      'schema v6 migration updates classical songs with full swara names',
+      () async {
+        await db.migration.onUpgrade(db.createMigrator(), 5, 6);
+
+        final songs = await repo.watchAllSongs().first;
+        final vathapi = songs.firstWhere((s) => s.title.contains('Vathapi'));
+        expect(vathapi.lyrics, contains('Sa - Ri - Ga -'));
+      },
+    );
+
+    test('schema v8 migration writes markers in full swara names', () async {
+      await db.migration.onUpgrade(db.createMigrator(), 7, 8);
+
+      final songs = await repo.watchAllSongs().first;
+      final vathapi = songs.firstWhere((s) => s.title.contains('Vathapi'));
+
+      expect(vathapi.lyrics, contains('[Sa]Vathapi Gana[Pa]pathim'));
+      // No single-letter markers left anywhere.
+      expect(vathapi.lyrics, isNot(contains('[S]')));
+      expect(vathapi.lyrics, isNot(contains('[G]')));
+    });
+
+    test(
+      'schema v8 migration makes Raghupati match its Swaram block',
+      () async {
+        await db.migration.onUpgrade(db.createMigrator(), 7, 8);
+
+        final songs = await repo.watchAllSongs().first;
+        final raghupati = songs.firstWhere(
+          (s) => s.title.contains('Raghupati'),
+        );
+
+        // The Swaram block is Sa Pa Ma Sa, then Sa Pa Ni Sa. The markers above
+        // the words must say the same thing.
+        expect(
+          raghupati.lyrics,
+          contains('[Sa]Raghupati [Pa]Raghava [Ma]Raja [Sa]Ram,'),
+        );
+        expect(
+          raghupati.lyrics,
+          contains('[Sa]Patita [Pa]Pavana [Ni]Sita [Sa]Ram.'),
+        );
+        expect(
+          raghupati.lyrics,
+          contains('[Sa]Sita [Pa]Ram [Ma]Sita [Sa]Ram,'),
+        );
+        expect(
+          raghupati.lyrics,
+          contains('[Sa]Bhaja [Pa]Pyare [Ni]Tukaram / [Sa]Sita Ram.'),
+        );
+      },
+    );
+
+    test('the migration leaves a song of the user\'s own alone', () async {
+      // Matching is by title. A song whose title is not one of the three seeded
+      // classical names is never rewritten.
+      //
+      // Note the limit of that rule: the match is a substring, so a song the
+      // user titled "My Raghupati Notes" *would* be overwritten. Only the
+      // seeded titles were ever meant to match.
+      final id = await repo.insert(_newSong(title: 'My Own Song'));
+
+      await db.migration.onUpgrade(db.createMigrator(), 7, 8);
+
+      final songs = await repo.watchAllSongs().first;
+      final mine = songs.firstWhere((s) => s.id == id);
+      expect(mine.lyrics, '[C]La la la');
+    });
   });
 
   group('insert / update / delete', () {
@@ -59,7 +157,7 @@ void main() {
       expect(id, greaterThan(0));
 
       final songs = await repo.watchAllSongs().first;
-      expect(songs, hasLength(4));
+      expect(songs, hasLength(7));
       expect(songs.any((s) => s.id == id && s.title == 'My Song'), isTrue);
     });
 
@@ -201,8 +299,8 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       await sub.cancel();
-      expect(emissions.first, 3);
-      expect(emissions.last, 4);
+      expect(emissions.first, 6);
+      expect(emissions.last, 7);
     });
   });
 }

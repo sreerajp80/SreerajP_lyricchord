@@ -1,12 +1,31 @@
 import 'package:flutter/material.dart';
 
+/// A gesture item with an icon, title, and description.
+@immutable
+class GestureHelpItem {
+  const GestureHelpItem({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+}
+
 /// One block of help: a heading and its list of points.
 @immutable
 class HelpSection {
-  const HelpSection({required this.heading, required this.points});
+  const HelpSection({
+    required this.heading,
+    required this.points,
+    this.gestureItems,
+  });
 
   final String heading;
   final List<String> points;
+  final List<GestureHelpItem>? gestureItems;
 }
 
 /// One help topic shown as a card on the Help hub and its own detail page.
@@ -120,6 +139,41 @@ const List<HelpTopic> helpTopics = [
     ],
   ),
   HelpTopic(
+    id: 'pitch-pipe-drone',
+    title: 'Pitch Pipe & Shruti Drone',
+    icon: Icons.graphic_eq,
+    summary: 'Synthesized reference pitch cues and continuous Tanpura drone',
+    intro:
+        'Pitch Pipe & Shruti Drone provides 100% offline audio synthesis for '
+        'vocal starting pitch cues, continuous Tanpura background drones, and '
+        '5-tier stage text font scaling.',
+    sections: [
+      HelpSection(
+        heading: 'Pitch Pipe Cuer',
+        points: [
+          'Tap the Pitch Pipe button in Stage HUD to hear a 2-second reference pitch cue tone.',
+          'Helps vocalists quickly find their starting note in any key before singing.',
+        ],
+      ),
+      HelpSection(
+        heading: 'Shruti Box Drone',
+        points: [
+          'Toggle "Shruti Drone" to start a continuous background hum.',
+          'Switch between Root + 5th (Pa) or Root + 4th (Ma) tuning.',
+          'Synthesized programmatically with multi-harmonic overtones and stereo depth.',
+          'Automatically stops when you leave performance view to prevent background sound leaks.',
+        ],
+      ),
+      HelpSection(
+        heading: '5-Tier Stage Font Scaling',
+        points: [
+          'Dynamic text zoom ranging from 85% up to 130% scale for stage readability.',
+          'Tap the font scale icon in Stage HUD to cycle text sizes quickly.',
+        ],
+      ),
+    ],
+  ),
+  HelpTopic(
     id: 'auto-scroll',
     title: 'Auto-scroll',
     icon: Icons.swap_vert,
@@ -187,6 +241,38 @@ const List<HelpTopic> helpTopics = [
       ),
       HelpSection(
         heading: 'The gestures',
+        gestureItems: [
+          GestureHelpItem(
+            icon: Icons.touch_app_outlined,
+            title: 'Tap once',
+            description: 'Show or hide the controls',
+          ),
+          GestureHelpItem(
+            icon: Icons.keyboard_double_arrow_up,
+            title: 'Double-tap up top',
+            description: 'Faster',
+          ),
+          GestureHelpItem(
+            icon: Icons.keyboard_double_arrow_down,
+            title: 'Double-tap down low',
+            description: 'Slower',
+          ),
+          GestureHelpItem(
+            icon: Icons.pan_tool_outlined,
+            title: 'Tap with two fingers',
+            description: 'Play or pause',
+          ),
+          GestureHelpItem(
+            icon: Icons.zoom_out_map,
+            title: 'Pinch',
+            description: 'Change the text size',
+          ),
+          GestureHelpItem(
+            icon: Icons.arrow_back,
+            title: 'Back',
+            description: 'Leave full screen',
+          ),
+        ],
         points: [
           'Tap once to show or hide the control bar. It slides away again '
               'after a few seconds.',

@@ -90,6 +90,88 @@ void main() {
     });
   });
 
+  group('directives', () {
+    test('a {name: value} line is read as a directive, not drawn', () {
+      final sheet = parser.parseSheet(
+        '{raga: Yamunakalyani}\n'
+        '{tala: Adi}\n'
+        '\n'
+        '[S]Krishna nee begane baro',
+      );
+
+      expect(sheet.raga, 'Yamunakalyani');
+      expect(sheet.tala, 'Adi');
+      expect(sheet.isIndianNotation, isTrue);
+      // The directive lines are gone; the blank and the lyric line remain.
+      expect(sheet.lines.length, 2);
+      expect(sheet.lines.first.isBlank, isTrue);
+      expect(sheet.lines.last.text, 'Krishna nee begane baro');
+    });
+
+    test('parse() leaves directive lines out of the sheet', () {
+      final lines = parser.parse('{raga: Kalyani}\nhello');
+
+      expect(lines.length, 1);
+      expect(lines.single.text, 'hello');
+    });
+
+    test('the directive name is lower-cased and the value trimmed', () {
+      final sheet = parser.parseSheet('{ Raga :  Hamsadhvani  }');
+
+      expect(sheet.directives['raga'], 'Hamsadhvani');
+    });
+
+    test('an unknown directive is kept but never drawn', () {
+      final sheet = parser.parseSheet('{composer: Dikshitar}\nwords');
+
+      expect(sheet.directives['composer'], 'Dikshitar');
+      expect(sheet.raga, isNull);
+      expect(sheet.isIndianNotation, isFalse);
+      expect(sheet.lines.single.text, 'words');
+    });
+
+    test('a lyric line that merely contains a brace stays lyric text', () {
+      final sheet = parser.parseSheet('sing {loudly} now');
+
+      expect(sheet.directives, isEmpty);
+      expect(sheet.lines.single.text, 'sing {loudly} now');
+    });
+
+    test('a western song has no directives and is not Indian notation', () {
+      final sheet = parser.parseSheet('[G]Amazing [C]grace');
+
+      expect(sheet.directives, isEmpty);
+      expect(sheet.isIndianNotation, isFalse);
+    });
+  });
+
+  group('swaram lines', () {
+    test('a line of only swaras is tagged as a swaram', () {
+      final lines = parser.parse('Sa - Ri - Ga - Ma - | Pa - Dha - Ni - Sa -');
+
+      expect(lines.single.kind, ChordLineKind.swaram);
+    });
+
+    test('a lyric line is tagged as lyric', () {
+      final lines = parser.parse('Krishna nee begane baro');
+
+      expect(lines.single.kind, ChordLineKind.lyric);
+    });
+
+    test('a section label is not a swaram', () {
+      expect(parser.parse('Swaram:').single.kind, ChordLineKind.lyric);
+      expect(parser.parse('Pallavi:').single.kind, ChordLineKind.lyric);
+    });
+
+    test('lyrics carrying swara markers stay a lyric line', () {
+      // `[S]Krishna …` is words with swaras above them, so it must keep
+      // wrapping normally rather than being drawn as a beat grid.
+      final lines = parser.parse('[S]Krishna nee be[M]gane baro');
+
+      expect(lines.single.kind, ChordLineKind.lyric);
+    });
+  });
+
   group('chordsUsed', () {
     test('lists each chord once, in the order it appears', () {
       final chords = parser.chordsUsed('[G]a [D]b [G]c\n[Em]d');

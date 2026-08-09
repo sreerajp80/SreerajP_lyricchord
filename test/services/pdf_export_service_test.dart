@@ -174,9 +174,8 @@ void main() {
     expect(html.contains('font-size: 15.0pt;'), isTrue);
     expect(html.contains('font-size: 0.73em;'), isTrue);
     expect(html.contains('.piece .word { font-size: 1em;'), isTrue);
-    // The page size and margins come only from the native print attributes,
-    // because the page width is chosen from the song.
-    expect(html.contains('@page { margin: 0; }'), isTrue);
+    // Page margins are set in @page CSS.
+    expect(html.contains('@page { margin: 20pt; }'), isTrue);
     expect(html.contains('size: A4'), isFalse);
     // The old small sizes are gone.
     expect(html.contains('font-size: 11pt; white-space: pre;'), isFalse);
@@ -237,5 +236,70 @@ void main() {
   test('builds HTML for empty list of songs', () async {
     final html = await service.buildHtmlForMultiple([]);
     expect(html.contains('<!DOCTYPE html>'), isTrue);
+  });
+
+  group('Indian notation', () {
+    const song = SongNote(
+      title: 'Krishna Nee Begane Baro',
+      artist: 'Vyasatirtha',
+      lyrics:
+          '{raga: Yamunakalyani}\n'
+          '{tala: Adi}\n'
+          '\n'
+          '[S]Krishna nee be[M]gane baro\n'
+          '\n'
+          'Sa - Ri - Ga - Ma - | Pa - Dha - Ni - Sa -',
+      key: 'E',
+      bpm: 68,
+      timestamp: 0,
+    );
+
+    test('directives print in the header, never as lyric text', () async {
+      final html = await service.buildHtml(song);
+
+      // The raw directive line must not reach the sheet.
+      expect(html.contains('{raga:'), isFalse);
+      expect(html.contains('{tala:'), isFalse);
+      // It appears in the header instead.
+      expect(html.contains('Raga: Yamunakalyani'), isTrue);
+      expect(html.contains('Tala: Adi'), isTrue);
+    });
+
+    test('an Indian song prints no key at all', () async {
+      final html = await service.buildHtml(song);
+
+      // A Western note letter has no place on a swara sheet. The raga and tala
+      // rows say what the song is; the BPM still prints.
+      expect(html.contains('Key: E'), isFalse);
+      expect(html.contains('Sa: E'), isFalse);
+      expect(html.contains('BPM: 68'), isTrue);
+    });
+
+    test('a Western song still reads "Key"', () async {
+      const western = SongNote(
+        title: 'Amazing Grace',
+        artist: 'Traditional',
+        lyrics: '[G]Amazing grace',
+        key: 'G',
+        bpm: 80,
+        timestamp: 0,
+      );
+
+      final html = await service.buildHtml(western);
+
+      expect(html.contains('Key: G'), isTrue);
+      expect(html.contains('Raga:'), isFalse);
+    });
+
+    test('a swaram line prints as one fixed-width row', () async {
+      final html = await service.buildHtml(song);
+
+      expect(
+        html.contains(
+          '<div class="swaram">Sa - Ri - Ga - Ma - | Pa - Dha - Ni - Sa -</div>',
+        ),
+        isTrue,
+      );
+    });
   });
 }

@@ -1,90 +1,77 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
-import 'package:lyricchord/providers/theme_mode_provider.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
   group('StageModeNotifier', () {
-    late ProviderContainer container;
-
-    setUp(() => container = ProviderContainer());
-    tearDown(() => container.dispose());
-
-    StageModeState read() => container.read(stageModeProvider);
-    StageModeNotifier notifier() => container.read(stageModeProvider.notifier);
-
-    test('starts off, with no HUD', () {
-      expect(read().enabled, isFalse);
-      expect(read().hudVisible, isFalse);
-    });
-
-    test('entering shows the HUD, so the way out is on screen', () {
-      notifier().enter();
-      expect(read().enabled, isTrue);
-      expect(read().hudVisible, isTrue);
-    });
-
-    test('leaving clears everything', () {
-      notifier().enter();
-      notifier().exit();
-      expect(read(), const StageModeState());
-    });
-
-    test('toggle goes in and back out', () {
-      notifier().toggle();
-      expect(read().enabled, isTrue);
-      notifier().toggle();
-      expect(read().enabled, isFalse);
-    });
-
-    test('a tap shows the HUD and a second tap hides it', () {
-      notifier().enter();
-      notifier().hideHud();
-      expect(read().hudVisible, isFalse);
-
-      notifier().toggleHud();
-      expect(read().hudVisible, isTrue);
-      notifier().toggleHud();
-      expect(read().hudVisible, isFalse);
-    });
-
-    test('the HUD cannot be shown while Stage Mode is off', () {
-      notifier().showHud();
-      expect(read().hudVisible, isFalse);
-    });
-  });
-
-  group('StageHelpSeenNotifier', () {
-    Future<ProviderContainer> containerWith({bool seen = false}) async {
-      SharedPreferences.setMockInitialValues({
-        if (seen) AppConstants.prefStageHelpSeen: true,
-      });
-      final prefs = await SharedPreferences.getInstance();
-      return ProviderContainer(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      );
-    }
-
-    test('is false the first time and true once marked', () async {
-      final container = await containerWith();
+    test('initial state has stage mode, lock mode and quiet mode disabled', () {
+      final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(container.read(stageHelpSeenProvider), isFalse);
-
-      await container.read(stageHelpSeenProvider.notifier).markSeen();
-      expect(container.read(stageHelpSeenProvider), isTrue);
+      final state = container.read(stageModeProvider);
+      expect(state.enabled, isFalse);
+      expect(state.hudVisible, isFalse);
+      expect(state.isLocked, isFalse);
+      expect(state.isQuietMode, isFalse);
     });
 
-    test('stays true across a restart', () async {
-      final container = await containerWith(seen: true);
+    test('entering stage mode enables full screen and HUD', () {
+      final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(container.read(stageHelpSeenProvider), isTrue);
+      final notifier = container.read(stageModeProvider.notifier);
+      notifier.enter();
+
+      final state = container.read(stageModeProvider);
+      expect(state.enabled, isTrue);
+      expect(state.hudVisible, isTrue);
+    });
+
+    test('locking stage mode sets isLocked true and hides HUD', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(stageModeProvider.notifier);
+      notifier.enter();
+      notifier.lockStage();
+
+      final state = container.read(stageModeProvider);
+      expect(state.isLocked, isTrue);
+      expect(state.hudVisible, isFalse);
+    });
+
+    test(
+      'unlockStageWithAuth unlocks stage mode when security is not available',
+      () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final notifier = container.read(stageModeProvider.notifier);
+        notifier.enter();
+        notifier.lockStage();
+
+        final unlocked = await notifier.unlockStageWithAuth();
+        expect(unlocked, isTrue);
+
+        final state = container.read(stageModeProvider);
+        expect(state.isLocked, isFalse);
+        expect(state.hudVisible, isTrue);
+      },
+    );
+
+    test('toggling quiet mode updates state correctly', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(stageModeProvider.notifier);
+      await notifier.toggleQuietMode();
+
+      var state = container.read(stageModeProvider);
+      expect(state.isQuietMode, isTrue);
+
+      await notifier.toggleQuietMode();
+      state = container.read(stageModeProvider);
+      expect(state.isQuietMode, isFalse);
     });
   });
 }

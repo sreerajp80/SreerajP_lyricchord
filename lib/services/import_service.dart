@@ -25,14 +25,13 @@ typedef UserTitlePromptHandler =
 
 /// Orchestrates importing ChordPro content with duplicate resolution.
 class ImportService {
-  final SongRepository _repository;
-  final ChordProService _chordProService;
+  final SongRepository repository;
+  final ChordProService chordProService;
 
   const ImportService({
-    required SongRepository repository,
-    ChordProService chordProService = const ChordProService(),
-  }) : _repository = repository,
-       _chordProService = chordProService;
+    required this.repository,
+    this.chordProService = const ChordProService(),
+  });
 
   /// Formats timestamp for title suffix e.g., "(2026-07-26 07:45)"
   static String formatTimestamp(DateTime dt) {
@@ -50,19 +49,19 @@ class ImportService {
     required ImportDuplicateStrategy strategy,
     UserTitlePromptHandler? onAskUserTitle,
   }) async {
-    final parsedList = _chordProService.parseMultiple(content);
+    final parsedList = chordProService.parseMultiple(content);
     final importedSongs = <SongNote>[];
     final importedIds = <int>[];
 
     final now = DateTime.now();
 
     for (final parsed in parsedList) {
-      final existing = await _repository.findByTitle(parsed.title);
+      final existing = await repository.findByTitle(parsed.title);
 
       if (existing == null) {
         // No duplicate - insert directly
         final stamped = parsed.copyWith(timestamp: now.millisecondsSinceEpoch);
-        final id = await _repository.insert(stamped);
+        final id = await repository.insert(stamped);
         importedSongs.add(stamped);
         importedIds.add(id);
         continue;
@@ -79,7 +78,7 @@ class ImportService {
             bpm: parsed.bpm,
             timestamp: now.millisecondsSinceEpoch,
           );
-          await _repository.update(updated);
+          await repository.update(updated);
           importedSongs.add(updated);
           importedIds.add(existing.id);
           break;
@@ -90,7 +89,7 @@ class ImportService {
             title: newTitle,
             timestamp: now.millisecondsSinceEpoch,
           );
-          final id = await _repository.insert(stamped);
+          final id = await repository.insert(stamped);
           importedSongs.add(stamped);
           importedIds.add(id);
           break;
@@ -98,13 +97,13 @@ class ImportService {
         case ImportDuplicateStrategy.renameExisting:
           final renamedExistingTitle =
               '${existing.title} ${formatTimestamp(now)}';
-          await _repository.update(
+          await repository.update(
             existing.copyWith(title: renamedExistingTitle),
           );
           final stamped = parsed.copyWith(
             timestamp: now.millisecondsSinceEpoch,
           );
-          final id = await _repository.insert(stamped);
+          final id = await repository.insert(stamped);
           importedSongs.add(stamped);
           importedIds.add(id);
           break;
@@ -134,7 +133,7 @@ class ImportService {
               bpm: parsed.bpm,
               timestamp: now.millisecondsSinceEpoch,
             );
-            await _repository.update(updated);
+            await repository.update(updated);
             importedSongs.add(updated);
             importedIds.add(existing.id);
           } else {
@@ -142,7 +141,7 @@ class ImportService {
               title: userTitle,
               timestamp: now.millisecondsSinceEpoch,
             );
-            final id = await _repository.insert(stamped);
+            final id = await repository.insert(stamped);
             importedSongs.add(stamped);
             importedIds.add(id);
           }

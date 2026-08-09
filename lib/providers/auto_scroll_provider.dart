@@ -35,6 +35,13 @@ class AutoScrollSettings {
   /// Tempo-mode length in measures, clamped to [minMeasures]–[maxMeasures].
   final int measures;
 
+  /// Beats in one measure, for the Tempo-Auto length.
+  ///
+  /// 4 for ordinary Western songs. An Indian song takes the beat count of its
+  /// tala instead — Adi is 8 — so Tempo-Auto times the cycle correctly rather
+  /// than assuming common time.
+  final int beatsPerMeasure;
+
   /// True while the sheet is scrolling on its own.
   final bool isPlaying;
 
@@ -66,11 +73,15 @@ class AutoScrollSettings {
   /// One tap of the measures stepper.
   static const int measuresStep = 4;
 
+  /// Beats per measure when the song does not name a tala — common time.
+  static const int defaultBeatsPerMeasure = 4;
+
   const AutoScrollSettings({
     this.songId,
     this.mode = AutoScrollMode.manual,
     this.speed = defaultSpeed,
     this.measures = defaultMeasures,
+    this.beatsPerMeasure = defaultBeatsPerMeasure,
     this.isPlaying = false,
     this.contentExtent = 0,
   });
@@ -80,6 +91,7 @@ class AutoScrollSettings {
     AutoScrollMode? mode,
     double? speed,
     int? measures,
+    int? beatsPerMeasure,
     bool? isPlaying,
     double? contentExtent,
   }) {
@@ -88,6 +100,7 @@ class AutoScrollSettings {
       mode: mode ?? this.mode,
       speed: speed ?? this.speed,
       measures: measures ?? this.measures,
+      beatsPerMeasure: beatsPerMeasure ?? this.beatsPerMeasure,
       isPlaying: isPlaying ?? this.isPlaying,
       contentExtent: contentExtent ?? this.contentExtent,
     );
@@ -100,17 +113,26 @@ class AutoScrollSettings {
       other.mode == mode &&
       other.speed == speed &&
       other.measures == measures &&
+      other.beatsPerMeasure == beatsPerMeasure &&
       other.isPlaying == isPlaying &&
       other.contentExtent == contentExtent;
 
   @override
-  int get hashCode =>
-      Object.hash(songId, mode, speed, measures, isPlaying, contentExtent);
+  int get hashCode => Object.hash(
+    songId,
+    mode,
+    speed,
+    measures,
+    beatsPerMeasure,
+    isPlaying,
+    contentExtent,
+  );
 
   @override
   String toString() =>
       'AutoScrollSettings(songId: $songId, mode: $mode, speed: $speed, '
-      'measures: $measures, isPlaying: $isPlaying, '
+      'measures: $measures, beatsPerMeasure: $beatsPerMeasure, '
+      'isPlaying: $isPlaying, '
       'contentExtent: $contentExtent)';
 }
 
@@ -141,8 +163,26 @@ class AutoScrollNotifier extends Notifier<AutoScrollSettings> {
   /// Does nothing when the same song is already loaded, so a database rebuild
   /// (the song stream emits again after our own write) can never undo a change
   /// the user just made. Mode goes back to Manual, paused, at the top.
-  void loadForSong(int songId, {required double speed, required int measures}) {
-    if (state.songId == songId) return;
+  ///
+  /// The one exception is [beatsPerMeasure]: it comes from the song's `{tala}`
+  /// line, not from the user's controls, so editing the tala must re-time the
+  /// scroll straight away rather than waiting for the song to be reopened.
+  void loadForSong(
+    int songId, {
+    required double speed,
+    required int measures,
+    int beatsPerMeasure = AutoScrollSettings.defaultBeatsPerMeasure,
+  }) {
+    final beats = beatsPerMeasure < 1
+        ? AutoScrollSettings.defaultBeatsPerMeasure
+        : beatsPerMeasure;
+
+    if (state.songId == songId) {
+      if (state.beatsPerMeasure != beats) {
+        state = state.copyWith(beatsPerMeasure: beats);
+      }
+      return;
+    }
     _saveTimer?.cancel();
     _saveTimer = null;
     _savePending = false;
@@ -153,6 +193,7 @@ class AutoScrollNotifier extends Notifier<AutoScrollSettings> {
         AutoScrollSettings.minMeasures,
         AutoScrollSettings.maxMeasures,
       ),
+      beatsPerMeasure: beats,
     );
   }
 

@@ -73,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -92,6 +92,15 @@ class AppDatabase extends _$AppDatabase {
         // upgrade never changes how a song already scrolls.
         await m.addColumn(songNotes, songNotes.scrollSpeed);
         await m.addColumn(songNotes, songNotes.scrollMeasures);
+      }
+      if (from < 4) {
+        await _seedMissingClassicSongs();
+      }
+      if (from < 8) {
+        // v5, v6 and v7 also rewrote these songs' text. This replaces all of
+        // it: the classical songs are written in swaras, spelled in full
+        // (`[Sa]`, not `[S]`), and their markers now match the Swaram block.
+        await _rewriteClassicalSongsInSwaraNotation();
       }
     },
     beforeOpen: (details) async {
@@ -294,8 +303,68 @@ class AppDatabase extends _$AppDatabase {
           favorite: const Value(false),
           timestamp: now + 2,
         ),
+        ..._classicalSeedSongs(now),
       ]);
     });
+  }
+
+  Future<void> _seedMissingClassicSongs() async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final existingSongs = await getAllSongs();
+    final existingTitles = existingSongs
+        .map((s) => s.title.trim().toLowerCase())
+        .toSet();
+
+    final classicalSongs = _classicalSeedSongs(now);
+
+    for (final song in classicalSongs) {
+      if (!existingTitles.contains(song.title.value.trim().toLowerCase())) {
+        await insertSong(song);
+      }
+    }
+  }
+
+  /// Rewrites the three seeded classical songs in swara notation.
+  ///
+  /// They used to carry Western chords (`[E]Krishna nee be[A]gane baro`), which
+  /// is wrong for Carnatic music: an Indian song is written in swaras. Later
+  /// they carried single letters (`[S]`) that did not always agree with the
+  /// song's own Swaram block. This puts back the full, correct text.
+  ///
+  /// Matching is by title, so a song the user renamed or wrote themselves is
+  /// left alone.
+  Future<void> _rewriteClassicalSongsInSwaraNotation() async {
+    final existingSongs = await getAllSongs();
+
+    for (final song in existingSongs) {
+      final lyrics = _classicalLyricsFor(song.title);
+      if (lyrics == null) continue;
+
+      await updateSong(
+        SongNotesCompanion(
+          id: Value(song.id),
+          title: Value(song.title),
+          artist: Value(song.artist),
+          key: Value(song.key),
+          bpm: Value(song.bpm),
+          favorite: Value(song.favorite),
+          timestamp: Value(song.timestamp),
+          scrollSpeed: Value(song.scrollSpeed),
+          scrollMeasures: Value(song.scrollMeasures),
+          lyrics: Value(lyrics),
+        ),
+      );
+    }
+  }
+
+  /// The swara lyrics for a seeded classical song [title], or `null` when the
+  /// title is not one of them.
+  String? _classicalLyricsFor(String title) {
+    final name = title.toLowerCase();
+    if (name.contains('vathapi')) return _vathapiLyrics;
+    if (name.contains('raghupati')) return _raghupatiLyrics;
+    if (name.contains('krishna nee')) return _krishnaNeeLyrics;
+    return null;
   }
 
   Future<void> _seedClassicSetlists() async {
@@ -312,6 +381,96 @@ class AppDatabase extends _$AppDatabase {
     await setSetlistSongs(setlistId, const [1, 2, 3]);
   }
 }
+
+// --- Classical seed songs ---------------------------------------------------
+//
+// These three are written in Indian notation, not Western: the markers hold
+// swaras and the raga and tala are `{…}` header lines, which the sheet shows
+// above the song instead of drawing as lyrics. Swaras are spelled in full
+// (`[Sa]`, `[Ma]`) so the markers read the same way as the Swaram block.
+//
+// The `key` column still holds a tonic, but nothing shows it for these songs:
+// a Western note letter has no place on an Indian sheet, and a swara is
+// already named relative to Sa. It is kept only so the column is never empty.
+//
+// Defined once and used by first-run seeding, by the "seed anything missing"
+// upgrade, and by the v7 rewrite, so the three copies cannot drift apart.
+
+/// The seeded classical songs, timestamped from [now].
+List<SongNotesCompanion> _classicalSeedSongs(int now) => [
+  SongNotesCompanion.insert(
+    title: 'Vathapi Ganapathim (Raga Hamsadhvani)',
+    artist: const Value('Muthuswami Dikshitar'),
+    key: const Value('C'),
+    bpm: const Value(72),
+    lyrics: const Value(_vathapiLyrics),
+    favorite: const Value(true),
+    timestamp: now + 3,
+  ),
+  SongNotesCompanion.insert(
+    title: 'Raghupati Raghava Raja Ram (Raga Mishra Gara)',
+    artist: const Value('Traditional Bhajan'),
+    key: const Value('D'),
+    bpm: const Value(84),
+    lyrics: const Value(_raghupatiLyrics),
+    favorite: const Value(false),
+    timestamp: now + 4,
+  ),
+  SongNotesCompanion.insert(
+    title: 'Krishna Nee Begane Baro (Raga Yamunakalyani)',
+    artist: const Value('Vyasatirtha'),
+    key: const Value('E'),
+    bpm: const Value(68),
+    lyrics: const Value(_krishnaNeeLyrics),
+    favorite: const Value(false),
+    timestamp: now + 5,
+  ),
+];
+
+/// Hamsadhvani uses S R G P N — it has no Ma and no Dha.
+const String _vathapiLyrics =
+    '{raga: Hamsadhvani}\n'
+    '{tala: Adi}\n'
+    '\n'
+    'Pallavi:\n'
+    '[Sa]Vathapi Gana[Pa]pathim Bha[Sa]jeham\n'
+    '[Sa]Varanasyaam Va[Ga]rada Na[Pa]yakham\n'
+    '\n'
+    'Anupallavi:\n'
+    '[Sa]Bhoothadi Sam[Ga]sevitha [Pa]Charanam\n'
+    '[Sa]Bhootha Bouthika [Ni]Prapancha [Sa]Karanam\n'
+    '\n'
+    'Swaram:\n'
+    'Sa - Ri - Ga - Pa - Ni - Sa - | Sa - Ni - Pa - Ga - Ri - Sa -';
+
+const String _raghupatiLyrics =
+    '{raga: Mishra Gara}\n'
+    '{tala: Keherwa}\n'
+    '\n'
+    '[Sa]Raghupati [Pa]Raghava [Ma]Raja [Sa]Ram,\n'
+    '[Sa]Patita [Pa]Pavana [Ni]Sita [Sa]Ram.\n'
+    '\n'
+    '[Sa]Sita [Pa]Ram [Ma]Sita [Sa]Ram,\n'
+    '[Sa]Bhaja [Pa]Pyare [Ni]Tukaram / [Sa]Sita Ram.\n'
+    '\n'
+    'Swaram:\n'
+    'Sa - Sa - Pa - Pa - | Ma - Ma - Sa - Sa -\n'
+    'Sa - Sa - Pa - Pa - | Ni - Ni - Sa - Sa -';
+
+const String _krishnaNeeLyrics =
+    '{raga: Yamunakalyani}\n'
+    '\n'
+    'Pallavi:\n'
+    '[Sa]Krishna nee be[Ma]gane baro [Sa]\n'
+    '[Sa]Begane baro mukha[Pa]thanaye baro [Sa]\n'
+    '\n'
+    'Charanam:\n'
+    '[Sa]Jalakaara [Ma]kaalinali [Sa]nartana maadidha\n'
+    '[Sa]Helalalaagaadho [Pa]chinni krish[Sa]na\n'
+    '\n'
+    'Swaram:\n'
+    'Sa - Ri - Ga - Ma - Pa - Dha - Ni - Sa -\n'
+    'Sa - Ni - Dha - Pa - Ma - Ga - Ri - Sa -';
 
 /// Opens the on-device database file lazily, in the app documents directory.
 LazyDatabase _openConnection() {

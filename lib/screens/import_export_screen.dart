@@ -11,6 +11,7 @@ import 'package:lyricchord/models/import_preview_args.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/services/chord_pro_service.dart';
+import 'package:lyricchord/screens/air_qr_transmitter_screen.dart';
 
 /// Settings → Import & Export.
 class ImportExportScreen extends ConsumerWidget {
@@ -40,6 +41,17 @@ class ImportExportScreen extends ConsumerWidget {
             ),
             onTap: () => _importChordPro(context, ref),
           ),
+          ListTile(
+            leading: const Icon(
+              Icons.qr_code_scanner_rounded,
+              color: Colors.cyan,
+            ),
+            title: const Text('AirQR Scan Import (Camera / Photo)'),
+            subtitle: const Text(
+              'Scan an animated QR song stream from a bandmate\'s screen.',
+            ),
+            onTap: () => context.push('/air-qr-receive'),
+          ),
           const Divider(),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -59,6 +71,14 @@ class ImportExportScreen extends ConsumerWidget {
             ),
             onTap: () => _exportAllChordPro(context, ref),
           ),
+          ListTile(
+            leading: const Icon(Icons.qr_code_2_rounded, color: Colors.purple),
+            title: const Text('Export all songs via AirQR Stream'),
+            subtitle: const Text(
+              'Broadcast entire songbook as an animated QR stream.',
+            ),
+            onTap: () => _exportAllAirQr(context, ref),
+          ),
         ],
       ),
     );
@@ -68,17 +88,38 @@ class ImportExportScreen extends ConsumerWidget {
   Future<void> _importChordPro(BuildContext context, WidgetRef ref) async {
     try {
       final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['cho', 'pro', 'chordpro', 'txt'],
         allowMultiple: true,
         withData: true,
       );
       if (result == null || result.files.isEmpty) return;
 
+      final validFiles = result.files.where((file) {
+        final ext = file.extension?.toLowerCase() ?? '';
+        final name = file.name.toLowerCase();
+        return ext == 'cho' ||
+            ext == 'pro' ||
+            ext == 'chordpro' ||
+            ext == 'txt' ||
+            name.endsWith('.cho') ||
+            name.endsWith('.pro') ||
+            name.endsWith('.chordpro') ||
+            name.endsWith('.txt');
+      }).toList();
+
+      if (validFiles.isEmpty) {
+        throw const ImportException(
+          'Only .cho, .pro, .chordpro, and .txt files can be imported.',
+        );
+      }
+
       final allParsedSongs = <SongNote>[];
       final combinedContent = StringBuffer();
       String firstFileName = 'imported.chordpro';
 
-      for (var i = 0; i < result.files.length; i++) {
-        final file = result.files[i];
+      for (var i = 0; i < validFiles.length; i++) {
+        final file = validFiles[i];
         if (i == 0) firstFileName = file.name;
         final bytes = file.bytes;
         if (bytes == null) continue;
@@ -98,9 +139,9 @@ class ImportExportScreen extends ConsumerWidget {
       context.push(
         '/import-preview',
         extra: ImportPreviewArgs(
-          fileName: result.files.length == 1
+          fileName: validFiles.length == 1
               ? firstFileName
-              : '${result.files.length} files selected',
+              : '${validFiles.length} files selected',
           rawContent: combinedContent.toString(),
           parsedSongs: allParsedSongs,
         ),
@@ -126,6 +167,8 @@ class ImportExportScreen extends ConsumerWidget {
       final path = await FilePicker.platform.saveFile(
         dialogTitle: 'Export all songs as ChordPro',
         fileName: 'lyricchord_all_songs.chordpro',
+        type: FileType.custom,
+        allowedExtensions: const ['chordpro'],
         bytes: Uint8List.fromList(utf8.encode(text)),
       );
       if (context.mounted && path != null) {
@@ -134,6 +177,31 @@ class ImportExportScreen extends ConsumerWidget {
     } catch (_) {
       if (context.mounted) {
         _showSnack(context, 'Could not export songs.');
+      }
+    }
+  }
+
+  Future<void> _exportAllAirQr(BuildContext context, WidgetRef ref) async {
+    try {
+      final songs = await ref.read(songRepositoryProvider).getAllSongs();
+      if (songs.isEmpty) {
+        if (context.mounted) _showSnack(context, 'No songs to share.');
+        return;
+      }
+      const service = ChordProService();
+      final text = service.formatMultiple(songs);
+      if (context.mounted) {
+        context.push(
+          '/air-qr-transmit',
+          extra: AirQrTransmitterArgs(
+            title: 'Full Songbook (${songs.length} songs)',
+            chordProPayload: text,
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showSnack(context, 'Could not prepare AirQR export.');
       }
     }
   }

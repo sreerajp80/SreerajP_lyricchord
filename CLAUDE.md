@@ -14,8 +14,8 @@ below for the full detail; do not duplicate that detail here.
 | Type | A lyrics & chords notebook for musicians — write chord sheets, transpose, and auto-scroll while performing |
 | Platform(s) | Android and iOS (min SDK 24 / Android 7; iOS minimum confirmed at setup). Desktop is a possible later target, not built now |
 | Package / org id | `in.sreerajp.lyricchord` |
-| Flutter SDK | 3.41.9 (stable) |
-| Dart SDK | 3.11.5 |
+| Flutter SDK | 3.44.8 (stable) |
+| Dart SDK | 3.12.2 |
 | State management | Riverpod (`flutter_riverpod`) |
 | Navigation | go_router |
 | Database | drift (SQLite) for songs; `shared_preferences` for the theme-mode setting |

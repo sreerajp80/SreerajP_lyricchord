@@ -19,6 +19,28 @@ void main() {
       );
     });
 
+    test('an Adi tala cycle is twice as long as a 4/4 measure', () {
+      // Adi has 8 aksharas, not 4. Assuming common time made a classical song
+      // scroll twice as fast as it should.
+      final common = calc.tempoDuration(72, 16);
+      final adi = calc.tempoDuration(72, 16, beatsPerMeasure: 8);
+
+      // Compared with a tolerance: each duration is rounded to the nearest
+      // microsecond on its own, so doubling one can differ by a microsecond.
+      expect(adi.inMicroseconds, closeTo(common.inMicroseconds * 2, 2));
+      // 16 cycles * 8 beats = 128 beats at 72 bpm.
+      expect(adi.inMilliseconds, closeTo(128 * 60 / 72 * 1000, 1));
+    });
+
+    test('ends exactly at song end for an Adi tala song too', () {
+      const contentExtent = 3210.0;
+      final duration = calc.tempoDuration(68, 24, beatsPerMeasure: 8);
+      final pxPerSec = calc.tempoPixelsPerSecond(contentExtent, duration);
+
+      final seconds = duration.inMicroseconds / Duration.microsecondsPerSecond;
+      expect(pxPerSec * seconds, closeTo(contentExtent, 0.001));
+    });
+
     test('returns zero for inputs that make no real length', () {
       expect(calc.tempoDuration(0, 32), Duration.zero);
       expect(calc.tempoDuration(120, 0), Duration.zero);

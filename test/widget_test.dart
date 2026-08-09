@@ -38,6 +38,9 @@ void main() {
 
     expect(find.text('LyricChord'), findsOneWidget);
     expect(find.text('Lyrics & Chords Notebook'), findsOneWidget);
-    expect(find.text('Amazing Grace'), findsOneWidget);
+    expect(
+      find.text('Krishna Nee Begane Baro (Raga Yamunakalyani)'),
+      findsOneWidget,
+    );
   });
 }

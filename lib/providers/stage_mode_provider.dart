@@ -3,29 +3,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 
+import 'package:lyricchord/services/stage_quiet_mode_service.dart';
+import 'package:lyricchord/services/stage_security_service.dart';
+
 /// Live state of Stage Mode — the full-screen performing view.
-///
-/// Like the other performance state this is view state, not song data: it is
-/// not stored in the database. Unlike auto-scroll settings it is deliberately
-/// **not** reset when the user moves to another song, because Stage Mode is a
-/// way of working for the whole set, not a per-song setting.
 class StageModeState {
   /// True when the lyrics fill the screen and the system bars are hidden.
   final bool enabled;
 
-  /// True while the translucent control bar (the HUD) is on show. Meaningless
-  /// when [enabled] is false.
+  /// True while the translucent control bar (the HUD) is on show.
   final bool hudVisible;
+
+  /// True when touch inputs and navigation are locked to prevent accidental touches.
+  final bool isLocked;
+
+  /// True when incoming call ringers and notifications are muted automatically.
+  final bool isQuietMode;
 
   /// How long the HUD stays up after the last touch before it slides away.
   static const Duration hudTimeout = Duration(seconds: 4);
 
-  const StageModeState({this.enabled = false, this.hudVisible = false});
+  const StageModeState({
+    this.enabled = false,
+    this.hudVisible = false,
+    this.isLocked = false,
+    this.isQuietMode = false,
+  });
 
-  StageModeState copyWith({bool? enabled, bool? hudVisible}) {
+  StageModeState copyWith({
+    bool? enabled,
+    bool? hudVisible,
+    bool? isLocked,
+    bool? isQuietMode,
+  }) {
     return StageModeState(
       enabled: enabled ?? this.enabled,
       hudVisible: hudVisible ?? this.hudVisible,
+      isLocked: isLocked ?? this.isLocked,
+      isQuietMode: isQuietMode ?? this.isQuietMode,
     );
   }
 
@@ -33,54 +48,100 @@ class StageModeState {
   bool operator ==(Object other) =>
       other is StageModeState &&
       other.enabled == enabled &&
-      other.hudVisible == hudVisible;
+      other.hudVisible == hudVisible &&
+      other.isLocked == isLocked &&
+      other.isQuietMode == isQuietMode;
 
   @override
-  int get hashCode => Object.hash(enabled, hudVisible);
+  int get hashCode => Object.hash(enabled, hudVisible, isLocked, isQuietMode);
 
   @override
   String toString() =>
-      'StageModeState(enabled: $enabled, hudVisible: $hudVisible)';
+      'StageModeState(enabled: $enabled, hudVisible: $hudVisible, isLocked: $isLocked, isQuietMode: $isQuietMode)';
 }
 
-/// Turns Stage Mode on and off and tracks whether the HUD is showing.
-///
-/// The screen owns the auto-hide `Timer` and the system-bar calls; this only
-/// holds the flags, so it stays testable without a widget.
+/// Turns Stage Mode on and off, tracks HUD visibility, Stage Lock, and Stage Quiet Mode.
 class StageModeNotifier extends Notifier<StageModeState> {
   @override
   StageModeState build() => const StageModeState();
 
-  /// Goes full screen. The HUD starts visible so the way back out is on screen
-  /// straight away — the app bar with its back arrow is gone by then.
+  /// Goes full screen.
   void enter() {
     if (state.enabled) return;
     state = const StageModeState(enabled: true, hudVisible: true);
+    if (state.isQuietMode) {
+      ref.read(stageQuietModeServiceProvider).enableQuietMode();
+    }
   }
 
-  /// Leaves full screen and forgets the HUD.
+  /// Leaves full screen and restores system states.
   void exit() {
     if (!state.enabled) return;
+    if (state.isQuietMode) {
+      ref.read(stageQuietModeServiceProvider).disableQuietMode();
+    }
     state = const StageModeState();
   }
 
   /// Enter or leave in one call.
   void toggle() => state.enabled ? exit() : enter();
 
-  /// Shows the control bar (a single tap, or any button press).
+  /// Lock Stage view to prevent accidental screen touches.
+  void lockStage() {
+    state = state.copyWith(isLocked: true, hudVisible: false);
+  }
+
+  /// Authenticates using biometric/PIN to unlock Stage view.
+  Future<bool> unlockStageWithAuth({
+    String reason = 'Authenticate to unlock Stage View',
+  }) async {
+    final security = ref.read(stageSecurityServiceProvider);
+    final isAvailable = await security.isSecurityAvailable();
+    if (!isAvailable) {
+      // Fallback: unlock directly if no hardware lock is set up
+      state = state.copyWith(isLocked: false, hudVisible: true);
+      return true;
+    }
+
+    final result = await security.authenticate(reason: reason);
+    if (result.isSuccess) {
+      state = state.copyWith(isLocked: false, hudVisible: true);
+      return true;
+    }
+    return false;
+  }
+
+  /// Toggles Stage Quiet Mode on/off.
+  Future<void> toggleQuietMode() async {
+    final newQuiet = !state.isQuietMode;
+    state = state.copyWith(isQuietMode: newQuiet);
+    final quietService = ref.read(stageQuietModeServiceProvider);
+    if (state.enabled) {
+      if (newQuiet) {
+        await quietService.enableQuietMode();
+      } else {
+        await quietService.disableQuietMode();
+      }
+    }
+  }
+
+  /// Shows the control bar.
   void showHud() {
-    if (!state.enabled || state.hudVisible) return;
+    if (!state.enabled || state.hudVisible || state.isLocked) return;
     state = state.copyWith(hudVisible: true);
   }
 
-  /// Hides the control bar (the auto-hide timer, or a second tap).
+  /// Hides the control bar.
   void hideHud() {
     if (!state.hudVisible) return;
     state = state.copyWith(hudVisible: false);
   }
 
   /// What a single tap does: show the bar if it is away, hide it if it is up.
-  void toggleHud() => state.hudVisible ? hideHud() : showHud();
+  void toggleHud() {
+    if (state.isLocked) return;
+    state.hudVisible ? hideHud() : showHud();
+  }
 }
 
 /// The live Stage Mode state.

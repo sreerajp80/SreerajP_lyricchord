@@ -17,6 +17,7 @@ import 'package:lyricchord/screens/setlist_list_screen.dart';
 import 'package:lyricchord/services/chord_pro_service.dart';
 import 'package:lyricchord/services/html_pdf_service.dart';
 import 'package:lyricchord/services/pdf_export_service.dart';
+import 'package:lyricchord/screens/air_qr_transmitter_screen.dart';
 import 'package:lyricchord/widgets/empty_songbook.dart';
 import 'package:lyricchord/widgets/song_card.dart';
 import 'package:lyricchord/widgets/song_filter_row.dart';
@@ -77,6 +78,11 @@ class SongListScreen extends ConsumerWidget {
                         _exportSelectedChordPro(context, ref, songs),
                   ),
                   IconButton(
+                    icon: const Icon(Icons.qr_code_2_rounded),
+                    tooltip: 'Share selected via AirQR',
+                    onPressed: () => _shareSelectedAirQr(context, ref, songs),
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.share_outlined),
                     tooltip: 'Share selected',
                     onPressed: () => _shareSelected(context, ref, songs),
@@ -99,6 +105,11 @@ class SongListScreen extends ConsumerWidget {
                   ),
                 ]
               : [
+                  IconButton(
+                    icon: const Icon(Icons.qr_code_scanner_rounded),
+                    tooltip: 'Scan AirQR Song',
+                    onPressed: () => context.push('/air-qr-receive'),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.settings_outlined),
                     tooltip: 'Settings',
@@ -223,6 +234,8 @@ class SongListScreen extends ConsumerWidget {
         fileName: selectedSongs.length == 1
             ? '${safeFileName(selectedSongs.first.title)}.chordpro'
             : 'selected_songs.chordpro',
+        type: FileType.custom,
+        allowedExtensions: const ['chordpro'],
         bytes: Uint8List.fromList(utf8.encode(text)),
       );
       if (context.mounted && path != null) {
@@ -500,6 +513,26 @@ class SongListScreen extends ConsumerWidget {
     } on AppException catch (e) {
       if (context.mounted) _showError(context, e.message);
     }
+  }
+
+  void _shareSelectedAirQr(
+    BuildContext context,
+    WidgetRef ref,
+    List<SongNote> songs,
+  ) {
+    final selectedIds = ref.read(multiSongSelectionProvider);
+    final selected = songs.where((s) => selectedIds.contains(s.id)).toList();
+    if (selected.isEmpty) return;
+
+    const service = ChordProService();
+    final text = service.formatMultiple(selected);
+    context.push(
+      '/air-qr-transmit',
+      extra: AirQrTransmitterArgs(
+        title: '${selected.length} Selected Songs',
+        chordProPayload: text,
+      ),
+    );
   }
 
   void _showError(BuildContext context, String message) {

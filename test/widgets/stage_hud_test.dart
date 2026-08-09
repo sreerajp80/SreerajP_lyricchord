@@ -9,7 +9,12 @@ import 'package:lyricchord/widgets/stage_hud.dart';
 void main() {
   late ProviderContainer container;
 
-  Future<void> pumpHud(WidgetTester tester, {bool visible = true}) async {
+  Future<void> pumpHud(
+    WidgetTester tester, {
+    bool visible = true,
+    String? raga,
+    String? tala,
+  }) async {
     container = ProviderContainer();
     addTearDown(container.dispose);
     container.read(stageModeProvider.notifier).enter();
@@ -24,6 +29,8 @@ void main() {
               title: 'Jingle Bells',
               currentKey: 'G',
               bpm: 120,
+              raga: raga,
+              tala: tala,
             ),
           ),
         ),
@@ -41,6 +48,26 @@ void main() {
     expect(find.textContaining('Key G'), findsOneWidget);
     expect(find.textContaining('120 BPM'), findsOneWidget);
     expect(find.text('1.00x'), findsOneWidget);
+  });
+
+  testWidgets('a raga song shows raga and tala instead of a key', (
+    tester,
+  ) async {
+    await pumpHud(tester, raga: 'Mishra Gara', tala: 'Keherwa');
+
+    expect(find.textContaining('Raga Mishra Gara'), findsOneWidget);
+    expect(find.textContaining('Tala Keherwa'), findsOneWidget);
+    expect(find.textContaining('120 BPM'), findsOneWidget);
+    // A Western note letter has no place on a swara sheet.
+    expect(find.textContaining('Key G'), findsNothing);
+  });
+
+  testWidgets('a raga song with no tala still hides the key', (tester) async {
+    await pumpHud(tester, raga: 'Hamsadhvani');
+
+    expect(find.textContaining('Raga Hamsadhvani'), findsOneWidget);
+    expect(find.textContaining('Tala'), findsNothing);
+    expect(find.textContaining('Key G'), findsNothing);
   });
 
   testWidgets('the exit button leaves Stage Mode but not the song', (

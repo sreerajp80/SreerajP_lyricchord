@@ -1,6 +1,6 @@
 # Change Log: Share selected song(s) as ChordPro or PDF
 
-**Plan reference:** [plans/20260728_072045_share-selected-songs.md](file:///l:/Android/SreerajP_lyricchord/plans/20260728_072045_share-selected-songs.md)
+**Plan reference:** [plans/20260728_072045_share-selected-songs.md](../plans/20260728_072045_share-selected-songs.md)
 
 ## Summary
 

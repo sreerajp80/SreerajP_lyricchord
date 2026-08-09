@@ -67,12 +67,28 @@ class ChordSheetView extends StatelessWidget {
       );
     }
 
+    // A swaram is read as a grid of beats, so it uses the fixed-width chord
+    // font and never wraps. It is drawn at the chord badge size, with no extra
+    // letter spacing, so a long phrase stays on screen — the ` - ` beat dashes
+    // already separate the swaras.
+    final swaramStyle = TextStyle(
+      fontSize: fontSize * 0.8,
+      fontFamily: 'monospace',
+      height: 1.15,
+      color: theme.colorScheme.primary,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final line in lines)
           if (line.isBlank)
             SizedBox(height: fontSize)
+          else if (line.kind == ChordLineKind.swaram)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: _SwaramLine(text: line.text, style: swaramStyle),
+            )
           else
             Padding(
               padding: const EdgeInsets.only(bottom: 2),
@@ -84,6 +100,27 @@ class ChordSheetView extends StatelessWidget {
               ),
             ),
       ],
+    );
+  }
+}
+
+/// A swaram passage: one unbroken fixed-width row.
+///
+/// Wrapping a swaram in the middle would break the beat grid and make it
+/// unreadable, so a long phrase scrolls sideways on its own instead. The
+/// horizontal scroll does not fight the sheet's vertical auto-scroll — they
+/// are different axes, so each gesture goes to only one of them.
+class _SwaramLine extends StatelessWidget {
+  const _SwaramLine({required this.text, required this.style});
+
+  final String text;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Text(text, style: style, softWrap: false, maxLines: 1),
     );
   }
 }

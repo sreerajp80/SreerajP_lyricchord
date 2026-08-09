@@ -18,6 +18,7 @@ import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/lyric_font_provider.dart';
 import 'package:lyricchord/providers/performance_provider.dart';
+import 'package:lyricchord/providers/pitch_drone_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
@@ -27,6 +28,7 @@ import 'package:lyricchord/services/chord_sheet_parser.dart';
 import 'package:lyricchord/services/chord_transposer.dart';
 import 'package:lyricchord/services/html_pdf_service.dart';
 import 'package:lyricchord/services/pdf_export_service.dart';
+import 'package:lyricchord/services/swara_notation_service.dart';
 import 'package:lyricchord/widgets/chord_reference_dialog.dart';
 import 'package:lyricchord/widgets/chord_sheet_view.dart';
 import 'package:lyricchord/widgets/performance_controls.dart';
@@ -34,6 +36,7 @@ import 'package:lyricchord/widgets/stage_gesture_layer.dart';
 import 'package:lyricchord/widgets/stage_help_overlay.dart';
 import 'package:lyricchord/widgets/stage_hud.dart';
 import 'package:lyricchord/widgets/transpose_sheet.dart';
+import 'package:lyricchord/screens/air_qr_transmitter_screen.dart';
 
 /// Read and perform a song: the chord sheet plus the Performance Controls.
 ///
@@ -168,10 +171,19 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
     }
   }
 
-  /// Back in Stage Mode leaves Stage Mode, not the song. A second Back then
-  /// goes to the songbook as usual.
+  /// Back in Stage Mode leaves Stage Mode, not the song (or prompts auth unlock if locked).
+  /// A second Back then goes to the songbook as usual.
   void _onBack(bool didPop, Object? result) {
     if (didPop) return;
+    final stageState = ref.read(stageModeProvider);
+    if (stageState.isLocked) {
+      ref
+          .read(stageModeProvider.notifier)
+          .unlockStageWithAuth(
+            reason: 'Authenticate to unlock Stage Mode and exit',
+          );
+      return;
+    }
     ref.read(stageModeProvider.notifier).exit();
   }
 
@@ -572,6 +584,7 @@ class _SongPageState extends ConsumerState<_SongPage>
   static const ChordSheetParser _parser = ChordSheetParser();
   static const ChordTransposer _transposer = ChordTransposer();
   static const AutoScrollCalculator _calc = AutoScrollCalculator();
+  static const SwaraNotation _swara = SwaraNotation();
 
   final ScrollController _scrollController = ScrollController();
   late final Ticker _ticker;
@@ -645,7 +658,11 @@ class _SongPageState extends ConsumerState<_SongPage>
     if (settings.mode == AutoScrollMode.manual) {
       return _calc.manualPixelsPerSecond(settings.speed);
     }
-    final duration = _calc.tempoDuration(_bpm, settings.measures);
+    final duration = _calc.tempoDuration(
+      _bpm,
+      settings.measures,
+      beatsPerMeasure: settings.beatsPerMeasure,
+    );
     return _calc.tempoPixelsPerSecond(maxExtent, duration);
   }
 
@@ -661,8 +678,16 @@ class _SongPageState extends ConsumerState<_SongPage>
   /// Done after the frame because a provider must not be changed while widgets
   /// are building. Only the song on screen does this — pre-built neighbours in
   /// the pager must not take over the live settings.
-  void _loadScrollSettingsAfterFrame(SongNote song) {
+  void _loadScrollSettingsAfterFrame(SongNote song, ParsedSheet sheet) {
     if (!widget.active) return;
+
+    // An Indian song's cycle is its tala, not 4/4 — Adi is 8 beats. An unknown
+    // or missing tala falls back to common time.
+    final tala = sheet.tala;
+    final beats = tala == null
+        ? AutoScrollSettings.defaultBeatsPerMeasure
+        : _swara.talaBeats(tala) ?? AutoScrollSettings.defaultBeatsPerMeasure;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.active) return;
       ref
@@ -671,6 +696,7 @@ class _SongPageState extends ConsumerState<_SongPage>
             song.id,
             speed: song.scrollSpeed,
             measures: song.scrollMeasures,
+            beatsPerMeasure: beats,
           );
     });
   }
@@ -704,13 +730,15 @@ class _SongPageState extends ConsumerState<_SongPage>
         if (song == null) return const _MissingSong();
 
         _bpm = song.bpm;
-        _loadScrollSettingsAfterFrame(song);
         final lyrics = _transposer.transposeLyrics(
           song.lyrics,
           settings.semitones,
           song.key,
         );
-        final lines = _parser.parse(lyrics);
+        final sheet = _parser.parseSheet(lyrics);
+        final lines = sheet.lines;
+        // After parsing, so the song's tala can set the Tempo-Auto beat count.
+        _loadScrollSettingsAfterFrame(song, sheet);
         final currentKey = _transposer.transposeKey(
           song.key,
           settings.semitones,
@@ -726,6 +754,8 @@ class _SongPageState extends ConsumerState<_SongPage>
             title: song.title,
             currentKey: currentKey,
             bpm: song.bpm,
+            raga: sheet.raga,
+            tala: sheet.tala,
             hudVisible: stage.hudVisible,
           );
         }
@@ -743,6 +773,8 @@ class _SongPageState extends ConsumerState<_SongPage>
               bpm: song.bpm,
               active: widget.active,
               showFullScreenButton: !widget.embedded,
+              raga: sheet.raga,
+              tala: sheet.tala,
             ),
             Expanded(child: _sheet(settings, lines)),
           ],
@@ -788,7 +820,9 @@ class _SongPageState extends ConsumerState<_SongPage>
               : const EdgeInsets.fromLTRB(16, 8, 16, 48),
           child: ChordSheetView(
             lines: lines,
-            fontSize: settings.fontSize,
+            fontSize:
+                settings.fontSize *
+                ref.watch(pitchDroneProvider.select((s) => s.fontScaleFactor)),
             showChords: settings.showChords,
             lyricFontFamily: ref.watch(lyricFontProvider).family,
           ),
@@ -805,6 +839,8 @@ class _SongPageState extends ConsumerState<_SongPage>
     required String title,
     required String currentKey,
     required int bpm,
+    required String? raga,
+    required String? tala,
     required bool hudVisible,
   }) {
     final helpSeen = ref.watch(stageHelpSeenProvider);
@@ -821,6 +857,8 @@ class _SongPageState extends ConsumerState<_SongPage>
             title: title,
             currentKey: currentKey,
             bpm: bpm,
+            raga: raga,
+            tala: tala,
           ),
         ),
         if (!helpSeen)
@@ -881,12 +919,14 @@ class _OverflowMenu extends ConsumerWidget {
   final int? songId;
 
   static const ChordTransposer _transposer = ChordTransposer();
+  static const ChordSheetParser _parser = ChordSheetParser();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final id = songId;
     final song = id == null ? null : ref.watch(songByIdProvider(id)).value;
-    final semitones = ref.watch(performanceSettingsProvider).semitones;
+    final settings = ref.watch(performanceSettingsProvider);
+    final semitones = settings.semitones;
 
     return PopupMenuButton<VoidCallback>(
       tooltip: 'More options',
@@ -896,7 +936,14 @@ class _OverflowMenu extends ConsumerWidget {
           enabled: song != null,
           value: song == null
               ? null
-              : () => showTransposeSheet(context, writtenKey: song.key),
+              : () => showTransposeSheet(
+                  context,
+                  writtenKey: song.key,
+                  // A swara sheet has nothing to transpose.
+                  showTranspose: !_parser
+                      .parseSheet(song.lyrics)
+                      .isIndianNotation,
+                ),
           child: const ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
@@ -957,6 +1004,11 @@ class _OverflowMenu extends ConsumerWidget {
   /// transpose amount, works out the chords in the key the sheet sounds in, and
   /// opens the diagrams dialog. It is disabled when there is no song or the song
   /// has no chords.
+  ///
+  /// A song written in swaras gets the **Swara Reference** instead: the same
+  /// item, but it opens keyboards showing where each swara sits, not chord
+  /// shapes. Before this, it drew a C major chord for `Sa` and a G major for
+  /// `Ga` — confident and wrong.
   PopupMenuItem<VoidCallback> _chordReferenceItem(
     BuildContext context,
     WidgetRef ref,
@@ -964,20 +1016,40 @@ class _OverflowMenu extends ConsumerWidget {
     final id = songId;
     final song = id == null ? null : ref.watch(songByIdProvider(id)).value;
     final settings = ref.watch(performanceSettingsProvider);
-    final chords = song == null
+    final indian =
+        song != null && _parser.parseSheet(song.lyrics).isIndianNotation;
+
+    final markers = song == null
         ? const <String>[]
         : _transposer.chordsUsed(song.lyrics, settings.semitones, song.key);
+    // A reference reads best as a scale, so swaras are ordered low to high
+    // rather than in order of appearance.
+    final chords = indian ? _sortedByPitch(markers) : markers;
 
     return PopupMenuItem<VoidCallback>(
       enabled: chords.isNotEmpty,
-      value: () => showChordReferenceDialog(context, chords: chords),
-      child: const ListTile(
+      value: () =>
+          showChordReferenceDialog(context, chords: chords, swaraMode: indian),
+      child: ListTile(
         dense: true,
         contentPadding: EdgeInsets.zero,
-        leading: Icon(Icons.piano_outlined),
-        title: Text('Chord Reference Guide'),
+        leading: const Icon(Icons.piano_outlined),
+        title: Text(indian ? 'Swara Reference' : 'Chord Reference Guide'),
       ),
     );
+  }
+
+  /// [swaras] ordered by how far above Sa they sit. Anything unplaceable keeps
+  /// its position at the end rather than being dropped.
+  List<String> _sortedByPitch(List<String> swaras) {
+    const notation = SwaraNotation();
+    final sorted = [...swaras];
+    sorted.sort((a, b) {
+      final left = notation.swaraPosition(a) ?? 99;
+      final right = notation.swaraPosition(b) ?? 99;
+      return left.compareTo(right);
+    });
+    return sorted;
   }
 
   Future<void> _showExportDialog(
@@ -1068,6 +1140,10 @@ class _OverflowMenu extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     RadioListTile<String>(
+                      title: Text('AirQR Stream (Animated QR)'),
+                      value: 'airqr',
+                    ),
+                    RadioListTile<String>(
                       title: Text('ChordPro (.chordpro)'),
                       value: 'chordpro',
                     ),
@@ -1097,7 +1173,14 @@ class _OverflowMenu extends ConsumerWidget {
 
     if (result == null || !context.mounted) return;
 
-    if (result == 'chordpro') {
+    if (result == 'airqr') {
+      const service = ChordProService();
+      final text = service.format(song, semitones: semitones);
+      context.push(
+        '/air-qr-transmit',
+        extra: AirQrTransmitterArgs(title: song.title, chordProPayload: text),
+      );
+    } else if (result == 'chordpro') {
       await _shareChordPro(context, song, semitones);
     } else if (result == 'pdf') {
       await _sharePdf(context, song, semitones, font);
@@ -1248,6 +1331,8 @@ class _OverflowMenu extends ConsumerWidget {
       final path = await FilePicker.platform.saveFile(
         dialogTitle: 'Export as PDF',
         fileName: '${safeFileName(song.title)}.pdf',
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
         bytes: bytes,
       );
       if (path != null) {
@@ -1286,6 +1371,8 @@ class _OverflowMenu extends ConsumerWidget {
       final path = await FilePicker.platform.saveFile(
         dialogTitle: 'Export as ChordPro',
         fileName: '${safeFileName(song.title)}.chordpro',
+        type: FileType.custom,
+        allowedExtensions: const ['chordpro'],
         bytes: Uint8List.fromList(utf8.encode(text)),
       );
       if (context.mounted && path != null) {

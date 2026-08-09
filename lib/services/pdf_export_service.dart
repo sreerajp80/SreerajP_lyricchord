@@ -74,12 +74,13 @@ class PdfExportService {
       song.key,
     );
     final key = _transposer.transposeKey(song.key, semitones);
-    final lines = _parser.parse(lyrics);
+    final sheet = _parser.parseSheet(lyrics);
+    final lines = sheet.lines;
 
     final css = await _buildCss(font);
 
     final body = StringBuffer()
-      ..write(_header(song, key))
+      ..write(_header(song, key, sheet))
       ..write('<hr class="rule">')
       ..write(_lyricsBlock(lines));
 
@@ -109,10 +110,11 @@ class PdfExportService {
 
     for (var i = 0; i < songs.length; i++) {
       final song = songs[i];
-      final lines = _parser.parse(song.lyrics);
+      final sheet = _parser.parseSheet(song.lyrics);
+      final lines = sheet.lines;
 
       body.write('<div class="song-container">');
-      body.write(_header(song, song.key));
+      body.write(_header(song, song.key, sheet));
       body.write('<hr class="rule">');
       body.write(_lyricsBlock(lines));
       body.write('</div>');
@@ -164,10 +166,9 @@ class PdfExportService {
 
     return '''
 $faces
-/* The page size and the margins come only from the native print attributes
-   (see HtmlPdfService / LcHtmlToPdf), because the page width is chosen from
-   the song itself. Setting them here as well would apply them twice. */
-@page { margin: 0; }
+/* Page size is set by native print attributes; page margins are set here in
+   @page so HTML content is offset from paper edges when printed. */
+@page { margin: 20pt; }
 html, body { margin: 0; padding: 0; }
 body { font-family: $stack; color: #000; line-height: 1.30; }
 .song-container { page-break-after: always; }
@@ -192,6 +193,11 @@ body { font-family: $stack; color: #000; line-height: 1.30; }
   white-space: pre;
 }
 .piece .word { font-size: 1em; white-space: pre; }
+/* A swaram passage: fixed-width so the beats line up, and kept on one row. */
+.swaram {
+  font-family: monospace; font-size: ${_lyricPt}pt; color: $_accent;
+  letter-spacing: 0.06em; white-space: pre; margin: 0 0 3pt 0;
+}
 ''';
   }
 
@@ -304,16 +310,33 @@ body { font-family: $stack; color: #000; line-height: 1.30; }
 
   // --- Header ---------------------------------------------------------------
 
-  String _header(SongNote song, String key) {
+  String _header(SongNote song, String key, ParsedSheet sheet) {
     final b = StringBuffer()
       ..write('<h1 class="title">${_esc(song.title)}</h1>');
     if (song.artist.trim().isNotEmpty) {
       b.write('<p class="artist">${_esc(song.artist)}</p>');
     }
+    // An Indian sheet prints no key. A Western note letter has no place on it,
+    // and a swara is already named relative to Sa. The raga and tala below say
+    // what the song is.
     b.write(
-      '<p class="meta">Key: ${_esc(key)}&nbsp;&nbsp;&nbsp;&nbsp;'
-      'BPM: ${song.bpm}</p>',
+      sheet.isIndianNotation
+          ? '<p class="meta">BPM: ${song.bpm}</p>'
+          : '<p class="meta">Key: ${_esc(key)}&nbsp;&nbsp;&nbsp;&nbsp;'
+                'BPM: ${song.bpm}</p>',
     );
+
+    // The raga and tala are song information, not lyrics, so they belong in
+    // the header rather than on the sheet.
+    final parts = [
+      if (sheet.raga != null && sheet.raga!.isNotEmpty)
+        'Raga: ${_esc(sheet.raga!)}',
+      if (sheet.tala != null && sheet.tala!.isNotEmpty)
+        'Tala: ${_esc(sheet.tala!)}',
+    ];
+    if (parts.isNotEmpty) {
+      b.write('<p class="meta">${parts.join('&nbsp;&nbsp;&nbsp;&nbsp;')}</p>');
+    }
     return b.toString();
   }
 
@@ -324,6 +347,12 @@ body { font-family: $stack; color: #000; line-height: 1.30; }
     for (final line in lines) {
       if (line.isBlank) {
         b.write('<div class="blank"></div>');
+        continue;
+      }
+      // A swaram only reads correctly when the beats line up, so it prints as
+      // one fixed-width row instead of being split into chord/word pieces.
+      if (line.kind == ChordLineKind.swaram) {
+        b.write('<div class="swaram">${_esc(line.text)}</div>');
         continue;
       }
       b.write('<div class="line">');

@@ -24,8 +24,38 @@ class FakeSongRepository implements SongRepository {
       _nextId =
           initial.fold<int>(0, (maxId, s) => s.id > maxId ? s.id : maxId) + 1;
 
-  /// The three seeded songs, matching what the real database ships with.
+  /// The seeded songs, matching what the real database ships with.
   factory FakeSongRepository.seeded() => FakeSongRepository([
+    const SongNote(
+      id: 6,
+      title: 'Krishna Nee Begane Baro (Raga Yamunakalyani)',
+      artist: 'Vyasatirtha',
+      lyrics: '{raga: Yamunakalyani}\n[Sa]Krishna nee be[Ma]gane baro [Sa]',
+      key: 'E',
+      bpm: 68,
+      timestamp: 6,
+    ),
+    const SongNote(
+      id: 5,
+      title: 'Raghupati Raghava Raja Ram (Raga Mishra Gara)',
+      artist: 'Traditional Bhajan',
+      lyrics:
+          '{raga: Mishra Gara}\n'
+          '[Sa]Raghupati [Pa]Raghava [Ma]Raja [Sa]Ram',
+      key: 'D',
+      bpm: 84,
+      timestamp: 5,
+    ),
+    const SongNote(
+      id: 4,
+      title: 'Vathapi Ganapathim (Raga Hamsadhvani)',
+      artist: 'Muthuswami Dikshitar',
+      lyrics: '{raga: Hamsadhvani}\n[Sa]Vathapi Gana[Pa]pathim Bha[Sa]jeham',
+      key: 'C',
+      bpm: 72,
+      favorite: true,
+      timestamp: 4,
+    ),
     const SongNote(
       id: 3,
       title: 'Jingle Bells',

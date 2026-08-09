@@ -37,7 +37,12 @@ class AutoScrollControls extends ConsumerWidget {
     final isTempo = settings.mode == AutoScrollMode.tempo;
     // Tempo cannot play until we have a real length (positive bpm + measures).
     final tempoReady =
-        _calc.tempoDuration(bpm, settings.measures) != Duration.zero;
+        _calc.tempoDuration(
+          bpm,
+          settings.measures,
+          beatsPerMeasure: settings.beatsPerMeasure,
+        ) !=
+        Duration.zero;
     final canPlay = !isTempo || tempoReady;
 
     // A Wrap, not a Row, so the row cannot overflow. On a normal phone both

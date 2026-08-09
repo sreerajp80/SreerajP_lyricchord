@@ -1,5 +1,6 @@
 package `in`.sreerajp.lyricchord
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.print.LcHtmlToPdf
@@ -61,6 +62,41 @@ class MainActivity : FlutterActivity() {
                 "getInitialFile" -> {
                     val fileData = extractFileData(intent, force = false)
                     result.success(fileData)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        val quietChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "in.sreerajp.lyricchord/quiet_mode")
+        var previousRingerMode: Int? = null
+        quietChannel.setMethodCallHandler { call, result ->
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+            if (audioManager == null) {
+                result.success(false)
+                return@setMethodCallHandler
+            }
+            when (call.method) {
+                "enableQuietMode" -> {
+                    try {
+                        if (previousRingerMode == null) {
+                            previousRingerMode = audioManager.ringerMode
+                        }
+                        audioManager.ringerMode = android.media.AudioManager.RINGER_MODE_SILENT
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
+                "disableQuietMode" -> {
+                    try {
+                        previousRingerMode?.let { mode ->
+                            audioManager.ringerMode = mode
+                            previousRingerMode = null
+                        }
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
                 }
                 else -> result.notImplemented()
             }

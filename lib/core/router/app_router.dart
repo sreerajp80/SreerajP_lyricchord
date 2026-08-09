@@ -10,6 +10,7 @@ import 'package:lyricchord/screens/help/help_screen.dart';
 import 'package:lyricchord/screens/home_shell.dart';
 import 'package:lyricchord/screens/import_export_screen.dart';
 import 'package:lyricchord/screens/metronome_settings_screen.dart';
+import 'package:lyricchord/screens/pitch_drone_settings_screen.dart';
 import 'package:lyricchord/screens/setlist_detail_screen.dart';
 import 'package:lyricchord/screens/setlist_list_screen.dart';
 import 'package:lyricchord/screens/settings_screen.dart';
@@ -21,6 +22,8 @@ import 'package:lyricchord/screens/import_settings_screen.dart';
 
 import 'package:lyricchord/models/import_preview_args.dart';
 import 'package:lyricchord/screens/import_preview_screen.dart';
+import 'package:lyricchord/screens/air_qr_receiver_screen.dart';
+import 'package:lyricchord/screens/air_qr_transmitter_screen.dart';
 
 /// The app's routes.
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -35,6 +38,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => const HomeShell(),
     routes: [
       GoRoute(path: '/', builder: (context, state) => const HomeShell()),
+      GoRoute(
+        path: '/air-qr-transmit',
+        builder: (context, state) =>
+            AirQrTransmitterScreen(args: state.extra as AirQrTransmitterArgs),
+      ),
+      GoRoute(
+        path: '/air-qr-receive',
+        builder: (context, state) => const AirQrReceiverScreen(),
+      ),
       GoRoute(
         path: '/import-preview',
         builder: (context, state) =>
@@ -91,6 +103,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'metronome',
                 builder: (context, state) => const MetronomeSettingsScreen(),
+              ),
+              GoRoute(
+                path: 'pitch-drone',
+                builder: (context, state) => const PitchDroneSettingsScreen(),
               ),
             ],
           ),
