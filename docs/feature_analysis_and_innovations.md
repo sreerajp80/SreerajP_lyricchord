@@ -38,7 +38,7 @@ The following matrix categorizes all features into **Implemented**, **Partially 
 | Basic PDF Export        | `PdfExportService`, A4 single/multi page    | ✅ Implemented              |
 | Metronome Audio         | `MetronomeCalculator`, `MetronomeBeat`      | ✅ Implemented              |
 | Setlist Manager         | Reordering, song picker sheet               | ✅ Implemented              |
-| Pitch Pipe & Drone      | `PcmSynthService`, Tanpura drone & pitch cue| ✅ Implemented              |
+| Pitch Pipe & Drone      | `PcmSynthService`, shruti box drone & pitch cue| ✅ Implemented           |
 | 5-Tier Font Scale       | `pitchDroneProvider`, dynamic 0.85x–1.30x    | ✅ Implemented              |
 | QR Songbook Sharing     | AirQR Fountain stream & camera receiver     | ✅ Implemented              |
 | Stage Lock & Security   | `StageSecurityService` & `StageQuietModeService` | ✅ Implemented          |
@@ -130,7 +130,8 @@ By integrating production-tested components and architectures from existing Flut
 #### 3.6 Procedural Pitch Pipe & Shruti Box Drone (`chronotune-smart-clock`) **[✅ Implemented]**
 * **Technology Leveraged:** PCM 16-bit stereo synthesis, multi-harmonic additive synthesis with ADSR envelope, and equal-power audio blending from [chronotune-smart-clock](file:///L:/Android/chronotune-smart-clock/docs/features.md).
 * **LyricChord Integration:**
-  * **Shruti Box Generator:** Real-time synthesized continuous Tanpura/Shruti drone (Root + Fifth / Fourth) in any key (C through B) for Indian classical or acoustic practice (`PcmSynthService`).
+  * **Shruti Box Generator:** Real-time synthesized continuous shruti box drone (Sa + Pa / Sa + Ma) in any of the twelve pitches, for Indian classical or acoustic practice (`PcmSynthService`). The two notes use pure just-intonation ratios (3:2 and 4:3), as a real drone instrument sounds — not equal temperament. It holds one steady pair of notes and **does not follow the melody**. Not a tanpura: a tanpura has four strings plucked in a cycle and its character comes from *jawari*, which this does not model.
+  * **Indian pitch naming:** because Sa is movable, the drone must be anchored to a real pitch. That anchor is named the way each tradition names it — `5 kattai` for Carnatic, `safed 5` for Hindustani, plain `G` for Western, with no Western letter shown on an Indian sheet. The song's tala decides which (`PitchNamingService`), and the singer's own Sa is set in Settings.
   * **Pitch Pipe Cuer:** 2-second synthesized pure tone cue for vocalists before starting a song.
   * **5-Tier Dynamic Font Scale:** Dynamic text scaling (0.85x to 1.30x) for screen readability on stage (`pitchDroneProvider`).
   * **Help Documentation:** Added under `Settings -> Help -> Pitch Pipe & Shruti Drone` (`help_content.dart`).
@@ -181,7 +182,7 @@ These features do not exist in mainstream market competitors (such as Ultimate G
 | 2. Acoustic Strum Page Turner    --> Low-Latency Offline Mic Pattern Recognition   |
 | 3. Stage HUD & Red Night Vision   --> Ambient Lux Sensor + Zero-Distraction View   |
 | 4. Synchronized Multi-Instrument  --> Parallel Guitar + Harmonium + Ukulele Visual |
-| 5. Offline Pitch Pipe & Drone     --> Built-in PCM Tanpura / Shruti Box Generator  |
+| 5. Offline Pitch Pipe & Drone     --> Built-in PCM Shruti Box Generator            |
 | 6. Smart Capo Optimizer           --> Algorithmic Fingering Difficulty Minimizer  |
 | 7. Song Snapshot Revisions        --> Local Git-like Version Control History      |
 +-----------------------------------------------------------------------------------+
@@ -228,7 +229,7 @@ These features do not exist in mainstream market competitors (such as Ultimate G
 > **Why it's unique:** Vocalists and guitarists frequently start songs out of pitch when moving between songs in a setlist.
 
 * **Feature Mechanics:**
-  * **Shruti Box Drone Synthesizer:** Synthesizes continuous PCM stereo Tanpura/Shruti drone audio (Root + Fifth / Fourth) with multi-harmonic overtone warmth for practice and vocal alignment.
+  * **Shruti Box Drone Synthesizer:** Synthesizes continuous PCM stereo shruti box drone audio (Sa + Pa / Sa + Ma) with multi-harmonic overtone warmth for practice and vocal alignment. It is a reference, not an accompaniment — the drone never changes with the tune.
   * **Built-in Offline Pitch Cuer:** Synthesizes a clean 2-second reference pitch note when tapping a "Pitch Pipe" icon or upon opening a song in a setlist.
   * **Setlist Key Transition Alert:** Displays visual cues when consecutive songs in a setlist have jarring key jumps (e.g., `Song 1: G Major` → `Song 2: Eb Major`: warning badge reading *"Key Shift +8 semitones / Recommend Capo 1 (D shape)"*).
 
@@ -283,7 +284,7 @@ These features do not exist in mainstream market competitors (such as Ultimate G
 
 #### Milestone 0: Core Foundation & Sister Integrations (Completed ✅)
 * **AirQR P2P Sharing:** Fountain code streaming transmitter and live camera scanner (`AirQrService`, `AirQrTransmitterScreen`, `AirQrReceiverScreen`).
-* **Procedural Pitch Pipe & Drone:** Synthesized PCM 16-bit Tanpura continuous drone & pure vocal pitch cues (`PcmSynthService`, `pitchDroneProvider`).
+* **Procedural Pitch Pipe & Drone:** Synthesized PCM 16-bit shruti box drone & pure vocal pitch cues, named per tradition (`PcmSynthService`, `PitchDroneAudioService`, `PitchNamingService`, `pitchDroneProvider`).
 * **Stage Lock & Quiet Performance Mode:** Biometric/PIN screen lock overlay & DND notification silencing (`StageSecurityService`, `StageQuietModeService`).
 * **Core Songbook & Engine:** Transposition, smooth auto-scroll, chord reference diagrams (Guitar & Harmonium), ChordPro parser, and PDF printing.
 

@@ -1,34 +1,41 @@
-import 'dart:io';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/models/pitch_drone_settings.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
-import 'package:lyricchord/services/pcm_synth_service.dart';
+import 'package:lyricchord/services/pitch_drone_audio_service.dart';
 
 /// Riverpod notifier managing Pitch Pipe audio cues, Shruti Box drone state,
 /// dynamic 5-tier font scale, and persisting settings to `shared_preferences`.
+///
+/// The audio itself lives in [PitchDroneAudio]. This notifier only decides
+/// *what* should sound and records *whether it did* — it never touches an
+/// `AudioPlayer`, so a widget test can run the whole flow with a fake.
 class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
-  static const PcmSynthService _synth = PcmSynthService();
-  AudioPlayer? _cuePlayer;
-  AudioPlayer? _dronePlayer;
+  PitchDroneAudio get _audio => ref.read(pitchDroneAudioProvider);
+
+  /// The pitch the drone is sounding right now.
+  ///
+  /// Not the same as [PitchDroneSettings.selectedKey]: a song sheet can start
+  /// the drone on the song's own key without changing the saved default, and a
+  /// later interval change must stay on that key rather than jumping back.
+  String? _soundingKey;
 
   @override
   PitchDroneSettings build() {
     final prefs = ref.watch(sharedPreferencesProvider);
     const defaults = PitchDroneSettings();
 
-    ref.onDispose(() {
-      _cuePlayer?.dispose();
-      _dronePlayer?.dispose();
-    });
-
     return PitchDroneSettings(
       selectedKey:
           prefs.getString(AppConstants.prefPitchDroneKey) ??
           defaults.selectedKey,
+      saKey: prefs.getString(AppConstants.prefSaKey) ?? defaults.saKey,
+      pitchNaming: PitchTradition.fromStorage(
+        prefs.getString(AppConstants.prefPitchNaming),
+        fallback: defaults.pitchNaming,
+      ),
       droneInterval:
           prefs.getString(AppConstants.prefPitchDroneInterval) ??
           defaults.droneInterval,
@@ -49,18 +56,32 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
 
     // If drone is currently running, restart with the new key
     if (state.dronePlaying) {
-      await _startDrone();
+      await _startDrone(key);
     }
   }
 
-  /// Sets drone interval ('Pa' for 5th or 'Ma' for 4th).
+  /// Sets where the singer's Sa sits, as a pitch name.
+  Future<void> setSaKey(String key) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setString(AppConstants.prefSaKey, key);
+    state = state.copyWith(saKey: key);
+  }
+
+  /// Sets how pitches are named when a song's tradition is unclear.
+  Future<void> setPitchNaming(PitchTradition tradition) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setString(AppConstants.prefPitchNaming, tradition.storageKey);
+    state = state.copyWith(pitchNaming: tradition);
+  }
+
+  /// Sets drone interval ('Pa' for the fifth or 'Ma' for the fourth).
   Future<void> setDroneInterval(String interval) async {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString(AppConstants.prefPitchDroneInterval, interval);
     state = state.copyWith(droneInterval: interval);
 
     if (state.dronePlaying) {
-      await _startDrone();
+      await _startDrone(_soundingKey ?? state.selectedKey);
     }
   }
 
@@ -69,9 +90,7 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setDouble(AppConstants.prefPitchDroneVolume, volume);
     state = state.copyWith(volume: volume);
-
-    _cuePlayer?.setVolume(volume);
-    _dronePlayer?.setVolume(volume);
+    await _audio.setVolume(volume);
   }
 
   /// Sets 5-tier stage font scale index (0 to 4).
@@ -88,61 +107,57 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
     await setFontScaleIndex(nextIndex);
   }
 
-  /// Plays a synthesized 2-second reference pitch cue tone for [key].
-  Future<void> playPitchCue({String? key}) async {
-    final targetKey = key ?? state.selectedKey;
-    final wavBytes = _synth.generatePitchCueWav(noteKey: targetKey);
-
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/pitch_cue.wav');
-    await tempFile.writeAsBytes(wavBytes);
-
-    _cuePlayer ??= AudioPlayer();
-    await _cuePlayer!.stop();
-    await _cuePlayer!.setVolume(state.volume);
-    await _cuePlayer!.play(DeviceFileSource(tempFile.path));
+  /// Plays a synthesized reference pitch cue for [key].
+  ///
+  /// [key] is the pitch to sound and does **not** become the saved default —
+  /// a song opening on its own key must not overwrite the user's setting.
+  /// Returns false when no sound was produced, so the caller can say so.
+  Future<bool> playPitchCue({String? key}) async {
+    await _audio.setVolume(state.volume);
+    final played = await _audio.playCue(key ?? state.selectedKey);
+    state = played
+        ? state.copyWith(clearError: true)
+        : state.copyWith(lastError: 'Could not play the pitch cue.');
+    return played;
   }
 
-  /// Toggles continuous Shruti Box drone on or off.
-  Future<void> toggleDrone({String? key}) async {
+  /// Toggles the continuous Shruti Box drone. Returns false if starting failed.
+  Future<bool> toggleDrone({String? key}) async {
     if (state.dronePlaying) {
       await stopDrone();
-    } else {
-      if (key != null && key != state.selectedKey) {
-        final prefs = ref.read(sharedPreferencesProvider);
-        await prefs.setString(AppConstants.prefPitchDroneKey, key);
-        state = state.copyWith(selectedKey: key);
-      }
-      await _startDrone();
+      return true;
     }
+    return _startDrone(key ?? state.selectedKey);
   }
 
-  /// Starts continuous Shruti Box drone playback.
-  Future<void> _startDrone() async {
-    final wavBytes = _synth.generateShrutiDroneWav(
-      noteKey: state.selectedKey,
+  /// Starts the drone on [key]. Only reports playing when sound really began.
+  Future<bool> _startDrone(String key) async {
+    await _audio.setVolume(state.volume);
+    final started = await _audio.startDrone(
+      noteKey: key,
       interval: state.droneInterval,
     );
 
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/shruti_drone.wav');
-    await tempFile.writeAsBytes(wavBytes);
-
-    _dronePlayer ??= AudioPlayer();
-    await _dronePlayer!.stop();
-    await _dronePlayer!.setReleaseMode(ReleaseMode.loop);
-    await _dronePlayer!.setVolume(state.volume);
-    await _dronePlayer!.play(DeviceFileSource(tempFile.path));
-
-    state = state.copyWith(dronePlaying: true);
+    _soundingKey = started ? key : null;
+    state = started
+        ? state.copyWith(dronePlaying: true, clearError: true)
+        : state.copyWith(
+            dronePlaying: false,
+            lastError: 'Could not start the drone.',
+          );
+    return started;
   }
 
   /// Stops continuous Shruti Box drone playback.
   Future<void> stopDrone() async {
-    if (_dronePlayer != null) {
-      await _dronePlayer!.stop();
-    }
+    await _audio.stopDrone();
+    _soundingKey = null;
     state = state.copyWith(dronePlaying: false);
+  }
+
+  /// Clears [PitchDroneSettings.lastError] once the UI has shown it.
+  void clearError() {
+    if (state.lastError != null) state = state.copyWith(clearError: true);
   }
 }
 

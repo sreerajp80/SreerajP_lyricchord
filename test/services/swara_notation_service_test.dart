@@ -208,4 +208,46 @@ void main() {
       expect(swara.talaBeats('tala'), isNull);
     });
   });
+
+  group('full name with a variant digit', () {
+    const swara = SwaraNotation();
+
+    test('reads the same as the short letter form', () {
+      for (final pair in const [
+        ['Ma1', 'M1'],
+        ['Ma2', 'M2'],
+        ['Ri1', 'R1'],
+        ['Ri2', 'R2'],
+        ['Ri3', 'R3'],
+        ['Re2', 'R2'],
+        ['Ga1', 'G1'],
+        ['Ga3', 'G3'],
+        ['Dha2', 'D2'],
+        ['Ni3', 'N3'],
+      ]) {
+        expect(
+          swara.swaraPosition(pair[0]),
+          swara.swaraPosition(pair[1]),
+          reason: '${pair[0]} should equal ${pair[1]}',
+        );
+        expect(swara.swaraPosition(pair[0]), isNotNull, reason: pair[0]);
+      }
+    });
+
+    test('is case-insensitive', () {
+      expect(swara.swaraPosition('ma2'), 6);
+      expect(swara.swaraPosition('MA2'), 6);
+    });
+
+    test('a bare full name is still the plain row', () {
+      expect(swara.swaraPosition('Ma'), 5);
+      expect(swara.swaraPosition('Ri'), 2);
+      expect(swara.swaraPosition('Ga'), 4);
+    });
+
+    test('an unknown name with a digit is still unreadable', () {
+      expect(swara.swaraPosition('Xy2'), isNull);
+      expect(swara.swaraPosition('Ma9'), isNull);
+    });
+  });
 }

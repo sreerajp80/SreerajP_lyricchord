@@ -72,4 +72,39 @@ void main() {
 
     expect(find.textContaining('Key G'), findsOneWidget);
   });
+
+  group('pitch pipe button', () {
+    testWidgets('is on the ordinary song screen, not only in Stage Mode', (
+      tester,
+    ) async {
+      await pumpControls(tester);
+
+      expect(
+        find.byTooltip('Pitch pipe & shruti box'),
+        findsOneWidget,
+        reason: 'a singer needs a starting note without entering Stage Mode',
+      );
+    });
+
+    testWidgets('opens the sheet on the song key', (tester) async {
+      await pumpControls(tester, currentKey: 'G');
+
+      await tester.tap(find.byTooltip('Pitch pipe & shruti box'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Pitch Pipe & Shruti Box'), findsOneWidget);
+      expect(find.text('Song key:  G'), findsOneWidget);
+    });
+
+    testWidgets('passes the raga and tala through, so naming is Indian', (
+      tester,
+    ) async {
+      await pumpControls(tester, raga: 'Mishra Gara', tala: 'Keherwa');
+
+      await tester.tap(find.byTooltip('Pitch pipe & shruti box'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('safed'), findsWidgets);
+    });
+  });
 }

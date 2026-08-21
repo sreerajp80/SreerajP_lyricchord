@@ -35,9 +35,9 @@ class GeneralSettingsScreen extends StatelessWidget {
           ),
           _GeneralCard(
             icon: Icons.graphic_eq,
-            title: 'Pitch Pipe & Shruti Drone',
+            title: 'Pitch Pipe & Shruti Box',
             subtitle:
-                'Synthesized reference pitch tones and continuous Tanpura drone',
+                'Reference pitch tones, a steady drone, and your Sa (kattai)',
             onTap: () => context.push('/settings/general/pitch-drone'),
           ),
         ],

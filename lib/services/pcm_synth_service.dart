@@ -1,6 +1,19 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+/// One tone in a rendered run: a pitch and how long it sounds.
+///
+/// A frequency of zero is silence that still takes up its time.
+class PcmTone {
+  /// Pitch in Hz, or zero for silence.
+  final double frequency;
+
+  /// How long this tone lasts.
+  final double durationSeconds;
+
+  const PcmTone({required this.frequency, required this.durationSeconds});
+}
+
 /// Procedural PCM 16-bit stereo/mono audio synthesizer.
 ///
 /// Ported directly from `chronotune-smart-clock` (`AudioEngine.kt`).
@@ -129,13 +142,123 @@ class PcmSynthService {
     return bytes.buffer.asUint8List();
   }
 
-  /// Synthesizes a continuous Tanpura / Shruti Box drone WAV buffer (Root + Pa/Ma).
+  /// Percussive envelope for a metronome click: instant attack, fast fall to
+  /// silence.
   ///
-  /// [interval]: 'Pa' (5th) or 'Ma' (4th).
+  /// [adsrEnvelope] is shaped for a long sung note (it sustains at 0.85), which
+  /// would make a click sound like a short beep. A click needs the opposite: a
+  /// ~1 ms rise so it starts sharply without a pop, then an exponential decay so
+  /// it is gone before the next beat. Returns 0.0–1.0.
+  static double clickEnvelope(int sampleIndex, int totalSamples) {
+    if (totalSamples <= 0) return 0.0;
+    final progress = (sampleIndex / totalSamples).clamp(0.0, 1.0);
+
+    // A very short rise avoids the click starting on a hard edge (which is
+    // heard as a crackle on some speakers).
+    const attackPortion = 0.03;
+    if (progress < attackPortion) return progress / attackPortion;
+
+    // Exponential fall. The factor 9 leaves the tail near silence at the end.
+    final decayProgress = (progress - attackPortion) / (1.0 - attackPortion);
+    return math.exp(-9.0 * decayProgress).clamp(0.0, 1.0);
+  }
+
+  /// Synthesizes one short metronome click as WAV bytes.
+  ///
+  /// A click is not a note: it is a ~30 ms blip that must be over well before
+  /// the next beat, even at a fast tempo (300 bpm leaves 200 ms). Mono, because
+  /// a beat should sit in the middle and not wander between ears.
+  ///
+  /// [frequency] sets the pitch — use a higher value for the accented beat 1 so
+  /// the ear can tell the bar start apart. [amplitude] is the peak level
+  /// (0.0–1.0) before the player's own volume is applied.
+  Uint8List generateClickWav({
+    double frequency = 1000.0,
+    double durationSeconds = 0.03,
+    double amplitude = 0.8,
+    int sampleRate = 44100,
+  }) {
+    final totalSamples = (sampleRate * durationSeconds).toInt();
+    const channels = 1;
+    const bitsPerSample = 16;
+    final dataSize = totalSamples * channels * (bitsPerSample ~/ 8);
+
+    final header = _buildWavHeader(
+      dataLength: dataSize,
+      sampleRate: sampleRate,
+      channels: channels,
+      bitsPerSample: bitsPerSample,
+    );
+
+    final bytes = ByteData(header.length + dataSize);
+    for (var i = 0; i < header.length; i++) {
+      bytes.setUint8(i, header[i]);
+    }
+
+    var offset = header.length;
+    final peak = 32767 * amplitude.clamp(0.0, 1.0);
+    for (var i = 0; i < totalSamples; i++) {
+      final t = i / sampleRate;
+      // Fundamental plus a quiet octave above: gives the click a bit of "tick"
+      // edge so it cuts through a guitar or a room without being loud.
+      final wave =
+          (math.sin(2 * math.pi * frequency * t) +
+              0.35 * math.sin(2 * math.pi * frequency * 2 * t)) /
+          1.35;
+      final sample = (wave * peak * clickEnvelope(i, totalSamples))
+          .clamp(-32768, 32767)
+          .toInt();
+      bytes.setInt16(offset, sample, Endian.little);
+      offset += 2;
+    }
+
+    return bytes.buffer.asUint8List();
+  }
+
+  /// Envelope for a looping drone: flat, with only a hair of fade at each end.
+  ///
+  /// [adsrEnvelope] is shaped for a note that begins and ends — it sinks to
+  /// silence over the last 5% of its length. On a buffer that loops, that turns
+  /// into a swell and dip on every pass, which a drone must not have: a drone is
+  /// meant to sit still so the ear can lean on it.
+  ///
+  /// So this holds 1.0 the whole way and fades only over about 5 ms at each
+  /// edge — long enough to stop the loop seam clicking, short enough that no
+  /// one hears it. Returns 0.0–1.0.
+  static double droneEnvelope(
+    int sampleIndex,
+    int totalSamples,
+    int sampleRate,
+  ) {
+    if (totalSamples <= 0) return 0.0;
+
+    final fade = math.min((sampleRate * 0.005).round(), totalSamples ~/ 2);
+    if (fade <= 0) return 1.0;
+
+    if (sampleIndex < fade) return sampleIndex / fade;
+    final fromEnd = totalSamples - 1 - sampleIndex;
+    if (fromEnd < fade) return (fromEnd / fade).clamp(0.0, 1.0);
+    return 1.0;
+  }
+
+  /// Synthesizes a continuous Shruti Box drone WAV buffer (Sa + Pa/Ma).
+  ///
+  /// [interval]: 'Pa' (the fifth) or 'Ma' (the fourth).
+  ///
+  /// **Not a tanpura.** A tanpura has four strings plucked in a cycle and takes
+  /// its shimmer from *jawari*, the string grazing a curved bridge. This is a
+  /// steady reed-style drone — a shruti box.
+  ///
+  /// The default length is two seconds, which matters for two reasons. It is
+  /// exactly three cycles of the 1.5 Hz tremolo, so the wobble lines up across
+  /// the loop seam. And at 2 s the buffer is ~350 KB, which fits inside the
+  /// roughly 1 MB a `SoundPool` sample is allowed — the drone has to play
+  /// through SoundPool because the plain media player never starts on some
+  /// devices (see `PitchDroneAudioService`).
   Uint8List generateShrutiDroneWav({
     required String noteKey,
     String interval = 'Pa',
-    double durationSeconds = 4.0,
+    double durationSeconds = 2.0,
     int sampleRate = 44100,
   }) {
     final rootFreq = getFrequency(noteKey);
@@ -163,7 +286,7 @@ class PcmSynthService {
 
     var offset = header.length;
     for (var i = 0; i < totalSamples; i++) {
-      final env = adsrEnvelope(i, totalSamples);
+      final env = droneEnvelope(i, totalSamples, sampleRate);
       // Gentle subtle 1.5Hz amplitude modulation simulating string vibration
       final tremolo =
           0.85 + 0.15 * math.sin(2 * math.pi * 1.5 * (i / sampleRate));
@@ -192,6 +315,80 @@ class PcmSynthService {
       offset += 2;
       bytes.setInt16(offset, rightSample, Endian.little);
       offset += 2;
+    }
+
+    return bytes.buffer.asUint8List();
+  }
+
+  /// Renders a run of tones back to back as one WAV.
+  ///
+  /// Used by the melody player. One file for the whole line, rather than one
+  /// file per note, because note timing has to be exact — starting a separate
+  /// sound for each note leaves an audible, uneven gap between them.
+  ///
+  /// A tone with a frequency of zero renders as silence but still takes its
+  /// time, so an unreadable beat leaves a gap in the right place instead of
+  /// pulling every later note earlier.
+  Uint8List generateSequenceWav({
+    required List<PcmTone> tones,
+    int sampleRate = 44100,
+    double amplitude = 0.7,
+  }) {
+    const channels = 2;
+    const bitsPerSample = 16;
+
+    final counts = tones
+        .map((t) => math.max(0, (sampleRate * t.durationSeconds).round()))
+        .toList(growable: false);
+    var totalSamples = 0;
+    for (final count in counts) {
+      totalSamples += count;
+    }
+    // An empty run still has to be a valid WAV, or the player reports a broken
+    // file rather than simply staying quiet.
+    if (totalSamples <= 0) totalSamples = 1;
+
+    final dataSize = totalSamples * channels * (bitsPerSample ~/ 8);
+    final header = _buildWavHeader(
+      dataLength: dataSize,
+      sampleRate: sampleRate,
+      channels: channels,
+      bitsPerSample: bitsPerSample,
+    );
+
+    final bytes = ByteData(header.length + dataSize);
+    for (var i = 0; i < header.length; i++) {
+      bytes.setUint8(i, header[i]);
+    }
+
+    var offset = header.length;
+    for (var t = 0; t < tones.length; t++) {
+      final tone = tones[t];
+      final count = counts[t];
+      if (count <= 0) continue;
+
+      for (var i = 0; i < count; i++) {
+        var left = 0;
+        var right = 0;
+
+        if (tone.frequency > 0) {
+          final env = adsrEnvelope(i, count);
+          final amp = 32767 * amplitude * env;
+          left = (harmonicSample(i, tone.frequency, sampleRate) * amp)
+              .clamp(-32768, 32767)
+              .toInt();
+          right =
+              (harmonicSample(i, tone.frequency * stereoDetune, sampleRate) *
+                      amp)
+                  .clamp(-32768, 32767)
+                  .toInt();
+        }
+
+        bytes.setInt16(offset, left, Endian.little);
+        offset += 2;
+        bytes.setInt16(offset, right, Endian.little);
+        offset += 2;
+      }
     }
 
     return bytes.buffer.asUint8List();

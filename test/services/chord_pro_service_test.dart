@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/services/chord_pro_service.dart';
 
@@ -142,6 +143,111 @@ void main() {
       expect(text.contains('{key: A}'), isTrue);
       expect(text.contains('[A]hi [D]there'), isTrue);
     });
+
+    test('an Indian song writes raga and tala instead of a key', () {
+      const song = SongNote(
+        title: 'X',
+        lyrics: '[Sa]la la',
+        key: 'E',
+        bpm: 68,
+        timestamp: 0,
+        raga: 'Yamunakalyani',
+        tala: 'Adi',
+        tradition: PitchTradition.carnatic,
+      );
+
+      final text = service.format(song);
+
+      // A swara sheet has no key. Writing one is meaningless, and on re-import
+      // it is a stray Western marker.
+      expect(text.contains('{key:'), isFalse);
+      expect(text.contains('{raga: Yamunakalyani}'), isTrue);
+      expect(text.contains('{tala: Adi}'), isTrue);
+    });
+
+    test('an old raga header inside the lyrics is not written twice', () {
+      // Songs written before raga became a column still carry the header line
+      // in their text. The columns are the source now, so the old copy goes.
+      const song = SongNote(
+        title: 'X',
+        lyrics: '{raga: Kalyani}\n{tala: Adi}\n[Sa]la la',
+        key: 'C',
+        bpm: 90,
+        timestamp: 0,
+        raga: 'Kalyani',
+        tala: 'Adi',
+        tradition: PitchTradition.carnatic,
+      );
+
+      final text = service.format(song);
+
+      expect('{raga:'.allMatches(text).length, 1);
+      expect('{tala:'.allMatches(text).length, 1);
+      expect(text.trim().endsWith('[Sa]la la'), isTrue);
+    });
+  });
+
+  group('raga and tala', () {
+    test('parse reads them and marks the song Carnatic', () {
+      final song = service.parse(
+        '{title: X}\n{raga: Kalyani}\n{tala: Adi}\n[Sa]la la',
+      );
+
+      expect(song.raga, 'Kalyani');
+      expect(song.tala, 'Adi');
+      expect(song.tradition, PitchTradition.carnatic);
+      expect(song.isIndian, isTrue);
+    });
+
+    test('a Hindustani tala makes the song Hindustani', () {
+      final song = service.parse(
+        '{title: X}\n{raga: Yaman}\n{tala: Keherwa}\n[Sa]la la',
+      );
+
+      expect(song.tradition, PitchTradition.hindustani);
+    });
+
+    test('a file with no raga stays Western', () {
+      final song = service.parse('{title: X}\n{key: G}\n[G]la la');
+
+      expect(song.raga, isEmpty);
+      expect(song.tradition, PitchTradition.western);
+      expect(song.isIndian, isFalse);
+    });
+
+    test('raga, tala and tradition survive an export/import round-trip', () {
+      const song = SongNote(
+        title: 'X',
+        lyrics: '[Sa]la la',
+        key: 'C',
+        bpm: 72,
+        timestamp: 0,
+        raga: 'Hamsadhvani',
+        tala: 'Adi',
+        tradition: PitchTradition.carnatic,
+      );
+
+      final back = service.parse(service.format(song));
+
+      expect(back.raga, 'Hamsadhvani');
+      expect(back.tala, 'Adi');
+      expect(back.tradition, PitchTradition.carnatic);
+      expect(back.lyrics, '[Sa]la la');
+    });
+
+    test('parseMultiple keeps each song\'s own raga and tala', () {
+      final songs = service.parseMultiple(
+        '{title: One}\n{raga: Kalyani}\n{tala: Adi}\n[Sa]la\n'
+        '{new_song}\n'
+        '{title: Two}\n{key: G}\n[G]la',
+      );
+
+      expect(songs, hasLength(2));
+      expect(songs.first.raga, 'Kalyani');
+      expect(songs.first.tradition, PitchTradition.carnatic);
+      expect(songs.last.raga, isEmpty);
+      expect(songs.last.tradition, PitchTradition.western);
+    });
   });
 
   group('round-trip (export then import)', () {
@@ -263,5 +369,61 @@ void main() {
         expect(parsedBack[1].lyrics, songs[1].lyrics);
       },
     );
+  });
+
+  group('melody lines', () {
+    const song = '''
+{title: Krishna Nee Begane Baro}
+{raga: Yamunakalyani}
+{tala: misra chapu}
+{tonic: 1 kattai}
+{tempo: 68}
+
+Pallavi:
+[Sa]Krishna nee be[Ma]gane baro [Sa]
+{melody} P ,  M2 | M2!G3~ ,  | R2 S
+''';
+
+    test('a melody line survives import', () {
+      final parsed = service.parse(song);
+      expect(
+        parsed.lyrics.contains('{melody} P ,  M2 | M2!G3~ ,  | R2 S'),
+        isTrue,
+      );
+    });
+
+    test('the tonic stays with the lyrics, not in a column', () {
+      final parsed = service.parse(song);
+      expect(parsed.lyrics.contains('{tonic: 1 kattai}'), isTrue);
+    });
+
+    test('the brace spelling is kept too', () {
+      final parsed = service.parse('{title: T}\n{melody: S R G}\n');
+      expect(parsed.lyrics.contains('{melody: S R G}'), isTrue);
+    });
+
+    test('export then import brings the melody back unchanged', () {
+      final parsed = service.parse(song);
+      final written = service.format(parsed);
+      final again = service.parse(written);
+      expect(again.lyrics, parsed.lyrics);
+      expect(
+        again.lyrics.contains('{melody} P ,  M2 | M2!G3~ ,  | R2 S'),
+        isTrue,
+      );
+      expect(again.lyrics.contains('{tonic: 1 kattai}'), isTrue);
+    });
+
+    test('transposing chords leaves the melody alone', () {
+      final parsed = service.parse(song);
+      final moved = service.format(parsed, semitones: 2);
+      expect(moved.contains('{melody} P ,  M2 | M2!G3~ ,  | R2 S'), isTrue);
+    });
+
+    test('a melody line survives a multi-song import', () {
+      final parsed = service.parseMultiple(song);
+      expect(parsed.single.lyrics.contains('{melody} P ,  M2'), isTrue);
+      expect(parsed.single.lyrics.contains('{tonic: 1 kattai}'), isTrue);
+    });
   });
 }

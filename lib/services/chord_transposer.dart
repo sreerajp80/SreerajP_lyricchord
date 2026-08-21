@@ -107,8 +107,19 @@ class ChordTransposer {
   /// `[Aa]` and `[Eha]`. The song has to decide, not the token: a lone `[D]` in
   /// a Western song really is a D chord, and nothing about that one token can
   /// tell the two apart.
-  String transposeLyrics(String lyrics, int semitones, String originalKey) {
-    if (_parser.parseSheet(lyrics).isIndianNotation) return lyrics;
+  ///
+  /// Pass [isIndian] from the song's stored `tradition` whenever the caller has
+  /// a saved song. Reading the `{raga: …}` line is only a fallback for text
+  /// that has no row yet, such as a file being imported: a misspelt header
+  /// (`{ragam: …}`) would otherwise make an Indian sheet look Western and get
+  /// its swaras rewritten.
+  String transposeLyrics(
+    String lyrics,
+    int semitones,
+    String originalKey, {
+    bool? isIndian,
+  }) {
+    if (isIndian ?? _parser.parseSheet(lyrics).isIndianNotation) return lyrics;
 
     final useFlats = useFlatsAfter(originalKey, semitones);
 
@@ -127,9 +138,14 @@ class ChordTransposer {
   /// written ones.
   ///
   /// An Indian sheet's markers are returned as written, for the same reason as
-  /// in [transposeLyrics].
-  List<String> chordsUsed(String lyrics, int semitones, String originalKey) {
-    if (_parser.parseSheet(lyrics).isIndianNotation) {
+  /// in [transposeLyrics]. [isIndian] works the same way there too.
+  List<String> chordsUsed(
+    String lyrics,
+    int semitones,
+    String originalKey, {
+    bool? isIndian,
+  }) {
+    if (isIndian ?? _parser.parseSheet(lyrics).isIndianNotation) {
       return _parser.chordsUsed(lyrics);
     }
 

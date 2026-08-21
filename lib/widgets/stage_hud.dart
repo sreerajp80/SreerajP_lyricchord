@@ -155,6 +155,8 @@ class StageHud extends ConsumerWidget {
                                   isScrollControlled: true,
                                   builder: (_) => PitchDroneControlsSheet(
                                     songKey: currentKey,
+                                    raga: raga,
+                                    tala: tala,
                                   ),
                                 );
                               },

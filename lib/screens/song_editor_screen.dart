@@ -4,12 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/core/utils/chord_insert.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/providers/custom_chords_provider.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/lyric_font_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
 import 'package:lyricchord/providers/song_editor_provider.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
+import 'package:lyricchord/services/pitch_naming_service.dart';
 import 'package:lyricchord/widgets/chord_inserter_bar.dart';
 import 'package:lyricchord/widgets/song_meta_fields.dart';
 
@@ -32,6 +34,8 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
   final _titleController = TextEditingController();
   final _artistController = TextEditingController();
   final _keyController = TextEditingController();
+  final _ragaController = TextEditingController();
+  final _talaController = TextEditingController();
   final _bpmController = TextEditingController();
   final _lyricsController = TextEditingController();
   final _lyricsFocus = FocusNode();
@@ -72,6 +76,8 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
       _titleController.text = draft.title;
       _artistController.text = draft.artist;
       _keyController.text = draft.key;
+      _ragaController.text = draft.raga;
+      _talaController.text = draft.tala;
       _bpmController.text = draft.bpmText;
       _lyricsController.text = draft.lyrics;
       _filled = true;
@@ -86,12 +92,31 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
     _titleController.dispose();
     _artistController.dispose();
     _keyController.dispose();
+    _ragaController.dispose();
+    _talaController.dispose();
     _bpmController.dispose();
     _lyricsController.dispose();
     _lyricsFocus.removeListener(_onLyricsFocusChange);
     _lyricsFocus.dispose();
     _undoController.dispose();
     super.dispose();
+  }
+
+  /// A note under the Tala field when the typed tala belongs to the other
+  /// tradition, or `null` when there is nothing to say.
+  ///
+  /// A warning only. Saving is never blocked — the app knows a fixed list of
+  /// tala names and the user may well be writing one it has not heard of.
+  String? _talaWarning(SongDraft draft) {
+    const naming = PitchNamingService();
+    final matches = naming.talaMatchesTradition(draft.tala, draft.tradition);
+    if (matches != false) return null;
+
+    final other = draft.tradition == PitchTradition.carnatic
+        ? 'Hindustani'
+        : 'Carnatic';
+    return '"${draft.tala.trim()}" is usually a $other tala. '
+        'You can still save it.';
   }
 
   /// Folds the meta fields away while the lyrics field is focused, and brings
@@ -207,6 +232,13 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
                         onArtistChanged: _editor.setArtist,
                         onKeyChanged: _editor.setKey,
                         onBpmChanged: _editor.setBpmText,
+                        tradition: draft.tradition,
+                        ragaController: _ragaController,
+                        talaController: _talaController,
+                        onTraditionChanged: _editor.setTradition,
+                        onRagaChanged: _editor.setRaga,
+                        onTalaChanged: _editor.setTala,
+                        talaWarning: _talaWarning(draft),
                         selectedSetlistId: _selectedSetlistId,
                         availableSetlists: setlists,
                         onSetlistChanged: (id) =>

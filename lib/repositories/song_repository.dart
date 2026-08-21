@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/core/utils/song_copy.dart';
 import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 
 /// Data access for songs. Wraps the drift [AppDatabase] and exposes only pure
@@ -139,6 +140,14 @@ class SongRepository {
     timestamp: row.timestamp,
     scrollSpeed: row.scrollSpeed,
     scrollMeasures: row.scrollMeasures,
+    raga: row.raga,
+    tala: row.tala,
+    // An empty column means "not classified yet" — a song written before
+    // schema 9 that somehow escaped the backfill. `SongNote.isIndian` then
+    // falls back to reading the raga, which is the old behaviour.
+    tradition: row.tradition.isEmpty
+        ? null
+        : PitchTradition.fromStorage(row.tradition),
   );
 
   /// For inserts: omit `id` so the database assigns it.
@@ -153,6 +162,9 @@ class SongRepository {
         timestamp: song.timestamp,
         scrollSpeed: Value(song.scrollSpeed),
         scrollMeasures: Value(song.scrollMeasures),
+        raga: Value(song.raga),
+        tala: Value(song.tala),
+        tradition: Value(song.tradition?.storageKey ?? ''),
       );
 
   /// For updates/replace: include the `id` so drift matches the right row.
@@ -167,5 +179,8 @@ class SongRepository {
     timestamp: Value(song.timestamp),
     scrollSpeed: Value(song.scrollSpeed),
     scrollMeasures: Value(song.scrollMeasures),
+    raga: Value(song.raga),
+    tala: Value(song.tala),
+    tradition: Value(song.tradition?.storageKey ?? ''),
   );
 }

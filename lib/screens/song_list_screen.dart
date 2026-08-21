@@ -22,6 +22,7 @@ import 'package:lyricchord/widgets/empty_songbook.dart';
 import 'package:lyricchord/widgets/song_card.dart';
 import 'package:lyricchord/widgets/song_filter_row.dart';
 import 'package:lyricchord/widgets/song_search_field.dart';
+import 'package:lyricchord/widgets/songbook_error.dart';
 
 /// The songbook: search, All/Starred filter, and the list of song cards.
 ///
@@ -133,7 +134,10 @@ class SongListScreen extends ConsumerWidget {
                   child: songsAsync.when(
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
-                    error: (_, _) => const EmptySongbook(),
+                    error: (error, _) => SongbookError(
+                      error: error,
+                      onRetry: () => ref.invalidate(songsStreamProvider),
+                    ),
                     data: (_) => songs.isEmpty
                         ? EmptySongbook(
                             searching: query.trim().isNotEmpty,

@@ -9,8 +9,10 @@
 /// imported file is the one untrusted input, so parsing must never crash.
 library;
 
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/services/chord_transposer.dart';
+import 'package:lyricchord/services/pitch_naming_service.dart';
 
 /// A `{name: value}` directive line pulled from a ChordPro file.
 class _Directive {
@@ -25,6 +27,7 @@ class ChordProService {
   const ChordProService();
 
   static const ChordTransposer _transposer = ChordTransposer();
+  static const PitchNamingService _naming = PitchNamingService();
 
   /// Reads ChordPro [content] into a new [SongNote].
   ///
@@ -34,6 +37,8 @@ class ChordProService {
   /// - `{artist|a: ...}` → artist.
   /// - `{key|k: ...}` → key (defaults to `C`).
   /// - `{bpm|tempo: ...}` → bpm (keeps `120` if not a whole number).
+  /// - `{raga: ...}` → raga, and marks the song as Indian.
+  /// - `{tala: ...}` → tala, which decides Carnatic vs Hindustani.
   /// - `{comment|c: ...}` → kept as a plain lyric line (its text).
   ///
   /// Chorus/verse markers (`soc`/`eoc`/`sov`/`eov`) and any other directive are
@@ -45,6 +50,8 @@ class ChordProService {
     String? artist;
     String? key;
     int? bpm;
+    String? raga;
+    String? tala;
     final lyricLines = <String>[];
 
     final normalized = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
@@ -67,9 +74,30 @@ class ChordProService {
         case 'bpm':
         case 'tempo':
           bpm = int.tryParse(directive.value.trim()) ?? bpm;
+        case 'raga':
+          raga = directive.value;
+        case 'tala':
+          tala = directive.value;
         case 'comment':
         case 'c':
           lyricLines.add(directive.value);
+        case 'melody':
+        case 'tonic':
+          // Kept inside the lyrics, exactly as written, rather than lifted into
+          // a column of its own.
+          //
+          // A melody belongs beside the line of words it goes with — moving it
+          // to the header would lose which line it is the tune for. The tonic
+          // sits with it so both travel together through import, export and
+          // transposition, and neither needs a database change.
+          //
+          // `ChordSheetParser` reads them back out: the tonic through
+          // `ParsedSheet.directives`, the tune through `ChordLine.melody`.
+          //
+          // Only the `{melody: ...}` spelling reaches here at all. The usual
+          // `{melody} S R G` form does not end in a brace, so it is already
+          // treated as an ordinary line and passes through untouched.
+          lyricLines.add(line);
         default:
           // A structural marker (chorus/verse) or an unknown directive: drop
           // the directive itself but keep the surrounding spacing.
@@ -93,6 +121,13 @@ class ChordProService {
       key: cleanKey.isEmpty ? 'C' : cleanKey,
       bpm: bpm ?? 120,
       timestamp: 0,
+      raga: raga?.trim() ?? '',
+      tala: tala?.trim() ?? '',
+      tradition: _naming.detect(
+        raga: raga,
+        tala: tala,
+        fallback: PitchTradition.carnatic,
+      ),
     );
   }
 
@@ -108,6 +143,7 @@ class ChordProService {
       song.lyrics,
       semitones,
       song.key,
+      isIndian: song.isIndian,
     );
 
     final out = StringBuffer();
@@ -115,12 +151,43 @@ class ChordProService {
     if (song.artist.trim().isNotEmpty) {
       out.writeln('{artist: ${song.artist}}');
     }
-    out.writeln('{key: $key}');
+    // An Indian sheet has a raga, not a key. Writing `{key: C}` on one is
+    // meaningless, and on re-import it is the kind of stray Western marker that
+    // makes the song look like a chord sheet. The PDF export already leaves it
+    // out for the same reason.
+    if (song.isIndian) {
+      if (song.raga.trim().isNotEmpty) out.writeln('{raga: ${song.raga}}');
+      if (song.tala.trim().isNotEmpty) out.writeln('{tala: ${song.tala}}');
+    } else {
+      out.writeln('{key: $key}');
+    }
     out.writeln('{tempo: ${song.bpm}}');
     out.writeln();
-    out.write(lyrics);
+    out.write(_withoutRagaAndTalaLines(lyrics));
     return out.toString();
   }
+
+  /// Drops any `{raga: …}` / `{tala: …}` line from inside [lyrics].
+  ///
+  /// Songs written before those became columns still carry the header lines in
+  /// their text. [format] now writes them from the columns, so leaving the old
+  /// copies in would export each one twice.
+  String _withoutRagaAndTalaLines(String lyrics) {
+    final kept = lyrics
+        .split('\n')
+        .where((line) => !_ragaOrTalaLine.hasMatch(line.trim()))
+        .toList();
+    while (kept.isNotEmpty && kept.first.trim().isEmpty) {
+      kept.removeAt(0);
+    }
+    return kept.join('\n');
+  }
+
+  /// A whole line that is nothing but a `{raga: …}` or `{tala: …}` directive.
+  static final RegExp _ragaOrTalaLine = RegExp(
+    r'^\{\s*(raga|tala)\s*:[^{}]*\}$',
+    caseSensitive: false,
+  );
 
   /// Reads ChordPro [content] that may contain multiple songs separated by
   /// `{new_song}` / `{ns}` directives or separate `{title}` headers.
@@ -133,6 +200,8 @@ class ChordProService {
     var currentArtist = <String>[];
     var currentKey = <String>[];
     int? currentBpm;
+    var currentRaga = <String>[];
+    var currentTala = <String>[];
     var currentLyricLines = <String>[];
     var hasSongData = false;
 
@@ -153,6 +222,8 @@ class ChordProService {
           ? currentArtist.last.trim()
           : '';
       final keyStr = currentKey.isNotEmpty ? currentKey.last.trim() : '';
+      final ragaStr = currentRaga.isNotEmpty ? currentRaga.last.trim() : '';
+      final talaStr = currentTala.isNotEmpty ? currentTala.last.trim() : '';
 
       songs.add(
         SongNote(
@@ -162,6 +233,13 @@ class ChordProService {
           key: keyStr.isEmpty ? 'C' : keyStr,
           bpm: currentBpm ?? 120,
           timestamp: 0,
+          raga: ragaStr,
+          tala: talaStr,
+          tradition: _naming.detect(
+            raga: ragaStr,
+            tala: talaStr,
+            fallback: PitchTradition.carnatic,
+          ),
         ),
       );
 
@@ -169,6 +247,8 @@ class ChordProService {
       currentArtist = <String>[];
       currentKey = <String>[];
       currentBpm = null;
+      currentRaga = <String>[];
+      currentTala = <String>[];
       currentLyricLines = <String>[];
       hasSongData = false;
     }
@@ -208,9 +288,21 @@ class ChordProService {
         case 'tempo':
           currentBpm = int.tryParse(directive.value.trim()) ?? currentBpm;
           hasSongData = true;
+        case 'raga':
+          currentRaga.add(directive.value);
+          hasSongData = true;
+        case 'tala':
+          currentTala.add(directive.value);
+          hasSongData = true;
         case 'comment':
         case 'c':
           currentLyricLines.add(directive.value);
+          hasSongData = true;
+        case 'melody':
+        case 'tonic':
+          // Same reasoning as in [parse]: both stay inside the lyrics so the
+          // tune keeps its place beside the words it belongs to.
+          currentLyricLines.add(line);
           hasSongData = true;
         default:
           break;

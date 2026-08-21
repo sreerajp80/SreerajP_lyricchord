@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:lyricchord/core/constants/app_constants.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/screens/song_editor_screen.dart';
@@ -272,5 +273,130 @@ void main() {
 
     expect(find.byType(ChordInserterBar), findsOneWidget);
     expect(repo.currentSongs, hasLength(6));
+  });
+
+  group('notation picker', () {
+    /// The Notation dropdown, which decides Key vs Raga + Tala.
+    Finder notationPicker() =>
+        find.byType(DropdownButtonFormField<PitchTradition>);
+
+    Future<void> chooseNotation(WidgetTester tester, String label) async {
+      await tester.tap(notationPicker());
+      await settle(tester);
+      await tester.tap(find.text(label).last);
+      await settle(tester);
+    }
+
+    testWidgets('a new song starts Western and shows the Key field', (
+      tester,
+    ) async {
+      await pumpEditor(tester);
+
+      expect(find.text('Original key'), findsOneWidget);
+      expect(find.text('Raga'), findsNothing);
+      expect(find.text('Tala'), findsNothing);
+    });
+
+    testWidgets('choosing Carnatic swaps Key for Raga and Tala', (
+      tester,
+    ) async {
+      await pumpEditor(tester);
+
+      await chooseNotation(tester, 'Carnatic');
+
+      // An Indian sheet is written in swaras, so there is no key to transpose.
+      expect(find.text('Original key'), findsNothing);
+      expect(find.text('Raga'), findsOneWidget);
+      expect(find.text('Tala'), findsOneWidget);
+    });
+
+    testWidgets('an Indian song opens with its raga and tala filled in', (
+      tester,
+    ) async {
+      // Song 4 is seeded as Carnatic in the fake repository.
+      await pumpEditor(tester, songId: 4);
+
+      expect(find.widgetWithText(TextField, 'Hamsadhvani'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Adi'), findsOneWidget);
+      expect(find.text('Original key'), findsNothing);
+    });
+
+    testWidgets('a tala from the other tradition warns but does not block', (
+      tester,
+    ) async {
+      await pumpEditor(tester);
+      await chooseNotation(tester, 'Carnatic');
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Adi, Keherwa'),
+        'Keherwa',
+      );
+      await settle(tester);
+
+      expect(find.textContaining('usually a Hindustani tala'), findsOneWidget);
+
+      // The warning is advice, not a gate — saving still works.
+      await tester.tap(find.widgetWithText(TextButton, 'Save'));
+      await settle(tester);
+
+      expect(repo.currentSongs, hasLength(7));
+      final saved = repo.currentSongs.firstWhere((s) => s.tala == 'Keherwa');
+      expect(saved.tradition, PitchTradition.carnatic);
+    });
+
+    testWidgets('a matching tala shows no warning', (tester) async {
+      await pumpEditor(tester);
+      await chooseNotation(tester, 'Carnatic');
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Adi, Keherwa'),
+        'Adi',
+      );
+      await settle(tester);
+
+      expect(find.textContaining('usually a'), findsNothing);
+    });
+
+    testWidgets('switching back to Western clears the raga and tala', (
+      tester,
+    ) async {
+      await pumpEditor(tester);
+      await chooseNotation(tester, 'Carnatic');
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Kalyani, Yaman'),
+        'Kalyani',
+      );
+      await settle(tester);
+
+      await chooseNotation(tester, 'Western');
+      await tester.tap(find.widgetWithText(TextButton, 'Save'));
+      await settle(tester);
+
+      // A stale raga left behind would make the song look Indian again.
+      final saved = repo.currentSongs.firstWhere((s) => s.id == 7);
+      expect(saved.raga, isEmpty);
+      expect(saved.tradition, PitchTradition.western);
+      expect(saved.isIndian, isFalse);
+    });
+
+    testWidgets('an Indian song saves its tradition', (tester) async {
+      await pumpEditor(tester);
+      await chooseNotation(tester, 'Hindustani');
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Kalyani, Yaman'),
+        'Yaman',
+      );
+      await settle(tester);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Save'));
+      await settle(tester);
+
+      final saved = repo.currentSongs.firstWhere((s) => s.id == 7);
+      expect(saved.raga, 'Yaman');
+      expect(saved.tradition, PitchTradition.hindustani);
+      expect(saved.isIndian, isTrue);
+    });
   });
 }

@@ -51,6 +51,8 @@ Songs and setlists move in and out of the app through **ChordPro (`.chordpro`/`.
 * **Distraction-Free Workspace:** Clean, borderless multi-line text editor optimized for typing lyrics and embedding inline chord brackets (`song_editor_screen.dart`).
 * **Inline Chord Bracket Syntax:** Standard ChordPro notation (`[Chord]word`) placing floating chord badges precisely above targeted lyric syllables.
 * **Structured Song Metadata Inputs:** Text fields for Title, Artist/Band, Original Key selection dropdown, and numeric Tempo (BPM) entry (`song_meta_fields.dart`).
+* **Notation Picker (Western / Carnatic / Hindustani):** A dropdown that records which notation the song is written in, saved per song in the `tradition` column. Choosing Western shows the **Original key** field; choosing either Indian tradition replaces it with **Raga** and **Tala** fields, because an Indian sheet is written in swaras and has no key to transpose. Switching a song back to Western clears its raga and tala, so a stale value can never make it look Indian again.
+* **Tala Mismatch Warning:** Typing a tala that belongs to the other tradition (for example "Keherwa" on a Carnatic song) shows a note under the field. It is advice only and never blocks saving — the app knows a fixed list of tala names and the writer may be using one it has not heard of.
 * **Sticky Quick Chord Inserter Bar:** Persistent toolbar anchored above the soft keyboard during editing (`chord_inserter_bar.dart`):
   * **Key-Aware Chord Suggestions (`ChordSuggestionService`):** Analyzes the selected song key and generates common scale degree chord buttons: Major keys (I, ii, iii, IV, V, vi, V7, ♭VII) and Minor keys (i, ii°, ♭III, iv, v, ♭VI, ♭VII, V7), dynamically selecting sharp vs. flat note spelling tables. If the song's key text cannot be understood (e.g. left blank or malformed), suggestions quietly fall back to the key of C major instead of failing.
   * **One-Tap Insertion:** Tapping a chord button inserts `[Chord]` directly at the current text cursor position.
@@ -109,16 +111,46 @@ Songs and setlists move in and out of the app through **ChordPro (`.chordpro`/`.
 
 ### 2.6 Metronome System
 * **Song BPM Synchronization:** Automatically derives tempo from individual song BPM metadata.
-* **Visual Edge Flash Metronome:** Blinks container/screen borders on every beat for silent, high-visibility visual timekeeping on dark stage setups (`metronome_beat.dart`).
-* **Audio Click Metronome:** Synthesizes audio tick sounds on every beat.
-* **Independent Metronome Toggles:** Flash and Click options can be enabled independently or together in General Settings; settings persist across app restarts (`metronome_settings_screen.dart`).
+* **Visual Beat Flash & Bar Counter:** The metronome button flashes on every beat and shows the counted beat number (1 2 3 4) while running, for silent, high-visibility timekeeping on dark stage setups (`metronome_beat.dart`). The flash never falls below 60 ms, so it stays visible at fast tempos.
+* **Synthesized Audio Click:** A short percussive click is generated in pure Dart by `PcmSynthService.generateClickWav()` and played on the device **media** channel through `MetronomeAudioService` (`metronome_audio_service.dart`), in low-latency mode with the sound pre-loaded. It replaces the earlier platform UI key-press sound, which was silenced by the phone's "Touch sounds" setting, tied to the system volume, and mute in silent mode.
+* **Accented Downbeat & Time Signature:** Beat 1 of each bar plays a higher, louder accent click so the bar start is audible. Bars of 2, 3, 4 or 6 beats are selectable; the accent can be switched off for a flat tick.
+* **Click Volume:** A dedicated metronome volume (0–100%), kept separate from the Pitch Drone volume so the two do not fight, applied live to the loaded players.
+* **Hand-Set Tempo & Tap Tempo:** A long press on the metronome button opens `metronome_tempo_sheet.dart`: −/+ single-BPM nudges, a 30–300 BPM slider, a 4-tap averaging tap-tempo, and a "Use song tempo" reset. The override is session-only (`metronome_runtime_provider.dart`), so a per-song tweak does not follow the user to the next song. A song with no saved BPM now falls back to the last tempo used instead of leaving the button dead.
+* **Drift-Free Scheduled Beat:** Each beat is armed by its own timer aimed at `start + beatIndex × 60/bpm`, always measured from the start, so a late timer shortens the next wait instead of pushing every later beat back. The click no longer waits for a screen frame (previously up to ~16 ms late, and worse while the chord sheet was drawing).
+* **Independent Metronome Toggles:** Flash, Click, volume, beats-per-bar and accent can be set independently in General Settings; settings persist across app restarts (`metronome_settings_screen.dart`).
+* **Test the Sound:** A Test row in Metronome settings plays one bar at 100 BPM, so audio can be verified without opening a song that has a saved tempo.
+* **Safe Failure & Background Stop:** Every audio call is guarded — a failed click leaves the flash working and never interrupts a performance. The beat stops when its song page is swiped away or the app leaves the foreground, so no click plays off-screen.
 
-### 2.7 Chord Reference Guide & Instrument Visualizers
+### 2.7 Pitch Pipe & Shruti Box Drone
+* **Reference Pitch Cue:** A 2-second synthesized note so a singer can find their starting pitch before the song begins (`PcmSynthService.generatePitchCueWav()`).
+* **Shruti Box Drone:** A continuous synthesized drone of two notes — **Sa + Pa** (the fifth) or **Sa + Ma** (the fourth, for ragas that leave out Pa such as Malkauns and Marwa). The two notes use pure just-intonation ratios (3:2 and 4:3), the way a real drone instrument sounds, rather than equal temperament.
+* **A reference, not an accompaniment:** the drone holds **one steady pair of notes** for as long as it is on. It does not follow the tune, the words or the chords. This is stated plainly in Help and in Settings, because "continuous drone" was being read as "hums the song".
+* **Not a tanpura:** a tanpura has four strings plucked in a cycle and takes its shimmer from *jawari* (the string grazing a curved bridge). This synthesizes a steady reed-style drone, so it is described as a shruti box.
+* **Per-Tradition Pitch Naming (`pitch_naming_service.dart`):** Sa is movable, so the drone must be anchored to a real pitch — but that anchor is named the way each tradition names it, and **no Western letter appears on an Indian sheet**. A Carnatic song shows `5 kattai`, a Hindustani song `safed 5`, a Western song plain `G`. The song's tala decides which, reusing the tala tables already in `swara_notation_service.dart`; when a song names a raga but no readable tala, the user's "Pitch naming" setting decides.
+* **Opens on the Right Pitch:** a **Western** song opens on the song's own transposed key; a **Carnatic or Hindustani** song opens on the singer's saved **Sa**, because the notation is written relative to Sa and the written key is not the pitch actually sung. Picking a different pitch in the sheet lasts for that sheet only and never overwrites the saved default.
+* **Reads Any Key Spelling:** flats (`Bb`, `Eb`), minor keys (`Am`, `F#m`), slash chords and lower case all resolve to the right pitch; an unreadable key falls back to the saved default rather than showing nothing.
+* **Reachable From the Song Screen:** a pitch button sits next to the metronome on the ordinary song screen, as well as in the Stage Mode bar (`performance_controls.dart`, `stage_hud.dart`).
+* **Safe Failure:** every audio call is wrapped (`pitch_drone_audio_service.dart`). A failure shows a `SnackBar` and logs the reason in debug builds only; the button reports "playing" **only** when sound really started, never on assumption.
+* **Your Sa & Naming Settings:** Settings → General → Pitch Pipe & Shruti Box sets the singer's Sa, the naming system, the Western default key, the interval, volume and stage font scale, with Test buttons for both sounds.
+
+### 2.8 Melody Lines (Phase 1)
+* **The gap it fills:** a chord sheet holds the words and tells the accompanist what to play. It does not hold the **tune**. A `{melody}` line written under a lyric line adds it, so someone who has never heard the song can still learn how it goes.
+* **How it is written:** `{melody} P ,  M2 | M2!G3~ ,  | R2 S` sits under the lyric line it belongs to. Beats are separated by spaces; the words and chords above are untouched. A song with no melody lines behaves exactly as before.
+* **Five marks (`melody_parser_service.dart`):** `,` holds the note before it for another beat; `|` is a bar line and takes no time; `-` joins notes sharing one beat (`G3-R2`); `!` slides into a note, optionally from a named one (`M2!G3`, or a bare `!G3`); `~` shakes the note. A leading `.` drops an octave, a trailing `'` or `^` raises it.
+* **One naming rule everywhere:** a bare swara name is the note from the plain **Sa Re Ga Ma Pa Dha Ni** row, so `Ma` is Ma1; a digit names the exact variant, so the raised Ma is `Ma2`/`M2`. `Ma2` and `M2` resolve identically (`swara_notation_service.dart`). **The raga never changes what a name means**, which is why there is no raga or melakarta database anywhere in the app.
+* **Never crashes on a hand-typed line:** an unreadable token becomes a marked beat that keeps its place, so every later beat stays where it was written, and the problem is reported in plain English rather than thrown (hard rule 4).
+* **Playback over the drone (`melody_player_service.dart`, `melody_audio_service.dart`):** the line is laid out in time, rendered as **one** WAV and played once — not one sound per note, which drifts and would teach uneven timing. Full speed and half speed, with looping, and a cursor that moves along the beat grid.
+* **Beat grid (`melody_beat_grid.dart`):** one box per beat, grouped the way the tala groups them, scrolling sideways when a cycle is too wide for the screen. It shows the writer's own spelling, so `Ma2` stays `Ma2`.
+* **Needs a real Sa:** `{tonic: 1 kattai}` gives the pitch; the tonic moves with the active transpose. Without it the grid still draws and reads correctly, but the play button stays off rather than humming a guessed pitch.
+* **Stored inline:** melody and tonic lines live in the song text, so import, export and transposition carry them through unchanged with no database change. Transposing chords never touches a melody line — swaras are relative to Sa and do not move.
+* **Honest about its limits:** it shows **where the notes go**, not how a singer shapes them. The slide and shake marks are parsed and stored but not yet sounded (phase 3), so files written now stay correct.
+
+### 2.9 Chord Reference Guide & Instrument Visualizers
 * **Transposed Chord Inspector:** Modal dialog (`chord_reference_dialog.dart`) listing all unique chords in the current song, automatically transposed to match the active performance key.
 * **Guitar Fretboard Diagrams (`guitar_chord_diagram.dart`, `chord_shape_service.dart`):** Custom-painted 6-string fretboard diagrams displaying finger placement dots, open/muted string indicators (O/X), and base fret numbers. Includes 24 hand-picked open chord shapes and dynamic movable barre chord template generation (E-shape and A-shape barre offsets) covering all 12 root semitones and chord qualities (`maj`, `m`, `7`, `m7`, `maj7`, `dim`, `aug`, etc.).
 * **Harmonium / Piano Keyboard Diagrams (`harmonium_chord_diagram.dart`, `chord_shape_service.dart`):** Custom-painted piano keyboard diagrams highlighting active chord notes across pitch classes (0–11) for 20+ chord qualities (`maj7`, `maj9`, `m7b5`, `m7`, `m9`, `m6`, `madd9`, `mmaj7`, `dim7`, `dim`, `aug`, `sus2`, `sus4`, `add9`, `6`, `9`, `7`, `m`). Highlights root note in accent color and slash chord bass notes (`C/E` → `E`) in a secondary color.
 
-### 2.8 Import & Export Workflows
+### 2.10 Import & Export Workflows
 * **ChordPro File Import (`chord_pro_service.dart`, `import_service.dart`):**
   * Imports `.cho`, `.pro`, `.chordpro`, and `.txt` files via system file pickers.
   * Parses ChordPro directives (`{title}`/`{t}`, `{artist}`/`{a}`, `{key}`/`{k}`, `{bpm}`/`{tempo}`, `{comment}`/`{c}`, chorus/verse formatting, `{new_song}` / `{ns}`), accepting both the long and short directive names.
@@ -147,7 +179,7 @@ Songs and setlists move in and out of the app through **ChordPro (`.chordpro`/`.
 * **Native System Share Sheet Integration:** Share single songs or multi-selected song bundles as ChordPro (`.chordpro`) or PDF (`.pdf`) files directly to messaging, email, or cloud storage apps.
 * **Safe File Naming (`safe_file_name.dart`):** Exported file names are automatically cleaned of characters that would break on some file systems, while non-English letters (such as Malayalam) are kept intact. A blank title falls back to a generic `"song"` file name.
 
-### 2.9 Typography, Themes, & In-App Help
+### 2.11 Typography, Themes, & In-App Help
 * **Material 3 Visual Design:** Material 3 styling with a blue Light primary (`#0052CC`) and amber Dark primary (`#FFD54F`), with `#D0BCFF` used as a floating-action-button accent in both modes.
 * **Theme Modes:** System Default, Light Mode, and Dark Mode options saved in shared preferences (`theme_settings_screen.dart`).
 * **Settings Hub:** A single Settings menu (`settings_screen.dart`, `general_settings_screen.dart`) groups all app-wide options together: Import, Import Settings, Metronome, Themes, Chords, Fonts, Help, and About.

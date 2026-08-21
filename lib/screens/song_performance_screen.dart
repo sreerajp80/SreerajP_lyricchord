@@ -27,7 +27,9 @@ import 'package:lyricchord/services/chord_pro_service.dart';
 import 'package:lyricchord/services/chord_sheet_parser.dart';
 import 'package:lyricchord/services/chord_transposer.dart';
 import 'package:lyricchord/services/html_pdf_service.dart';
+import 'package:lyricchord/services/pcm_synth_service.dart';
 import 'package:lyricchord/services/pdf_export_service.dart';
+import 'package:lyricchord/services/pitch_naming_service.dart';
 import 'package:lyricchord/services/swara_notation_service.dart';
 import 'package:lyricchord/widgets/chord_reference_dialog.dart';
 import 'package:lyricchord/widgets/chord_sheet_view.dart';
@@ -683,7 +685,10 @@ class _SongPageState extends ConsumerState<_SongPage>
 
     // An Indian song's cycle is its tala, not 4/4 — Adi is 8 beats. An unknown
     // or missing tala falls back to common time.
-    final tala = sheet.tala;
+    //
+    // The stored column wins; the `{tala: …}` header is only read for a song
+    // that predates the column.
+    final tala = song.tala.trim().isNotEmpty ? song.tala : sheet.tala;
     final beats = tala == null
         ? AutoScrollSettings.defaultBeatsPerMeasure
         : _swara.talaBeats(tala) ?? AutoScrollSettings.defaultBeatsPerMeasure;
@@ -734,9 +739,14 @@ class _SongPageState extends ConsumerState<_SongPage>
           song.lyrics,
           settings.semitones,
           song.key,
+          isIndian: song.isIndian,
         );
         final sheet = _parser.parseSheet(lyrics);
         final lines = sheet.lines;
+        // The stored columns win; the header lines are the fallback for a song
+        // written before those columns existed.
+        final raga = song.raga.trim().isNotEmpty ? song.raga : sheet.raga;
+        final tala = song.tala.trim().isNotEmpty ? song.tala : sheet.tala;
         // After parsing, so the song's tala can set the Tempo-Auto beat count.
         _loadScrollSettingsAfterFrame(song, sheet);
         final currentKey = _transposer.transposeKey(
@@ -746,16 +756,27 @@ class _SongPageState extends ConsumerState<_SongPage>
 
         _reportExtentAfterFrame();
 
+        // Melody playback needs a real pitch for Sa and a real tempo. Either
+        // missing simply leaves the beat grid readable but silent.
+        final tonicHz = _melodyTonicHz(song, sheet, settings.semitones);
+        final tempoBpm = song.bpm > 0 ? song.bpm.toDouble() : null;
+
         final stage = ref.watch(stageModeProvider);
         if (stage.enabled) {
           return _stageBody(
             context,
-            sheet: _sheet(settings, lines, stageMode: true),
+            sheet: _sheet(
+              settings,
+              lines,
+              stageMode: true,
+              tonicHz: tonicHz,
+              tempoBpm: tempoBpm,
+            ),
             title: song.title,
             currentKey: currentKey,
             bpm: song.bpm,
-            raga: sheet.raga,
-            tala: sheet.tala,
+            raga: raga,
+            tala: tala,
             hudVisible: stage.hudVisible,
           );
         }
@@ -773,10 +794,17 @@ class _SongPageState extends ConsumerState<_SongPage>
               bpm: song.bpm,
               active: widget.active,
               showFullScreenButton: !widget.embedded,
-              raga: sheet.raga,
-              tala: sheet.tala,
+              raga: raga,
+              tala: tala,
             ),
-            Expanded(child: _sheet(settings, lines)),
+            Expanded(
+              child: _sheet(
+                settings,
+                lines,
+                tonicHz: tonicHz,
+                tempoBpm: tempoBpm,
+              ),
+            ),
           ],
         );
       },
@@ -789,10 +817,37 @@ class _SongPageState extends ConsumerState<_SongPage>
   /// scrolling is paused ([NeverScrollableScrollPhysics]) so the scale gesture
   /// owns the pointers. Any pinch direction works — the scale gesture only
   /// measures the distance between the fingers, wherever they are.
+  /// The frequency of this song's Sa, for humming a `{melody}` line.
+  ///
+  /// The song's own `{tonic: ...}` line wins. An Indian song without one falls
+  /// back to its key, which is its Sa. A Western song has no Sa at all, so it
+  /// gets nothing and its melody lines stay unplayable rather than humming a
+  /// guessed pitch.
+  ///
+  /// [semitones] is the active transpose. Sa moves with it, or the tune would
+  /// be hummed in the old key while the chords showed the new one.
+  double? _melodyTonicHz(SongNote song, ParsedSheet sheet, int semitones) {
+    const naming = PitchNamingService();
+
+    final written = sheet.directives['tonic']?.trim() ?? '';
+    final fallback = song.isIndian ? song.key.trim() : '';
+    final source = written.isNotEmpty ? written : fallback;
+    if (source.isEmpty) return null;
+
+    final note = naming.noteForTonic(source);
+    if (note == null) return null;
+
+    return PcmSynthService.getFrequency(
+      _transposer.transposeKey(note, semitones),
+    );
+  }
+
   Widget _sheet(
     PerformanceSettings settings,
     List<ChordLine> lines, {
     bool stageMode = false,
+    double? tonicHz,
+    double? tempoBpm,
   }) {
     return Listener(
       onPointerDown: (_) => setState(() => _pointersDown++),
@@ -825,6 +880,8 @@ class _SongPageState extends ConsumerState<_SongPage>
                 ref.watch(pitchDroneProvider.select((s) => s.fontScaleFactor)),
             showChords: settings.showChords,
             lyricFontFamily: ref.watch(lyricFontProvider).family,
+            melodyTonicHz: tonicHz,
+            melodyTempoBpm: tempoBpm,
           ),
         ),
       ),
@@ -919,7 +976,6 @@ class _OverflowMenu extends ConsumerWidget {
   final int? songId;
 
   static const ChordTransposer _transposer = ChordTransposer();
-  static const ChordSheetParser _parser = ChordSheetParser();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -940,9 +996,7 @@ class _OverflowMenu extends ConsumerWidget {
                   context,
                   writtenKey: song.key,
                   // A swara sheet has nothing to transpose.
-                  showTranspose: !_parser
-                      .parseSheet(song.lyrics)
-                      .isIndianNotation,
+                  showTranspose: !song.isIndian,
                 ),
           child: const ListTile(
             dense: true,
@@ -1016,12 +1070,16 @@ class _OverflowMenu extends ConsumerWidget {
     final id = songId;
     final song = id == null ? null : ref.watch(songByIdProvider(id)).value;
     final settings = ref.watch(performanceSettingsProvider);
-    final indian =
-        song != null && _parser.parseSheet(song.lyrics).isIndianNotation;
+    final indian = song != null && song.isIndian;
 
     final markers = song == null
         ? const <String>[]
-        : _transposer.chordsUsed(song.lyrics, settings.semitones, song.key);
+        : _transposer.chordsUsed(
+            song.lyrics,
+            settings.semitones,
+            song.key,
+            isIndian: indian,
+          );
     // A reference reads best as a scale, so swaras are ordered low to high
     // rather than in order of appearance.
     final chords = indian ? _sortedByPitch(markers) : markers;

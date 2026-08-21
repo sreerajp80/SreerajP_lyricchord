@@ -3,10 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/providers/song_list_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/screens/home_shell.dart';
+import 'package:lyricchord/widgets/empty_songbook.dart';
 import 'package:lyricchord/widgets/song_card.dart';
+import 'package:lyricchord/widgets/songbook_error.dart';
 
 import '../helpers/fake_song_repository.dart';
 
@@ -275,4 +279,66 @@ void main() {
       expect(find.text('6 selected'), findsNothing);
     },
   );
+
+  group('when the songbook cannot be read', () {
+    /// Pumps the songbook with the song stream failing, the way it does when
+    /// the database will not open or a row cannot be mapped.
+    Future<void> pumpFailingSongbook(WidgetTester tester) async {
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(400, 900);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            songRepositoryProvider.overrideWithValue(repo),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            songsStreamProvider.overrideWith(
+              (ref) => Stream<List<SongNote>>.error(
+                StateError('Null check operator used on a null value'),
+              ),
+            ),
+          ],
+          child: const MaterialApp(home: HomeShell()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows the error view, not the empty songbook', (tester) async {
+      await pumpFailingSongbook(tester);
+
+      expect(find.byType(SongbookError), findsOneWidget);
+      expect(find.byType(EmptySongbook), findsNothing);
+      expect(find.text('Your songbook is empty'), findsNothing);
+    });
+
+    testWidgets('names the fault so the user can report it', (tester) async {
+      await pumpFailingSongbook(tester);
+
+      expect(find.text('Could not open your songbook'), findsOneWidget);
+      expect(
+        find.textContaining('Null check operator used on a null value'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('offers a way to try again', (tester) async {
+      await pumpFailingSongbook(tester);
+
+      final retry = find.widgetWithText(FilledButton, 'Try again');
+      expect(retry, findsOneWidget);
+
+      // Tapping it must not throw; the stream is still failing, so the error
+      // view stays up.
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SongbookError), findsOneWidget);
+    });
+  });
 }

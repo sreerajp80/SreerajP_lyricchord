@@ -26,6 +26,22 @@ class AppConstants {
   /// shared_preferences key for whether the metronome clicks on each beat.
   static const String prefMetronomeClick = 'metronome_click';
 
+  /// shared_preferences key for the metronome click loudness (0.0–1.0). Kept
+  /// separate from [prefPitchDroneVolume] so the drone and the beat do not
+  /// fight over one slider.
+  static const String prefMetronomeVolume = 'metronome_volume';
+
+  /// shared_preferences key for how many beats make one bar (the time
+  /// signature's top number).
+  static const String prefMetronomeBeatsPerBar = 'metronome_beats_per_bar';
+
+  /// shared_preferences key for whether beat 1 of each bar is accented.
+  static const String prefMetronomeAccent = 'metronome_accent';
+
+  /// shared_preferences key for the last tempo used by the metronome, so a song
+  /// with no saved tempo still starts at something sensible.
+  static const String prefMetronomeLastBpm = 'metronome_last_bpm';
+
   /// shared_preferences key for whether the one-time Stage Mode gesture guide
   /// has already been shown.
   static const String prefStageHelpSeen = 'stage_help_seen';
@@ -38,6 +54,19 @@ class AppConstants {
   static const String prefPitchDroneInterval = 'pitch_drone_interval';
   static const String prefPitchDroneVolume = 'pitch_drone_volume';
   static const String prefFontScaleIndex = 'stage_font_scale_index';
+
+  /// shared_preferences key for where the singer's **Sa** sits, held as a pitch
+  /// name (`G` = 5 kattai = safed 5).
+  ///
+  /// Kept apart from [prefPitchDroneKey] because the two answer different
+  /// questions. Sa belongs to the singer's voice and hardly ever changes; the
+  /// drone key follows whichever Western song is open. Sharing one value would
+  /// make every song overwrite the singer's own pitch.
+  static const String prefSaKey = 'pitch_sa_key';
+
+  /// shared_preferences key for how pitches are named — `western`, `carnatic`
+  /// or `hindustani`. Used when a song's own tradition cannot be worked out.
+  static const String prefPitchNaming = 'pitch_naming';
 
   /// Width (in logical pixels) at and above which the tablet dual-pane
   /// layout is used; below this a single-pane phone layout is used.

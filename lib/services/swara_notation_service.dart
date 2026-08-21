@@ -9,6 +9,13 @@
 /// `P7`, which is why that code is gone.)
 library;
 
+/// Which Indian classical tradition a tala belongs to.
+///
+/// The two traditions name the same pitch differently — Carnatic counts
+/// "kattai", Hindustani says "safed"/"kaali" — so knowing the tradition is what
+/// lets the app label a drone the way that song's musicians actually speak.
+enum TalaTradition { carnatic, hindustani }
+
 /// Swara vocabulary and tala lengths.
 class SwaraNotation {
   const SwaraNotation();
@@ -108,7 +115,7 @@ class SwaraNotation {
     if (text.isEmpty) return null;
 
     // 1. Carnatic digits are exact — read them before anything is stripped.
-    final digit = _carnaticPositions[_normaliseDigit(text)];
+    final digit = _carnaticPositions[_foldFullName(_normaliseDigit(text))];
     if (digit != null) return digit;
 
     final lower = text.toLowerCase();
@@ -147,6 +154,42 @@ class SwaraNotation {
     }
     return buffer.toString().toUpperCase();
   }
+
+  /// Folds a full name carrying a variant digit down to its letter form, so
+  /// `Ma2` reads the same as `M2` and `Dha2` the same as `D2`.
+  ///
+  /// Both spellings are in use in the same song: chords are written with full
+  /// names (`[Ma2]`) because that reads better above a lyric, while melody
+  /// lines use the short letters (`M2`) so the beats stay narrow. They must
+  /// mean the same note.
+  ///
+  /// Anything that is not a known name followed by a single digit is handed
+  /// back untouched, so this can never change how an existing token reads.
+  String _foldFullName(String normalised) {
+    final match = _fullNameWithDigit.firstMatch(normalised);
+    if (match == null) return normalised;
+
+    final letter = _letterByName[match.group(1)!.toLowerCase()];
+    if (letter == null) return normalised;
+    return '$letter${match.group(2)}';
+  }
+
+  /// A full swara name (two or three letters) followed by a variant digit.
+  /// [_normaliseDigit] has already uppercased the text by this point.
+  static final RegExp _fullNameWithDigit = RegExp(r'^([A-Z]{2,3})([1-4])$');
+
+  /// The short letter each full name folds down to.
+  static const Map<String, String> _letterByName = {
+    'sa': 'S',
+    'ri': 'R',
+    're': 'R',
+    'ga': 'G',
+    'ma': 'M',
+    'pa': 'P',
+    'dha': 'D',
+    'dh': 'D',
+    'ni': 'N',
+  };
 
   /// One semitone below the shuddha form.
   ///
@@ -253,9 +296,45 @@ class SwaraNotation {
     'tal',
   ];
 
-  /// Cycle lengths in beats. Carnatic first, then Hindustani.
+  /// Which tradition [tala] belongs to, or `null` when the name is not known.
+  ///
+  /// Used to decide how to name pitches: a Carnatic sheet says "5 kattai", a
+  /// Hindustani one says "safed 5". Matching follows the same rules as
+  /// [talaBeats], so `Adi`, `adi talam` and `ADI TALA` all answer Carnatic.
+  TalaTradition? talaTradition(String tala) {
+    final name = tala.trim().toLowerCase();
+    if (name.isEmpty) return null;
+
+    final exact = _traditionFor(name);
+    if (exact != null) return exact;
+
+    for (final suffix in _talaSuffixes) {
+      if (!name.endsWith(suffix)) continue;
+      final stripped = name.substring(0, name.length - suffix.length).trim();
+      if (stripped.isEmpty) continue;
+      final tradition = _traditionFor(stripped);
+      if (tradition != null) return tradition;
+    }
+    return null;
+  }
+
+  /// Looks [name] up in both tables, without any suffix stripping.
+  TalaTradition? _traditionFor(String name) {
+    if (_carnaticTalaBeats.containsKey(name)) return TalaTradition.carnatic;
+    if (_hindustaniTalaBeats.containsKey(name)) {
+      return TalaTradition.hindustani;
+    }
+    return null;
+  }
+
+  /// Every tala this knows, both traditions, for [talaBeats].
   static const Map<String, int> _talaBeats = {
-    // Carnatic
+    ..._carnaticTalaBeats,
+    ..._hindustaniTalaBeats,
+  };
+
+  /// Carnatic cycle lengths in beats.
+  static const Map<String, int> _carnaticTalaBeats = {
     'adi': 8,
     'rupaka': 6,
     'rupakam': 6,
@@ -270,7 +349,10 @@ class SwaraNotation {
     'matya': 10,
     'dhruva': 14,
     'eka': 4,
-    // Hindustani
+  };
+
+  /// Hindustani cycle lengths in beats.
+  static const Map<String, int> _hindustaniTalaBeats = {
     'teental': 16,
     'teentaal': 16,
     'tintal': 16,

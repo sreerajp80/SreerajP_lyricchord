@@ -88,8 +88,12 @@ lib/
 |   |-- constants/      # app_constants.dart — db name, pref keys, thresholds
 |   |-- errors/         # AppException hierarchy
 |   `-- utils/          # small helpers/extensions
-|-- models/             # SongNote and value types
-|-- services/           # ChordTransposer, ChordProService, PdfExportService, ScrollController logic
+|-- models/             # SongNote and value types, MelodyNote/MelodyBeat/MelodyLine
+|-- services/           # ChordTransposer, ChordProService, PdfExportService, ScrollController logic,
+|                       # MetronomeCalculator (beat math), MetronomeAudioService (click playback),
+|                       # PcmSynthService (WAV synthesis for pitch cue, drone, click and melody),
+|                       # MelodyParser (melody text -> beats), MelodyPlayerService (beats -> timed
+|                       # spans), MelodyAudioService (one rendered WAV per line)
 |-- repositories/       # SongRepository over the drift database
 |-- data/               # drift database + DAO definitions
 |-- providers/          # Riverpod providers (app state)
@@ -105,7 +109,7 @@ lib/
 | `lib/screens/` | Full-page UI; reads providers, no SQL/parsing logic |
 | `lib/widgets/` | Reusable UI (chord/lyric rendering, diagrams, controls) |
 | `lib/providers/` | App/screen state and glue between UI and services |
-| `lib/services/` | Pure logic: transpose, ChordPro parse/format, PDF export |
+| `lib/services/` | Pure logic: transpose, ChordPro parse/format, PDF export, beat math, audio synthesis/playback |
 | `lib/repositories/` | Data access; abstracts the drift database |
 | `lib/data/` | drift database, tables, DAOs |
 | `lib/core/config/` | About-screen `AppConfig` + `ConfigService` (fixed) |
@@ -222,13 +226,18 @@ Widget -> Provider (state) -> Service / Repository -> drift DAO -> SQLite
 
 ### Current Schema Version
 
-SQLite schema version: `1` (increment when a migration is added).
+SQLite schema version: `9` (increment when a migration is added).
 
 Migration history:
 
 | Version | Change Summary |
 |---------|---------------|
 | 1 | Initial schema: `song_notes` table |
+| 2 | `setlists` and `setlist_items` tables |
+| 3 | `song_notes.scrollSpeed` and `song_notes.scrollMeasures` |
+| 4 | Seeds any missing classical songs |
+| 5–8 | Rewrote the seeded classical songs in swara notation |
+| 9 | `song_notes.raga`, `song_notes.tala`, `song_notes.tradition` |
 
 ### Core Models Or Entities
 
@@ -248,6 +257,34 @@ Migration history:
 | `bpm` | int | Tempo in BPM |
 | `favorite` | bool | Starred |
 | `timestamp` | int | Last-modified time (ms since epoch) |
+| `scrollSpeed` | double | Manual auto-scroll speed last used |
+| `scrollMeasures` | int | Tempo-Auto length last used |
+| `raga` | String | Raga name; empty on a Western song |
+| `tala` | String | Tala name; empty on a Western song |
+| `tradition` | `PitchTradition?` | `western`, `carnatic`, `hindustani`; `null` = not classified |
+
+### Which Notation A Song Is Written In
+
+A song is either Western (chords) or Indian (swaras). The app never mixes the
+two on one sheet.
+
+- **Western vs Indian** is decided by the stored `tradition` column, read
+  through `SongNote.isIndian`. When `tradition` is `null` — a song that somehow
+  escaped the version 9 backfill — it falls back to the old rule, "does it name
+  a raga".
+- **Carnatic vs Hindustani** is decided by the **tala**, not the raga
+  (`PitchNamingService.detect`). Tala names split cleanly between the two
+  traditions; many raga names are shared, so a raga cannot settle it.
+- The `{raga: …}` and `{tala: …}` header lines inside the lyrics are legacy
+  input only. They are still parsed for imports and still hidden from the drawn
+  sheet, but the columns are the source of truth.
+
+Why the column exists: reading the header line meant a typo such as
+`{ragam: …}` made an Indian song look Western, and the transposer would then
+rewrite `[Ga]` and `[Dha]` as the chords G and D — silently damaging the sheet.
+It also meant a song with a raga but no readable tala fell back to the user's
+global "Pitch naming" setting, so the same song read Carnatic on one phone and
+Hindustani on another.
 
 ### Serialization Strategy
 
@@ -390,6 +427,9 @@ test/
 - Chord-over-lyric line parsing (the `[C]word` renderer).
 - Tempo-Auto scroll math (ends exactly at song end).
 - Database seeding on first run.
+- Melody line parsing: every mark, and broken input that must never throw.
+- Melody timing: beats add up, bar lines take no time, half speed doubles every
+  note without changing its pitch.
 
 ---
 

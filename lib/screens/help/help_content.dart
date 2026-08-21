@@ -127,41 +127,99 @@ const List<HelpTopic> helpTopics = [
           'Click plays a short tick on every beat.',
           'You can use either, both, or neither.',
           'Flash and Click stay greyed out until the metronome is enabled.',
+          'Click volume sets how loud the tick is. The tick uses the media '
+              'volume, so raise the volume buttons while a song is open if you '
+              'cannot hear it.',
+          'Tap "Test the sound" in Metronome settings to hear one bar without '
+              'opening a song.',
+        ],
+      ),
+      HelpSection(
+        heading: 'Beats in a bar',
+        points: [
+          'Pick 2, 3, 4 or 6 beats in a bar in Metronome settings.',
+          'With "Accent beat 1" on, the first beat of every bar is louder and '
+              'higher, so you can hear where the bar starts.',
+          'While the beat runs, the button counts the beat number — 1, 2, 3, 4 '
+              '— so you can see your place even with the sound off.',
         ],
       ),
       HelpSection(
         heading: 'Set the tempo',
         points: [
-          "The beat speed follows the song's BPM.",
+          "By default the beat speed follows the song's BPM.",
           'Change a song\'s BPM by editing the song.',
+          'Long press the metronome button to set the speed by hand: use - and '
+              '+, drag the slider, or tap "Tap tempo" along with the music.',
+          'A tempo you set by hand lasts for this session only. Tap "Use song '
+              'tempo" to go back to the song\'s own speed.',
+          'A song with no saved BPM still works — the metronome uses the last '
+              'speed you used.',
         ],
       ),
     ],
   ),
   HelpTopic(
     id: 'pitch-pipe-drone',
-    title: 'Pitch Pipe & Shruti Drone',
+    title: 'Pitch Pipe & Shruti Box',
     icon: Icons.graphic_eq,
-    summary: 'Synthesized reference pitch cues and continuous Tanpura drone',
+    summary: 'Reference pitch cues and a steady shruti box drone',
     intro:
-        'Pitch Pipe & Shruti Drone provides 100% offline audio synthesis for '
-        'vocal starting pitch cues, continuous Tanpura background drones, and '
-        '5-tier stage text font scaling.',
+        'A fully offline sound generator: a short reference note to start on, '
+        'and a steady shruti box drone to sing against. Nothing is downloaded '
+        'and no sound files ship with the app — the tones are built as you '
+        'press the button.',
     sections: [
       HelpSection(
-        heading: 'Pitch Pipe Cuer',
+        heading: 'What the drone does — and does not do',
         points: [
-          'Tap the Pitch Pipe button in Stage HUD to hear a 2-second reference pitch cue tone.',
-          'Helps vocalists quickly find their starting note in any key before singing.',
+          'The drone holds ONE steady pair of notes for as long as it is on.',
+          'It does NOT follow the tune, the words, or the chords. It never '
+              'changes until you change it.',
+          'Think of it as a tuning fork that never stops, so your ear stays '
+              'anchored while you sing.',
         ],
       ),
       HelpSection(
-        heading: 'Shruti Box Drone',
+        heading: 'Where to find it',
         points: [
-          'Toggle "Shruti Drone" to start a continuous background hum.',
-          'Switch between Root + 5th (Pa) or Root + 4th (Ma) tuning.',
-          'Synthesized programmatically with multi-harmonic overtones and stereo depth.',
-          'Automatically stops when you leave performance view to prevent background sound leaks.',
+          'Open a song and tap the pitch button (the bars icon) next to the '
+              'metronome.',
+          'It is in the Stage Mode bar too, next to the play button.',
+          'Settings → General → Pitch Pipe & Shruti Box sets the defaults and '
+              'has Test buttons.',
+        ],
+      ),
+      HelpSection(
+        heading: 'Pitch cue',
+        points: [
+          'Tap "Pitch Cue" to hear a 2-second reference note.',
+          'Helps singers find their starting note before the song begins.',
+        ],
+      ),
+      HelpSection(
+        heading: 'Shruti box drone',
+        points: [
+          'Tap "Shruti Drone" to start a continuous background hum.',
+          'Choose Sa + Pa (the fifth) for most music, or Sa + Ma (the fourth) '
+              'for ragas that leave out Pa, such as Malkauns or Marwa.',
+          'The two notes are tuned in pure ratios (3:2 and 4:3), the way a real '
+              'drone instrument sounds — not in equal temperament.',
+          'The drone keeps playing until you stop it, so you can practise '
+              'without it cutting out.',
+        ],
+      ),
+      HelpSection(
+        heading: 'Indian and Western naming',
+        points: [
+          'Sa is movable, so the app must know which actual pitch your Sa is. '
+              'Set it in Settings → "Your Sa (Shruti)".',
+          'A song with a raga is named the Indian way: "5 kattai" for '
+              'Carnatic, "safed 5" for Hindustani. The tala decides which. No '
+              'Western letters appear on an Indian sheet.',
+          'A song without a raga is named the Western way: just "G".',
+          'A Western song opens on the song\'s own key. An Indian song opens '
+              'on your Sa, because the notation is written relative to Sa.',
         ],
       ),
       HelpSection(
@@ -391,6 +449,78 @@ const List<HelpTopic> helpTopics = [
           'All songs found are added to your library.',
           'Importing one song opens it right away.',
           'Importing many songs shows how many were added.',
+        ],
+      ),
+    ],
+  ),
+  HelpTopic(
+    id: 'melody',
+    title: 'Melody Lines',
+    icon: Icons.graphic_eq,
+    summary: 'Write the tune under the words, then hear it.',
+    intro:
+        'A chord sheet tells you the words and tells the accompanist what to '
+        'play. It does not tell you the tune. A melody line adds that. Write '
+        '{melody} under a lyric line and the app draws the beats and hums '
+        'them back, so you can learn a song you have never heard.',
+    sections: [
+      HelpSection(
+        heading: 'Writing one',
+        points: [
+          'Put a line starting with {melody} under the lyric line it belongs '
+              'to.',
+          'Example: {melody} P ,  M2 | M2!G3~ ,  | R2 S',
+          'Beats are separated by spaces. One beat, one space.',
+          'The words and chords above it do not change at all.',
+        ],
+      ),
+      HelpSection(
+        heading: 'The five marks',
+        points: [
+          'A comma ( , ) holds the note before it for one more beat.',
+          'A bar ( | ) shows where a new tala group starts. It takes no time.',
+          'A hyphen ( - ) joins notes that share one beat: G3-R2 is half a '
+              'beat each.',
+          'A bang ( ! ) slides into a note. M2!G3 starts the slide at Ma. A '
+              'bare !G3 is a short slide in from just under Ga.',
+          'A tilde ( ~ ) shakes the note.',
+        ],
+      ),
+      HelpSection(
+        heading: 'Naming the notes',
+        points: [
+          'A bare name is the note from the plain Sa Re Ga Ma Pa Dha Ni row, '
+              'so Ma on its own is Ma1.',
+          'A digit names the exact one: Ma2 is the raised Ma, R1 R2 R3 are the '
+              'three Ris.',
+          'Ma2 and M2 mean the same note. Use full names in chords and short '
+              'letters in melody lines, or whichever reads better.',
+          'The raga never changes what a name means, so nothing is guessed.',
+          'A dot in front drops a note an octave (.N3). An apostrophe after '
+              "raises it (S').",
+        ],
+      ),
+      HelpSection(
+        heading: 'Hearing it',
+        points: [
+          'Add {tonic: 1 kattai} so the app knows where your Sa really is. '
+              'Without it the beats still draw, but nothing can play.',
+          'Add {tala: misra chapu} so the beats are grouped correctly.',
+          'The song tempo sets the speed.',
+          'Tap the play button beside a melody line to hum it.',
+          'Turn on Loop to repeat the line, or Half speed to learn it slowly.',
+          'Start the shruti drone first — a tune is much easier to hear '
+              'against a drone than on its own.',
+        ],
+      ),
+      HelpSection(
+        heading: 'What it can and cannot do',
+        points: [
+          'It shows you where the notes go and how long each one lasts.',
+          'It does not shape them the way a singer does. Listen to a '
+              'recording for that.',
+          'Every song needs a person who knows the tune to type it in. There '
+              'is no shortcut.',
         ],
       ),
     ],

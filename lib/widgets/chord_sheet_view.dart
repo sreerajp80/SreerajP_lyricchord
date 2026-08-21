@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:lyricchord/services/chord_sheet_parser.dart';
+import 'package:lyricchord/widgets/melody_line_row.dart';
 
 /// Draws the lyric sheet with chord badges above the words.
 ///
@@ -18,7 +19,19 @@ class ChordSheetView extends StatelessWidget {
     required this.fontSize,
     this.showChords = true,
     this.lyricFontFamily,
+    this.melodyTonicHz,
+    this.melodyTempoBpm,
   });
+
+  /// The frequency of the song's Sa, read from its `{tonic: ...}` line.
+  ///
+  /// `null` when the song does not name one. A melody line still draws its beat
+  /// grid — it just cannot be played, because without a real pitch there is no
+  /// frequency to hum.
+  final double? melodyTonicHz;
+
+  /// Beats per minute for melody playback, or `null` when the song has none.
+  final double? melodyTempoBpm;
 
   /// The parsed sheet, already transposed if a transpose is active.
   final List<ChordLine> lines;
@@ -84,6 +97,16 @@ class ChordSheetView extends StatelessWidget {
         for (final line in lines)
           if (line.isBlank)
             SizedBox(height: fontSize)
+          else if (line.kind == ChordLineKind.melody && line.melody != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4, top: 2),
+              child: MelodyLineRow(
+                melody: line.melody!,
+                tonicHz: melodyTonicHz,
+                tempoBpm: melodyTempoBpm,
+                textStyle: swaramStyle,
+              ),
+            )
           else if (line.kind == ChordLineKind.swaram)
             Padding(
               padding: const EdgeInsets.only(bottom: 2),

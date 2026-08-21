@@ -8,6 +8,8 @@
 /// marker) is kept as plain lyric text, which is CLAUDE.md hard rule 4.
 library;
 
+import 'package:lyricchord/models/melody_line.dart';
+import 'package:lyricchord/services/melody_parser_service.dart';
 import 'package:lyricchord/services/swara_notation_service.dart';
 
 /// One chunk of a line: an optional chord sitting above some lyric text.
@@ -49,6 +51,12 @@ enum ChordLineKind {
   /// that does not wrap, because a swaram only reads correctly when the beats
   /// line up.
   swaram,
+
+  /// A `{melody}` line: the tune for the lyric line above it, written in beats.
+  ///
+  /// Unlike [swaram] this carries timing, so it can be drawn as a beat grid and
+  /// played back. The parsed form is on `ChordLine.melody`.
+  melody,
 }
 
 /// One line of the sheet. A blank line has no segments.
@@ -56,10 +64,21 @@ class ChordLine {
   /// The chunks of this line, left to right.
   final List<ChordSegment> segments;
 
-  /// Whether this is lyrics or a swaram passage.
+  /// Whether this is lyrics, a swaram passage or a melody line.
   final ChordLineKind kind;
 
-  const ChordLine(this.segments, {this.kind = ChordLineKind.lyric});
+  /// The parsed tune, set only when [kind] is [ChordLineKind.melody].
+  ///
+  /// The renderer draws it as a beat grid and the player sings it. Nothing else
+  /// on the line changes, so a sheet with no melody lines behaves exactly as it
+  /// did before this existed.
+  final MelodyLine? melody;
+
+  const ChordLine(
+    this.segments, {
+    this.kind = ChordLineKind.lyric,
+    this.melody,
+  });
 
   /// True for a blank line, which the renderer draws as vertical space.
   bool get isBlank => segments.isEmpty;
@@ -75,6 +94,7 @@ class ChordLine {
   bool operator ==(Object other) {
     if (other is! ChordLine) return false;
     if (other.kind != kind) return false;
+    if (other.melody != melody) return false;
     if (other.segments.length != segments.length) return false;
     for (var i = 0; i < segments.length; i++) {
       if (other.segments[i] != segments[i]) return false;
@@ -83,7 +103,7 @@ class ChordLine {
   }
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(segments), kind);
+  int get hashCode => Object.hash(Object.hashAll(segments), kind, melody);
 
   @override
   String toString() => 'ChordLine($segments, kind: ${kind.name})';
@@ -118,6 +138,7 @@ class ChordSheetParser {
   const ChordSheetParser();
 
   static const SwaraNotation _swara = SwaraNotation();
+  static const MelodyParser _melody = MelodyParser();
 
   /// Splits [lyrics] into lines, then each line into [ChordSegment]s.
   ///
@@ -142,6 +163,13 @@ class ChordSheetParser {
         .split('\n');
 
     for (final raw in rawLines) {
+      // Checked before the directive test on purpose: `{melody: ...}` would
+      // otherwise be swallowed as a header directive and the tune would vanish.
+      if (_melody.isMelodyLine(raw)) {
+        lines.add(parseMelodyLine(raw));
+        continue;
+      }
+
       final directive = _directive(raw);
       if (directive != null) {
         // Last one wins, and an unknown name is simply kept and never drawn.
@@ -215,6 +243,21 @@ class ChordSheetParser {
     }
 
     return ChordLine(segments, kind: _kindOf(segments));
+  }
+
+  /// Reads a `{melody}` line into a [ChordLine] carrying the parsed tune.
+  ///
+  /// The line keeps its place in the sheet, so it draws under the lyric line it
+  /// was written under. Its single segment holds the melody text as typed, so a
+  /// screen that knows nothing about melodies still shows something sensible
+  /// rather than a blank.
+  ChordLine parseMelodyLine(String line) {
+    final melody = _melody.parse(line);
+    return ChordLine(
+      [ChordSegment(text: melody.source)],
+      kind: ChordLineKind.melody,
+      melody: melody,
+    );
   }
 
   /// A line with no chords whose words are all swaras is a swaram passage.

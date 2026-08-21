@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/repositories/setlist_repository.dart';
 import 'package:lyricchord/repositories/song_repository.dart';
@@ -101,6 +102,39 @@ void main() {
       await setlistRepo.addSongToSetlist(setlist.id, newSongId);
       updated = await setlistRepo.watchSetlistById(setlist.id).first;
       expect(updated!.songCount, initialCount + 1);
+    });
+
+    test('setlist songs keep their scroll and tradition fields', () async {
+      // A song reached through a setlist must be the same song as one reached
+      // through the songbook. Dropping fields here lost the saved scroll speed
+      // and made an Indian song read as Western.
+      final songId = await songRepo.insert(
+        SongNote(
+          title: 'Mohanam Piece',
+          lyrics: '{raga: Mohanam}\n{tala: Adi}\n[Sa]ri ga',
+          timestamp: DateTime.now().millisecondsSinceEpoch,
+          scrollSpeed: 1.75,
+          scrollMeasures: 48,
+          raga: 'Mohanam',
+          tala: 'Adi',
+          tradition: PitchTradition.carnatic,
+        ),
+      );
+
+      final setlistId = await setlistRepo.insertSetlist(
+        name: 'Classical Set',
+        songIds: [songId],
+      );
+
+      final setlist = await setlistRepo.watchSetlistById(setlistId).first;
+      final song = setlist!.songs.single;
+
+      expect(song.scrollSpeed, 1.75);
+      expect(song.scrollMeasures, 48);
+      expect(song.raga, 'Mohanam');
+      expect(song.tala, 'Adi');
+      expect(song.tradition, PitchTradition.carnatic);
+      expect(song.isIndian, isTrue);
     });
 
     test('deletes a setlist', () async {

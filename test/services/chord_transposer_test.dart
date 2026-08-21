@@ -152,6 +152,45 @@ void main() {
       expect(transposer.transposeLyrics(sheet, 5, 'C'), sheet);
     });
 
+    test('the stored tradition overrides a misspelt raga header', () {
+      // This is the bug the tradition column exists to fix. `{ragam:}` is not
+      // `{raga:}`, so sniffing the text calls this a Western song — and `[Ga]`
+      // and `[Dha]` then read as the chords G and D and get rewritten. Passing
+      // the song's saved tradition stops that.
+      const sheet = '{ragam: Kalyani}\n[Ga]la la [Dha]la la';
+
+      expect(transposer.transposeLyrics(sheet, 2, 'C', isIndian: true), sheet);
+    });
+
+    test('without the flag, a misspelt header still fools the sniffer', () {
+      // Documents why the column is needed: the text alone cannot tell.
+      const sheet = '{ragam: Kalyani}\n[Ga]la la [Dha]la la';
+
+      final moved = transposer.transposeLyrics(sheet, 2, 'C');
+      expect(moved, contains('[Aa]'));
+      expect(moved, contains('[Eha]'));
+    });
+
+    test('isIndian: false transposes a Western song that mentions a raga', () {
+      // The flag is the authority in both directions. A Western song whose
+      // lyrics happen to contain a raga line is still a chord sheet.
+      const sheet = '{raga: not really}\n[C]la la';
+
+      expect(
+        transposer.transposeLyrics(sheet, 2, 'C', isIndian: false),
+        contains('[D]'),
+      );
+    });
+
+    test('chordsUsed honours the stored tradition', () {
+      const sheet = '{ragam: Kalyani}\n[Sa]la [Ma]la';
+
+      expect(transposer.chordsUsed(sheet, 2, 'C', isIndian: true), [
+        'Sa',
+        'Ma',
+      ]);
+    });
+
     test('chordsUsed returns the swaras as written', () {
       const sheet =
           '{raga: Yamunakalyani}\n'

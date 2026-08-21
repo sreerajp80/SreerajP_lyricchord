@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:lyricchord/core/utils/song_copy.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/repositories/song_repository.dart';
 
@@ -34,6 +35,9 @@ class FakeSongRepository implements SongRepository {
       key: 'E',
       bpm: 68,
       timestamp: 6,
+      raga: 'Yamunakalyani',
+      tala: 'Adi',
+      tradition: PitchTradition.carnatic,
     ),
     const SongNote(
       id: 5,
@@ -45,6 +49,9 @@ class FakeSongRepository implements SongRepository {
       key: 'D',
       bpm: 84,
       timestamp: 5,
+      raga: 'Mishra Gara',
+      tala: 'Keherwa',
+      tradition: PitchTradition.hindustani,
     ),
     const SongNote(
       id: 4,
@@ -55,6 +62,9 @@ class FakeSongRepository implements SongRepository {
       bpm: 72,
       favorite: true,
       timestamp: 4,
+      raga: 'Hamsadhvani',
+      tala: 'Adi',
+      tradition: PitchTradition.carnatic,
     ),
     const SongNote(
       id: 3,

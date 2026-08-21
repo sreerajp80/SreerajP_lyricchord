@@ -121,6 +121,38 @@ class $SongNotesTable extends SongNotes
     requiredDuringInsert: false,
     defaultValue: const Constant(32),
   );
+  static const VerificationMeta _ragaMeta = const VerificationMeta('raga');
+  @override
+  late final GeneratedColumn<String> raga = GeneratedColumn<String>(
+    'raga',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _talaMeta = const VerificationMeta('tala');
+  @override
+  late final GeneratedColumn<String> tala = GeneratedColumn<String>(
+    'tala',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _traditionMeta = const VerificationMeta(
+    'tradition',
+  );
+  @override
+  late final GeneratedColumn<String> tradition = GeneratedColumn<String>(
+    'tradition',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -133,6 +165,9 @@ class $SongNotesTable extends SongNotes
     timestamp,
     scrollSpeed,
     scrollMeasures,
+    raga,
+    tala,
+    tradition,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -213,6 +248,24 @@ class $SongNotesTable extends SongNotes
         ),
       );
     }
+    if (data.containsKey('raga')) {
+      context.handle(
+        _ragaMeta,
+        raga.isAcceptableOrUnknown(data['raga']!, _ragaMeta),
+      );
+    }
+    if (data.containsKey('tala')) {
+      context.handle(
+        _talaMeta,
+        tala.isAcceptableOrUnknown(data['tala']!, _talaMeta),
+      );
+    }
+    if (data.containsKey('tradition')) {
+      context.handle(
+        _traditionMeta,
+        tradition.isAcceptableOrUnknown(data['tradition']!, _traditionMeta),
+      );
+    }
     return context;
   }
 
@@ -262,6 +315,18 @@ class $SongNotesTable extends SongNotes
         DriftSqlType.int,
         data['${effectivePrefix}scroll_measures'],
       )!,
+      raga: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raga'],
+      )!,
+      tala: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tala'],
+      )!,
+      tradition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tradition'],
+      )!,
     );
   }
 
@@ -289,6 +354,22 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
   /// Tempo-Auto length in measures the user last set for this song (schema
   /// version 3).
   final int scrollMeasures;
+
+  /// Raga name for an Indian song, `''` for a Western one (schema version 9).
+  final String raga;
+
+  /// Tala name for an Indian song, `''` for a Western one (schema version 9).
+  final String tala;
+
+  /// `western`, `carnatic`, `hindustani`, or `''` when not yet classified
+  /// (schema version 9).
+  ///
+  /// Stored rather than worked out from the lyrics on every read. The old
+  /// behaviour keyed off a `{raga: …}` header line, so a typo such as
+  /// `{ragam: …}` made an Indian song look Western — and the transposer would
+  /// then shift its `[Sa]` and `[Ma]` markers as if they were chord letters,
+  /// quietly corrupting the sheet.
+  final String tradition;
   const SongNoteRow({
     required this.id,
     required this.title,
@@ -300,6 +381,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     required this.timestamp,
     required this.scrollSpeed,
     required this.scrollMeasures,
+    required this.raga,
+    required this.tala,
+    required this.tradition,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -314,6 +398,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     map['timestamp'] = Variable<int>(timestamp);
     map['scroll_speed'] = Variable<double>(scrollSpeed);
     map['scroll_measures'] = Variable<int>(scrollMeasures);
+    map['raga'] = Variable<String>(raga);
+    map['tala'] = Variable<String>(tala);
+    map['tradition'] = Variable<String>(tradition);
     return map;
   }
 
@@ -329,6 +416,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       timestamp: Value(timestamp),
       scrollSpeed: Value(scrollSpeed),
       scrollMeasures: Value(scrollMeasures),
+      raga: Value(raga),
+      tala: Value(tala),
+      tradition: Value(tradition),
     );
   }
 
@@ -348,6 +438,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       timestamp: serializer.fromJson<int>(json['timestamp']),
       scrollSpeed: serializer.fromJson<double>(json['scrollSpeed']),
       scrollMeasures: serializer.fromJson<int>(json['scrollMeasures']),
+      raga: serializer.fromJson<String>(json['raga']),
+      tala: serializer.fromJson<String>(json['tala']),
+      tradition: serializer.fromJson<String>(json['tradition']),
     );
   }
   @override
@@ -364,6 +457,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       'timestamp': serializer.toJson<int>(timestamp),
       'scrollSpeed': serializer.toJson<double>(scrollSpeed),
       'scrollMeasures': serializer.toJson<int>(scrollMeasures),
+      'raga': serializer.toJson<String>(raga),
+      'tala': serializer.toJson<String>(tala),
+      'tradition': serializer.toJson<String>(tradition),
     };
   }
 
@@ -378,6 +474,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     int? timestamp,
     double? scrollSpeed,
     int? scrollMeasures,
+    String? raga,
+    String? tala,
+    String? tradition,
   }) => SongNoteRow(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -389,6 +488,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     timestamp: timestamp ?? this.timestamp,
     scrollSpeed: scrollSpeed ?? this.scrollSpeed,
     scrollMeasures: scrollMeasures ?? this.scrollMeasures,
+    raga: raga ?? this.raga,
+    tala: tala ?? this.tala,
+    tradition: tradition ?? this.tradition,
   );
   SongNoteRow copyWithCompanion(SongNotesCompanion data) {
     return SongNoteRow(
@@ -406,6 +508,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       scrollMeasures: data.scrollMeasures.present
           ? data.scrollMeasures.value
           : this.scrollMeasures,
+      raga: data.raga.present ? data.raga.value : this.raga,
+      tala: data.tala.present ? data.tala.value : this.tala,
+      tradition: data.tradition.present ? data.tradition.value : this.tradition,
     );
   }
 
@@ -421,7 +526,10 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
           ..write('favorite: $favorite, ')
           ..write('timestamp: $timestamp, ')
           ..write('scrollSpeed: $scrollSpeed, ')
-          ..write('scrollMeasures: $scrollMeasures')
+          ..write('scrollMeasures: $scrollMeasures, ')
+          ..write('raga: $raga, ')
+          ..write('tala: $tala, ')
+          ..write('tradition: $tradition')
           ..write(')'))
         .toString();
   }
@@ -438,6 +546,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     timestamp,
     scrollSpeed,
     scrollMeasures,
+    raga,
+    tala,
+    tradition,
   );
   @override
   bool operator ==(Object other) =>
@@ -452,7 +563,10 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
           other.favorite == this.favorite &&
           other.timestamp == this.timestamp &&
           other.scrollSpeed == this.scrollSpeed &&
-          other.scrollMeasures == this.scrollMeasures);
+          other.scrollMeasures == this.scrollMeasures &&
+          other.raga == this.raga &&
+          other.tala == this.tala &&
+          other.tradition == this.tradition);
 }
 
 class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
@@ -466,6 +580,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
   final Value<int> timestamp;
   final Value<double> scrollSpeed;
   final Value<int> scrollMeasures;
+  final Value<String> raga;
+  final Value<String> tala;
+  final Value<String> tradition;
   const SongNotesCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -477,6 +594,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     this.timestamp = const Value.absent(),
     this.scrollSpeed = const Value.absent(),
     this.scrollMeasures = const Value.absent(),
+    this.raga = const Value.absent(),
+    this.tala = const Value.absent(),
+    this.tradition = const Value.absent(),
   });
   SongNotesCompanion.insert({
     this.id = const Value.absent(),
@@ -489,6 +609,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     required int timestamp,
     this.scrollSpeed = const Value.absent(),
     this.scrollMeasures = const Value.absent(),
+    this.raga = const Value.absent(),
+    this.tala = const Value.absent(),
+    this.tradition = const Value.absent(),
   }) : title = Value(title),
        timestamp = Value(timestamp);
   static Insertable<SongNoteRow> custom({
@@ -502,6 +625,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     Expression<int>? timestamp,
     Expression<double>? scrollSpeed,
     Expression<int>? scrollMeasures,
+    Expression<String>? raga,
+    Expression<String>? tala,
+    Expression<String>? tradition,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -514,6 +640,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
       if (timestamp != null) 'timestamp': timestamp,
       if (scrollSpeed != null) 'scroll_speed': scrollSpeed,
       if (scrollMeasures != null) 'scroll_measures': scrollMeasures,
+      if (raga != null) 'raga': raga,
+      if (tala != null) 'tala': tala,
+      if (tradition != null) 'tradition': tradition,
     });
   }
 
@@ -528,6 +657,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     Value<int>? timestamp,
     Value<double>? scrollSpeed,
     Value<int>? scrollMeasures,
+    Value<String>? raga,
+    Value<String>? tala,
+    Value<String>? tradition,
   }) {
     return SongNotesCompanion(
       id: id ?? this.id,
@@ -540,6 +672,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
       timestamp: timestamp ?? this.timestamp,
       scrollSpeed: scrollSpeed ?? this.scrollSpeed,
       scrollMeasures: scrollMeasures ?? this.scrollMeasures,
+      raga: raga ?? this.raga,
+      tala: tala ?? this.tala,
+      tradition: tradition ?? this.tradition,
     );
   }
 
@@ -576,6 +711,15 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     if (scrollMeasures.present) {
       map['scroll_measures'] = Variable<int>(scrollMeasures.value);
     }
+    if (raga.present) {
+      map['raga'] = Variable<String>(raga.value);
+    }
+    if (tala.present) {
+      map['tala'] = Variable<String>(tala.value);
+    }
+    if (tradition.present) {
+      map['tradition'] = Variable<String>(tradition.value);
+    }
     return map;
   }
 
@@ -591,7 +735,10 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
           ..write('favorite: $favorite, ')
           ..write('timestamp: $timestamp, ')
           ..write('scrollSpeed: $scrollSpeed, ')
-          ..write('scrollMeasures: $scrollMeasures')
+          ..write('scrollMeasures: $scrollMeasures, ')
+          ..write('raga: $raga, ')
+          ..write('tala: $tala, ')
+          ..write('tradition: $tradition')
           ..write(')'))
         .toString();
   }
@@ -1296,6 +1443,9 @@ typedef $$SongNotesTableCreateCompanionBuilder =
       required int timestamp,
       Value<double> scrollSpeed,
       Value<int> scrollMeasures,
+      Value<String> raga,
+      Value<String> tala,
+      Value<String> tradition,
     });
 typedef $$SongNotesTableUpdateCompanionBuilder =
     SongNotesCompanion Function({
@@ -1309,6 +1459,9 @@ typedef $$SongNotesTableUpdateCompanionBuilder =
       Value<int> timestamp,
       Value<double> scrollSpeed,
       Value<int> scrollMeasures,
+      Value<String> raga,
+      Value<String> tala,
+      Value<String> tradition,
     });
 
 final class $$SongNotesTableReferences
@@ -1390,6 +1543,21 @@ class $$SongNotesTableFilterComposer
 
   ColumnFilters<int> get scrollMeasures => $composableBuilder(
     column: $table.scrollMeasures,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get raga => $composableBuilder(
+    column: $table.raga,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tala => $composableBuilder(
+    column: $table.tala,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tradition => $composableBuilder(
+    column: $table.tradition,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1477,6 +1645,21 @@ class $$SongNotesTableOrderingComposer
     column: $table.scrollMeasures,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get raga => $composableBuilder(
+    column: $table.raga,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tala => $composableBuilder(
+    column: $table.tala,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tradition => $composableBuilder(
+    column: $table.tradition,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SongNotesTableAnnotationComposer
@@ -1521,6 +1704,15 @@ class $$SongNotesTableAnnotationComposer
     column: $table.scrollMeasures,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get raga =>
+      $composableBuilder(column: $table.raga, builder: (column) => column);
+
+  GeneratedColumn<String> get tala =>
+      $composableBuilder(column: $table.tala, builder: (column) => column);
+
+  GeneratedColumn<String> get tradition =>
+      $composableBuilder(column: $table.tradition, builder: (column) => column);
 
   Expression<T> setlistItemsRefs<T extends Object>(
     Expression<T> Function($$SetlistItemsTableAnnotationComposer a) f,
@@ -1586,6 +1778,9 @@ class $$SongNotesTableTableManager
                 Value<int> timestamp = const Value.absent(),
                 Value<double> scrollSpeed = const Value.absent(),
                 Value<int> scrollMeasures = const Value.absent(),
+                Value<String> raga = const Value.absent(),
+                Value<String> tala = const Value.absent(),
+                Value<String> tradition = const Value.absent(),
               }) => SongNotesCompanion(
                 id: id,
                 title: title,
@@ -1597,6 +1792,9 @@ class $$SongNotesTableTableManager
                 timestamp: timestamp,
                 scrollSpeed: scrollSpeed,
                 scrollMeasures: scrollMeasures,
+                raga: raga,
+                tala: tala,
+                tradition: tradition,
               ),
           createCompanionCallback:
               ({
@@ -1610,6 +1808,9 @@ class $$SongNotesTableTableManager
                 required int timestamp,
                 Value<double> scrollSpeed = const Value.absent(),
                 Value<int> scrollMeasures = const Value.absent(),
+                Value<String> raga = const Value.absent(),
+                Value<String> tala = const Value.absent(),
+                Value<String> tradition = const Value.absent(),
               }) => SongNotesCompanion.insert(
                 id: id,
                 title: title,
@@ -1621,6 +1822,9 @@ class $$SongNotesTableTableManager
                 timestamp: timestamp,
                 scrollSpeed: scrollSpeed,
                 scrollMeasures: scrollMeasures,
+                raga: raga,
+                tala: tala,
+                tradition: tradition,
               ),
           withReferenceMapper: (p0) => p0
               .map(

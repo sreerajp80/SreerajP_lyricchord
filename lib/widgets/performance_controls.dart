@@ -7,6 +7,7 @@ import 'package:lyricchord/providers/performance_provider.dart';
 import 'package:lyricchord/services/auto_scroll_calculator.dart';
 import 'package:lyricchord/widgets/auto_scroll_controls.dart';
 import 'package:lyricchord/widgets/metronome_beat.dart';
+import 'package:lyricchord/widgets/pitch_drone_controls.dart';
 
 /// The compact, always-visible auto-scroll header shown above the chord sheet.
 ///
@@ -70,8 +71,26 @@ class PerformanceControls extends ConsumerWidget {
                   showFullScreenButton: showFullScreenButton,
                 ),
               ),
+              const SizedBox(width: 4),
+              // Stage Mode has this button too, but Stage Mode is a place many
+              // people never go. A singer needs their starting note before the
+              // song begins, so it belongs on the ordinary screen as well.
+              IconButton(
+                tooltip: 'Pitch pipe & shruti box',
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.graphic_eq),
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (_) => PitchDroneControlsSheet(
+                    songKey: currentKey,
+                    raga: raga,
+                    tala: tala,
+                  ),
+                ),
+              ),
               if (metronomeEnabled) ...[
-                const SizedBox(width: 12),
+                const SizedBox(width: 4),
                 MetronomeBeat(bpm: bpm, active: active),
               ],
             ],

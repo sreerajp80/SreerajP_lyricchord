@@ -6,6 +6,12 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'package:lyricchord/core/constants/app_constants.dart';
+// Both are pure logic — no storage, no UI, no navigation. Imported here only so
+// the version 9 backfill classifies old songs by exactly the same rule the rest
+// of the app uses, instead of a second copy that could drift out of step.
+import 'package:lyricchord/models/pitch_tradition.dart';
+import 'package:lyricchord/services/chord_sheet_parser.dart';
+import 'package:lyricchord/services/pitch_naming_service.dart';
 
 part 'app_database.g.dart';
 
@@ -33,6 +39,22 @@ class SongNotes extends Table {
   /// Tempo-Auto length in measures the user last set for this song (schema
   /// version 3).
   IntColumn get scrollMeasures => integer().withDefault(const Constant(32))();
+
+  /// Raga name for an Indian song, `''` for a Western one (schema version 9).
+  TextColumn get raga => text().withDefault(const Constant(''))();
+
+  /// Tala name for an Indian song, `''` for a Western one (schema version 9).
+  TextColumn get tala => text().withDefault(const Constant(''))();
+
+  /// `western`, `carnatic`, `hindustani`, or `''` when not yet classified
+  /// (schema version 9).
+  ///
+  /// Stored rather than worked out from the lyrics on every read. The old
+  /// behaviour keyed off a `{raga: …}` header line, so a typo such as
+  /// `{ragam: …}` made an Indian song look Western — and the transposer would
+  /// then shift its `[Sa]` and `[Ma]` markers as if they were chord letters,
+  /// quietly corrupting the sheet.
+  TextColumn get tradition => text().withDefault(const Constant(''))();
 }
 
 /// The `setlists` table (schema version 2).
@@ -73,7 +95,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -81,6 +103,10 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
       await _seedClassicSongs();
       await _seedClassicSetlists();
+      // The seed songs carry their raga and tala as `{…}` header lines, so the
+      // same backfill the upgrade uses fills their columns in. Keeping one code
+      // path means a fresh install and an upgraded one classify identically.
+      await _backfillSongTraditions();
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) {
@@ -102,9 +128,36 @@ class AppDatabase extends _$AppDatabase {
         // (`[Sa]`, not `[S]`), and their markers now match the Swaram block.
         await _rewriteClassicalSongsInSwaraNotation();
       }
+      if (from < 9) {
+        // Adding a column that is already there is a hard SQLite error, which
+        // would leave the upgrade half-applied and the app unable to open. Ask
+        // the table what it has first, so re-running this step is harmless.
+        final existing = await _songColumnNames();
+        for (final column in [
+          songNotes.raga,
+          songNotes.tala,
+          songNotes.tradition,
+        ]) {
+          if (!existing.contains(column.name)) {
+            await m.addColumn(songNotes, column);
+          }
+        }
+        // Older builds added some columns without a NOT NULL default, so on
+        // those devices the rows hold NULL. Drift declares them non-null, and
+        // its row mapper ends every non-null column with `!` — so one NULL
+        // makes reading any song throw "Null check operator used on a null
+        // value", which fails the upgrade and stops the whole app from opening.
+        // Heal the data before anything reads it back.
+        await _healNullSongColumns();
+        await _backfillSongTraditions();
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON;');
+      // Safety net for a device already stamped at version 9 with NULLs left
+      // in place: onUpgrade will never run again there, so the repair above
+      // would never fire. Once the data is clean this touches no rows.
+      await _healNullSongColumns();
     },
   );
 
@@ -355,6 +408,134 @@ class AppDatabase extends _$AppDatabase {
         ),
       );
     }
+  }
+
+  /// Every `song_notes` column drift declares non-null, with the SQL literal to
+  /// put back when a row holds NULL instead.
+  ///
+  /// `id`, `title` and `timestamp` are left out on purpose: they are NOT NULL in
+  /// every schema this app has ever written, so a NULL there is not a shape we
+  /// can invent a sensible value for.
+  static const Map<String, String> _songColumnDefaults = {
+    'artist': "''",
+    'lyrics': "''",
+    'key': "'C'",
+    'bpm': '120',
+    'favorite': '0',
+    'scroll_speed': '1.0',
+    'scroll_measures': '32',
+    'raga': "''",
+    'tala': "''",
+    'tradition': "''",
+  };
+
+  /// Replaces NULL with the declared default in every non-null `song_notes`
+  /// column.
+  ///
+  /// Older builds added some of these columns without a NOT NULL default, so on
+  /// those phones the rows hold NULL. Drift declares the columns non-null and
+  /// ends every one with `!` in its row mapper, so a single NULL makes reading
+  /// *any* song throw "Null check operator used on a null value" — which leaves
+  /// the songbook permanently empty.
+  ///
+  /// Safe to run on a healthy database (the columns are NOT NULL there, so the
+  /// `WHERE` matches nothing) and safe on an old database that does not have a
+  /// column yet (the column check skips it).
+  Future<void> _healNullSongColumns() async {
+    final existing = await _songColumnNames();
+    for (final entry in _songColumnDefaults.entries) {
+      if (existing.contains(entry.key)) {
+        await customStatement(
+          'UPDATE song_notes SET ${entry.key} = ${entry.value} '
+          'WHERE ${entry.key} IS NULL',
+        );
+      }
+    }
+  }
+
+  /// The column names the `song_notes` table currently has on disk.
+  Future<Set<String>> _songColumnNames() async {
+    final rows = await customSelect("PRAGMA table_info('song_notes')").get();
+    return rows.map((row) => row.read<String>('name')).toSet();
+  }
+
+  /// Fills in `raga`, `tala` and `tradition` for songs written before those
+  /// columns existed (schema version 9).
+  ///
+  /// Reads each song's `{raga: …}` and `{tala: …}` header lines and classifies
+  /// it once, so the answer stops depending on re-parsing the lyrics. The
+  /// lyrics text itself is left exactly as the user wrote it — the header lines
+  /// stay, and the parser keeps hiding them from the sheet — so nothing the
+  /// user sees changes after the upgrade.
+  ///
+  /// The fallback is fixed to Carnatic rather than the user's "Pitch naming"
+  /// setting on purpose: a migration must give every device the same answer,
+  /// otherwise the same song reads Carnatic on one phone and Hindustani on
+  /// another.
+  ///
+  /// Nothing in here is allowed to throw. Drift runs the whole upgrade in one
+  /// transaction, so a single unreadable or malformed song would roll the
+  /// migration back, leave the version stamp behind, and make every later
+  /// launch retry — and fail — the same work. That shows up as a songbook that
+  /// is slow to open and then permanently empty. A song we cannot classify is
+  /// left with empty raga and tala instead.
+  Future<void> _backfillSongTraditions() async {
+    const parser = ChordSheetParser();
+    const naming = PitchNamingService();
+
+    // Deliberately not `getAllSongs()`: that builds a full typed row per song,
+    // so every column has to be readable just to reach `id` and `lyrics`. A
+    // migration must not depend on columns it is in the middle of filling in.
+    final rows = await customSelect('SELECT id, lyrics FROM song_notes').get();
+
+    // One write pass instead of one statement per song, so a large songbook
+    // does not make the first launch after the upgrade crawl.
+    await batch((batch) {
+      for (final row in rows) {
+        final int songId;
+        try {
+          songId = row.read<int>('id');
+        } catch (_) {
+          // No usable primary key — there is nothing we could update.
+          continue;
+        }
+
+        var raga = '';
+        var tala = '';
+        var tradition = PitchTradition.western;
+        try {
+          // `readNullable`: an old phone can hold NULL here, and `read<String>`
+          // would throw on it.
+          final sheet = parser.parseSheet(
+            row.readNullable<String>('lyrics') ?? '',
+          );
+          raga = sheet.raga ?? '';
+          tala = sheet.tala ?? '';
+          tradition = naming.detect(
+            raga: sheet.raga,
+            tala: sheet.tala,
+            fallback: PitchTradition.carnatic,
+          );
+        } catch (_) {
+          // Unreadable or malformed lyrics: fall back to the Western default
+          // rather than failing the whole upgrade. The user can still open the
+          // song and set its raga by hand.
+        }
+
+        // A targeted write, not `replace()`: this must touch only the three new
+        // columns and leave `timestamp` alone, or the upgrade would reorder the
+        // whole songbook.
+        batch.update(
+          songNotes,
+          SongNotesCompanion(
+            raga: Value(raga),
+            tala: Value(tala),
+            tradition: Value(tradition.storageKey),
+          ),
+          where: (t) => t.id.equals(songId),
+        );
+      }
+    });
   }
 
   /// The swara lyrics for a seeded classical song [title], or `null` when the

@@ -72,6 +72,7 @@ class PdfExportService {
       song.lyrics,
       semitones,
       song.key,
+      isIndian: song.isIndian,
     );
     final key = _transposer.transposeKey(song.key, semitones);
     final sheet = _parser.parseSheet(lyrics);
@@ -320,7 +321,7 @@ body { font-family: $stack; color: #000; line-height: 1.30; }
     // and a swara is already named relative to Sa. The raga and tala below say
     // what the song is.
     b.write(
-      sheet.isIndianNotation
+      song.isIndian
           ? '<p class="meta">BPM: ${song.bpm}</p>'
           : '<p class="meta">Key: ${_esc(key)}&nbsp;&nbsp;&nbsp;&nbsp;'
                 'BPM: ${song.bpm}</p>',

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lyricchord/models/lyric_font.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/services/pdf_export_service.dart';
 
@@ -252,6 +253,12 @@ void main() {
       key: 'E',
       bpm: 68,
       timestamp: 0,
+      // Since schema 9 the stored columns decide the tradition, not the
+      // `{raga: …}` header line. The header stays in the lyrics so the parser
+      // still has something to hide from the sheet.
+      raga: 'Yamunakalyani',
+      tala: 'Adi',
+      tradition: PitchTradition.carnatic,
     );
 
     test('directives print in the header, never as lyric text', () async {

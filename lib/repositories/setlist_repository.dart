@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/setlist.dart';
 import 'package:lyricchord/models/song_note.dart';
 
@@ -124,6 +125,12 @@ class SetlistRepository {
     );
   }
 
+  /// Maps a song row exactly as `SongRepository` does.
+  ///
+  /// Every column matters here: dropping `scrollSpeed` loses the speed the
+  /// song was last performed at, and dropping `tradition` makes an Indian song
+  /// read as Western — so the transposer would shift its `[Sa]` and `[Ma]`
+  /// markers like chord letters.
   SongNote _toSongModel(SongNoteRow row) => SongNote(
     id: row.id,
     title: row.title,
@@ -133,5 +140,14 @@ class SetlistRepository {
     bpm: row.bpm,
     favorite: row.favorite,
     timestamp: row.timestamp,
+    scrollSpeed: row.scrollSpeed,
+    scrollMeasures: row.scrollMeasures,
+    raga: row.raga,
+    tala: row.tala,
+    // An empty column means "not classified yet"; `SongNote.isIndian` then
+    // falls back to reading the raga, which is the old behaviour.
+    tradition: row.tradition.isEmpty
+        ? null
+        : PitchTradition.fromStorage(row.tradition),
   );
 }

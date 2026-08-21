@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/repositories/song_repository.dart';
 
@@ -148,6 +149,135 @@ void main() {
       final songs = await repo.watchAllSongs().first;
       final mine = songs.firstWhere((s) => s.id == id);
       expect(mine.lyrics, '[C]La la la');
+    });
+  });
+
+  group('schema v9 — tradition columns', () {
+    /// Runs the version 9 step over songs already in the database.
+    Future<void> upgradeToV9() =>
+        db.migration.onUpgrade(db.createMigrator(), 8, 9);
+
+    test('a song with no raga is classified Western', () async {
+      final id = await repo.insert(_newSong(title: 'Plain Chords'));
+
+      await upgradeToV9();
+
+      final song = (await repo.findById(id))!;
+      expect(song.tradition, PitchTradition.western);
+      expect(song.raga, isEmpty);
+      expect(song.tala, isEmpty);
+      expect(song.isIndian, isFalse);
+    });
+
+    test('a raga with a Carnatic tala is classified Carnatic', () async {
+      final id = await repo.insert(
+        _newSong(
+          title: 'Carnatic Piece',
+          lyrics: '{raga: Kalyani}\n{tala: Adi}\n[Sa]la la',
+        ),
+      );
+
+      await upgradeToV9();
+
+      final song = (await repo.findById(id))!;
+      expect(song.raga, 'Kalyani');
+      expect(song.tala, 'Adi');
+      expect(song.tradition, PitchTradition.carnatic);
+    });
+
+    test('a raga with a Hindustani tala is classified Hindustani', () async {
+      final id = await repo.insert(
+        _newSong(
+          title: 'Hindustani Piece',
+          lyrics: '{raga: Yaman}\n{tala: Keherwa}\n[Sa]la la',
+        ),
+      );
+
+      await upgradeToV9();
+
+      final song = (await repo.findById(id))!;
+      expect(song.tala, 'Keherwa');
+      expect(song.tradition, PitchTradition.hindustani);
+    });
+
+    test('a raga with no tala still counts as Indian', () async {
+      // The tala is what tells Carnatic from Hindustani. With none, the
+      // migration settles on Carnatic — the important part is that it never
+      // falls back to Western and lets the transposer at the swaras.
+      final id = await repo.insert(
+        _newSong(title: 'No Tala', lyrics: '{raga: Bhairavi}\n[Sa]la la'),
+      );
+
+      await upgradeToV9();
+
+      final song = (await repo.findById(id))!;
+      expect(song.raga, 'Bhairavi');
+      expect(song.tala, isEmpty);
+      expect(song.isIndian, isTrue);
+      expect(song.tradition, PitchTradition.carnatic);
+    });
+
+    test('the migration leaves the lyrics text untouched', () async {
+      const text = '{raga: Kalyani}\n{tala: Adi}\n[Sa]la la';
+      final id = await repo.insert(_newSong(title: 'Keep Text', lyrics: text));
+
+      await upgradeToV9();
+
+      expect((await repo.findById(id))!.lyrics, text);
+    });
+
+    test('the migration does not reorder the songbook', () async {
+      final before = (await repo.watchAllSongs().first)
+          .map((s) => s.timestamp)
+          .toList();
+
+      await upgradeToV9();
+
+      final after = (await repo.watchAllSongs().first)
+          .map((s) => s.timestamp)
+          .toList();
+      expect(after, before);
+    });
+
+    test('running the version 9 step twice is harmless', () async {
+      // Adding a column that already exists is a hard SQLite error. The step
+      // has to survive a re-run, or a half-applied upgrade would brick the app.
+      await upgradeToV9();
+      await upgradeToV9();
+
+      expect(await repo.watchAllSongs().first, hasLength(6));
+    });
+
+    test(
+      'the seeded classical songs come out Indian on a fresh install',
+      () async {
+        final songs = await repo.watchAllSongs().first;
+        final indian = songs
+            .where((s) => s.isIndian)
+            .map((s) => s.title)
+            .toSet();
+
+        expect(indian, hasLength(3));
+        expect(
+          songs.where((s) => !s.isIndian).every((s) => s.raga.isEmpty),
+          isTrue,
+        );
+      },
+    );
+
+    test('raga, tala and tradition survive a save and reload', () async {
+      final id = await repo.insert(
+        _newSong(title: 'Round Trip').copyWith(
+          raga: 'Hamsadhvani',
+          tala: 'Adi',
+          tradition: PitchTradition.carnatic,
+        ),
+      );
+
+      final song = (await repo.findById(id))!;
+      expect(song.raga, 'Hamsadhvani');
+      expect(song.tala, 'Adi');
+      expect(song.tradition, PitchTradition.carnatic);
     });
   });
 
@@ -305,11 +435,12 @@ void main() {
   });
 }
 
-SongNote _newSong({required String title}) => SongNote(
-  title: title,
-  artist: 'Tester',
-  lyrics: '[C]La la la',
-  key: 'C',
-  bpm: 100,
-  timestamp: DateTime.now().millisecondsSinceEpoch,
-);
+SongNote _newSong({required String title, String lyrics = '[C]La la la'}) =>
+    SongNote(
+      title: title,
+      artist: 'Tester',
+      lyrics: lyrics,
+      key: 'C',
+      bpm: 100,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );

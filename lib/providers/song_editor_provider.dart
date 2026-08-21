@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lyricchord/core/utils/song_copy.dart';
+import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/services/chord_suggestion_service.dart';
@@ -33,6 +34,16 @@ class SongDraft {
   /// The song's saved Tempo-Auto measures, carried through like [scrollSpeed].
   final int scrollMeasures;
 
+  /// Which notation this song is written in. Decides whether the editor shows
+  /// a Key field (Western) or Raga and Tala fields (Indian).
+  final PitchTradition tradition;
+
+  /// The raga name. Only meaningful when [tradition] is not Western.
+  final String raga;
+
+  /// The tala name. Only meaningful when [tradition] is not Western.
+  final String tala;
+
   /// Chords the user added by hand this session, shown after the suggestions.
   final List<String> customChords;
 
@@ -49,6 +60,9 @@ class SongDraft {
     this.favorite = false,
     this.scrollSpeed = 1.0,
     this.scrollMeasures = 32,
+    this.tradition = PitchTradition.western,
+    this.raga = '',
+    this.tala = '',
     this.customChords = const [],
     this.original,
   });
@@ -74,6 +88,14 @@ class SongDraft {
       favorite: song.favorite,
       scrollSpeed: song.scrollSpeed,
       scrollMeasures: song.scrollMeasures,
+      raga: song.raga,
+      tala: song.tala,
+      // A song saved before the column existed has no stored tradition. Fall
+      // back to the old rule — a raga means Indian — so opening it in the
+      // editor never silently flips it to Western.
+      tradition:
+          song.tradition ??
+          (song.isIndian ? PitchTradition.carnatic : PitchTradition.western),
     );
     return draft.copyWith(original: draft);
   }
@@ -88,6 +110,9 @@ class SongDraft {
     bool? favorite,
     double? scrollSpeed,
     int? scrollMeasures,
+    PitchTradition? tradition,
+    String? raga,
+    String? tala,
     List<String>? customChords,
     SongDraft? original,
   }) {
@@ -101,6 +126,9 @@ class SongDraft {
       favorite: favorite ?? this.favorite,
       scrollSpeed: scrollSpeed ?? this.scrollSpeed,
       scrollMeasures: scrollMeasures ?? this.scrollMeasures,
+      tradition: tradition ?? this.tradition,
+      raga: raga ?? this.raga,
+      tala: tala ?? this.tala,
       customChords: customChords ?? this.customChords,
       original: original ?? this.original,
     );
@@ -113,8 +141,14 @@ class SongDraft {
         artist != start.artist ||
         key != start.key ||
         bpmText != start.bpmText ||
-        lyrics != start.lyrics;
+        lyrics != start.lyrics ||
+        tradition != start.tradition ||
+        raga != start.raga ||
+        tala != start.tala;
   }
+
+  /// True when this draft is written in swaras rather than chords.
+  bool get isIndian => tradition != PitchTradition.western;
 
   /// The tempo to save: the typed number, or [defaultBpm] when it is missing
   /// or out of a musically sensible range.
@@ -161,6 +195,11 @@ class SongDraft {
       timestamp: timestamp,
       scrollSpeed: scrollSpeed,
       scrollMeasures: scrollMeasures,
+      // Raga and tala are cleared on a Western song, so switching a song back
+      // to Western never leaves a stale raga behind to make it look Indian.
+      raga: isIndian ? raga.trim() : '',
+      tala: isIndian ? tala.trim() : '',
+      tradition: tradition,
     );
   }
 }
@@ -194,6 +233,13 @@ class SongEditorNotifier extends AsyncNotifier<SongDraft> {
   void setBpmText(String value) => _update((d) => d.copyWith(bpmText: value));
 
   void setLyrics(String value) => _update((d) => d.copyWith(lyrics: value));
+
+  void setTradition(PitchTradition value) =>
+      _update((d) => d.copyWith(tradition: value));
+
+  void setRaga(String value) => _update((d) => d.copyWith(raga: value));
+
+  void setTala(String value) => _update((d) => d.copyWith(tala: value));
 
   /// Adds a chord typed in the custom-chord dialog to the toolbar.
   /// Blank text and repeats are ignored.
