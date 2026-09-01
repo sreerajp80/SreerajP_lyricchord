@@ -35,6 +35,7 @@ below for the full detail; do not duplicate that detail here.
 | [docs/architecture.md](docs/architecture.md) | Changing structure, screens, state, services, models, repositories, storage, navigation |
 | [docs/security.md](docs/security.md) | Touching permissions, networking, imported files, logging, or the keystore |
 | [docs/implementation_plan.md](docs/implementation_plan.md) | Deciding what to build next and when a phase is "done" |
+| [docs/carnatic_notation.md](docs/carnatic_notation.md) | Touching swaras, `{melody}` lines, talas, ragas, or transcribing published Carnatic notation |
 | [docs/GUIDELINES_MANIFEST.md](docs/GUIDELINES_MANIFEST.md) | The shared Flutter guidelines index |
 | [docs/guidelines/guideline.md](docs/guidelines/guideline.md) | About-screen config, keystore rules, baseline `lib/` layout |
 | [docs/guidelines/flutter_project_engineering_standard.md](docs/guidelines/flutter_project_engineering_standard.md) | Any code change — layers, naming, testing |

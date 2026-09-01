@@ -82,13 +82,13 @@ void main() {
   });
 
   testWidgets('marks an unreadable beat without dropping it', (tester) async {
-    await pumpGrid(tester, '{melody} S X G');
-    expect(find.text('X'), findsOneWidget);
+    await pumpGrid(tester, '{melody} S Q G');
+    expect(find.text('Q'), findsOneWidget);
 
     final context = tester.element(find.byType(MelodyBeatGrid));
     final scheme = Theme.of(context).colorScheme;
     final container = tester.widget<Container>(
-      find.ancestor(of: find.text('X'), matching: find.byType(Container)).first,
+      find.ancestor(of: find.text('Q'), matching: find.byType(Container)).first,
     );
     expect(
       (container.decoration! as BoxDecoration).color,

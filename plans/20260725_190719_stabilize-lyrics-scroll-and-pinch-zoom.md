@@ -1,6 +1,6 @@
 # Plan: Stabilize Lyrics Vertical Scroll & Pinch Zoom
 
-**Status:** Approved & Implemented
+**Status:** completed
 
 ## Problem
 1. When scrolling down/up long lyrics on the song performance screen, slight horizontal finger movement caused the parent `PageView` to start swiping left/right to adjacent songs, making the view jumpy and unstable.

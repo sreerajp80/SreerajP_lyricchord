@@ -1,6 +1,6 @@
 # Plan: Rename App Identifier & References from LyricCord to LyricChord
 
-**Status:** Implemented
+**Status:** completed
 
 ## Issue
 The app name was updated from `lyriccord` / `LyricCord` to `lyricchord` / `LyricChord`. Several source files, config files, iOS configurations, and documentation files still contained the old name.

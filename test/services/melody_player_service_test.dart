@@ -21,8 +21,137 @@ void main() {
       expect(player.frequencyOf(-12, tonic), closeTo(tonic / 2, 0.001));
     });
 
-    test('Pa is a fifth above Sa', () {
-      expect(player.frequencyOf(7, tonic), closeTo(392.0, 0.5));
+    test('Pa lands exactly on the drone fifth', () {
+      // The shruti drone sounds Pa at exactly 1.5 x Sa. The melody must agree,
+      // or a held Pa beats slowly against the drone it should lock into.
+      expect(player.frequencyOf(7, tonic), closeTo(tonic * 1.5, 0.001));
+    });
+
+    test('Ma1 lands exactly on the drone fourth', () {
+      expect(player.frequencyOf(5, tonic), closeTo(tonic * 4 / 3, 0.001));
+    });
+
+    test('every key is its whole-number ratio', () {
+      const ratios = [
+        1.0,
+        16 / 15,
+        9 / 8,
+        6 / 5,
+        5 / 4,
+        4 / 3,
+        45 / 32,
+        3 / 2,
+        8 / 5,
+        5 / 3,
+        16 / 9,
+        15 / 8,
+      ];
+
+      for (var position = 0; position < ratios.length; position++) {
+        expect(
+          player.frequencyOf(position, tonic),
+          closeTo(tonic * ratios[position], 0.001),
+          reason: 'position $position',
+        );
+      }
+    });
+
+    test('the ratios are used in every octave, above and below', () {
+      // Ga3 is 5/4 wherever it is sung.
+      expect(player.frequencyOf(4 + 12, tonic), closeTo(tonic * 2.5, 0.001));
+      expect(player.frequencyOf(4 - 12, tonic), closeTo(tonic * 0.625, 0.001));
+    });
+
+    test('it is not equal temperament', () {
+      // Ga3 is the widest gap: just 5/4 is about 14 cents flat of the equal
+      // tempered major third, which is what makes a held third sound settled.
+      final just = player.frequencyOf(4, tonic);
+      final equal = tonic * 1.259921; // 2^(4/12)
+      expect(just, lessThan(equal));
+      expect(equal - just, greaterThan(2.0));
+    });
+  });
+
+  group('the shake', () {
+    /// The one span of a single-note line.
+    MelodySpan only(String melody, {double bpm = tempo}) => player
+        .schedule(parser.parse(melody), tonicHz: tonic, tempoBpm: bpm)
+        .spans
+        .first;
+
+    test('a plain note does not shake', () {
+      expect(only('{melody} G3').shakes, isFalse);
+    });
+
+    test('a marked note shakes', () {
+      final span = only('{melody} G3~');
+      expect(span.shakes, isTrue);
+      expect(span.shakeDepthSemitones, MelodyPlayerService.shakeDepthSemitones);
+    });
+
+    test('the swing follows the tempo', () {
+      // 120 bpm x 2 swings a beat = 4 Hz.
+      expect(only('{melody} G3~', bpm: 120).shakeHz, closeTo(4.0, 0.001));
+      expect(player.shakeHzFor(90), closeTo(3.0, 0.001));
+    });
+
+    test('the swing is clamped at both ends', () {
+      // A crawl would give a lazy scoop, a sprint a buzz; neither reads as a
+      // shake.
+      expect(player.shakeHzFor(40), MelodyPlayerService.shakeMinHz);
+      expect(player.shakeHzFor(400), MelodyPlayerService.shakeMaxHz);
+    });
+
+    test('a note too short for a full swing is sung plain', () {
+      // At 240 bpm a beat is 250 ms, and four notes sharing it are 62 ms each.
+      final schedule = player.schedule(
+        parser.parse('{melody} G3~-R2~-S~-N3~'),
+        tonicHz: tonic,
+        tempoBpm: 240,
+      );
+      for (final span in schedule.spans) {
+        expect(span.shakes, isFalse);
+      }
+    });
+
+    test('a held note is long enough, even when its own beat is not', () {
+      // At 400 bpm a beat is 150 ms — under the minimum on its own. The hold
+      // stretches the note to 300 ms, which is over it, so the decision has to
+      // wait until every span has its final length.
+      expect(only('{melody} G3~', bpm: 400).shakes, isFalse);
+      expect(only('{melody} G3~ ,', bpm: 400).shakes, isTrue);
+    });
+
+    test('slowing the line down slows the swing with it', () {
+      final full = player.schedule(
+        parser.parse('{melody} G3~'),
+        tonicHz: tonic,
+        tempoBpm: 180,
+      );
+      final half = player.schedule(
+        parser.parse('{melody} G3~'),
+        tonicHz: tonic,
+        tempoBpm: 180,
+        speed: MelodyPlayerService.halfSpeed,
+      );
+
+      expect(full.spans.first.shakeHz, closeTo(6.0, 0.001));
+      expect(half.spans.first.shakeHz, closeTo(3.0, 0.001));
+    });
+
+    test('a note that slides and shakes carries both', () {
+      final span = only('{melody} M2!G3~');
+      expect(span.shakes, isTrue);
+      expect(span.fromFrequency, closeTo(player.frequencyOf(6, tonic), 0.001));
+    });
+
+    test('silence never shakes', () {
+      final schedule = player.schedule(
+        parser.parse('{melody} x'),
+        tonicHz: tonic,
+        tempoBpm: tempo,
+      );
+      expect(schedule.spans.first.shakes, isFalse);
     });
   });
 
@@ -145,7 +274,7 @@ void main() {
   group('unreadable input', () {
     test('an unknown beat is silence but keeps its beat', () {
       final schedule = player.schedule(
-        parser.parse('{melody} S X G'),
+        parser.parse('{melody} S Q G'),
         tonicHz: tonic,
         tempoBpm: tempo,
       );
@@ -203,6 +332,45 @@ void main() {
       // beat is index 3.
       expect(schedule.beatAt(const Duration(milliseconds: 2500)), 3);
       expect(schedule.beatAt(const Duration(seconds: 9)), isNull);
+    });
+  });
+
+  group('the slide', () {
+    const parser = MelodyParser();
+    const player = MelodyPlayerService();
+
+    MelodySchedule scheduleOf(String line) =>
+        player.schedule(parser.parse(line), tonicHz: 240, tempoBpm: 60);
+
+    test('a written start pitch is used', () {
+      // Ma2 slides into Ga3: the glide starts on Ma, above the target.
+      final span = scheduleOf('{melody} Ma2!Ga3').spans.first;
+
+      expect(span.fromFrequency, isNotNull);
+      expect(span.fromFrequency, greaterThan(span.frequency));
+      expect(span.fromFrequency, closeTo(player.frequencyOf(6, 240), 0.01));
+    });
+
+    test('a bare ! scoops in from a semitone below', () {
+      final span = scheduleOf('{melody} !Ga3').spans.first;
+
+      expect(span.fromFrequency, isNotNull);
+      expect(span.fromFrequency, lessThan(span.frequency));
+      expect(span.fromFrequency, closeTo(player.frequencyOf(4 - 1, 240), 0.01));
+    });
+
+    test('a plain note has no glide', () {
+      expect(scheduleOf('{melody} Ga3').spans.first.fromFrequency, isNull);
+    });
+
+    test('a slide held over a beat keeps its glide', () {
+      // The hold stretches the span rather than adding one, so the glide has to
+      // travel with it or the note would lose its slide when held.
+      final spans = scheduleOf('{melody} !Ga3 ,').spans;
+
+      expect(spans, hasLength(1));
+      expect(spans.first.fromFrequency, isNotNull);
+      expect(spans.first.duration.inMilliseconds, closeTo(2000, 50));
     });
   });
 }

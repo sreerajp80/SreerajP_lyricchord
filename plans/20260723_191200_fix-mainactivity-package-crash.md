@@ -1,6 +1,6 @@
 # Plan: Fix Android App Startup Crash (ClassNotFoundException: MainActivity)
 
-**Status:** Implemented
+**Status:** completed
 
 ## Issue
 App crashes on launch on Android with logcat exception:

@@ -1,6 +1,6 @@
 # Song Performance Page: Group Export & Add Share in Overflow Menu
 
-**Status:** proposed
+**Status:** completed
 
 ## The issue
 

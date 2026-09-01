@@ -250,4 +250,43 @@ void main() {
       expect(swara.swaraPosition('Ma9'), isNull);
     });
   });
+
+  group('the Da spelling of Dha', () {
+    const swara = SwaraNotation();
+
+    test('Da places where Dha does', () {
+      expect(swara.swaraPosition('Da'), 9);
+      expect(swara.swaraPosition('Da'), swara.swaraPosition('Dha'));
+    });
+
+    test('Da2 means the same note as Dha2 and D2', () {
+      expect(swara.swaraPosition('Da2'), 9);
+      expect(swara.swaraPosition('Da2'), swara.swaraPosition('Dha2'));
+      expect(swara.swaraPosition('Da2'), swara.swaraPosition('D2'));
+    });
+
+    test('Da1 and Da3 keep their variant', () {
+      expect(swara.swaraPosition('Da1'), swara.swaraPosition('D1'));
+      expect(swara.swaraPosition('Da3'), swara.swaraPosition('D3'));
+    });
+
+    test('Da is a swara token, with or without a digit', () {
+      expect(swara.isSwaraToken('Da'), isTrue);
+      expect(swara.isSwaraToken('Da2'), isTrue);
+    });
+
+    test('a swaram line written with Da is still recognised', () {
+      expect(
+        swara.isSwaramLine('Sa - Ri2 - Ga3 - Ma2 - Pa - Da2 - Ni3 - Sa -'),
+        isTrue,
+      );
+    });
+
+    test('the older spellings still work', () {
+      expect(swara.swaraPosition('Dha2'), 9);
+      expect(swara.swaraPosition('Dh'), 9);
+      expect(swara.swaraPosition('D'), 9);
+      expect(swara.isSwaraToken('Dha'), isTrue);
+    });
+  });
 }

@@ -1,0 +1,108 @@
+# Notes can now start or stop inside a beat
+
+Date: 2026-08-22
+
+Implements [plans/20260822_mid_beat_notes.md](../plans/20260822_mid_beat_notes.md).
+
+---
+
+## Why
+
+The `{melody}` format treated a beat as indivisible in time: notes could share a
+beat, but none could begin part-way through one or stop part-way through one.
+Carnatic phrases do that constantly, because they begin off the beat. In the
+seeded sample it forced 5 notes out of 397 to be snapped half a beat away from
+where the source puts them.
+
+## What changed
+
+### `lib/models/melody_beat.dart`
+
+A beat is now a list of **slots**, each one of three things:
+
+| Slot | Meaning |
+|---|---|
+| a note | strike it |
+| **tie** | whatever sounded before keeps sounding |
+| **silence** | nothing sounds |
+
+Tie and silence are genuinely different — a tie keeps a note ringing, silence
+stops it — so `MelodyNote?` would not have been enough.
+
+`notes` and `slots` are now **derived views** over the slot list rather than
+stored fields, so every existing caller kept working unchanged.
+
+### `lib/services/melody_parser_service.dart`
+
+* A `,` in a beat's **first** slot is a tie. It used to be thrown away —
+  *"A comma with nothing before it has nothing to extend, so it is dropped"* —
+  which is exactly what stopped a note starting mid-beat.
+* `x` (or `X`) is a silent slot.
+* A `,` **after** a note still extends it, unchanged.
+
+### `lib/services/melody_player_service.dart`
+
+The scheduler walks slots instead of notes. A tie stretches the previous span
+rather than adding one, so the note is not struck again — the same trick the
+whole-beat hold already used. A silent slot takes its share of the beat as
+silence.
+
+### `lib/services/carnatic_notation_import_service.dart`
+
+`_render` was rewritten. It now lays every event on a timeline of one cell per
+quarter-aksharakala and reads each beat off it, so a note that runs past a beat
+line keeps its real length and the next beat opens with a tie. Slot counts are
+reduced by their greatest common divisor, so a beat of two halves is written
+with two slots rather than four.
+
+**No snapping anywhere.** The pallavi's `, R ,` now converts to `,-Ri2`, and
+`G , m` to `Ga3 ,-Ma1` — Ga for a beat and a half, then Ma, which is what the
+durations actually say.
+
+### The sample song
+
+All 32 melody lines regenerated through the importer. The 5 notes that were
+snapped now land where the source puts them. Every line still parses at exactly
+7 beats, and every section still reads 4/4.
+
+## Something the work turned up
+
+**In this notation `,` and `;` both extend a note. Neither is a rest.** A `,`
+after a note lengthens it; a `;` is a beat of extension. So the importer only
+ever needs the **tie**, never the silence mark.
+
+`x` was kept anyway, because the format genuinely had no way to write a rest
+inside a beat, and that is a real gap independent of this importer. But the plan
+presented `x` as needed for the conversion, and it is not. Recorded here rather
+than quietly left looking necessary.
+
+## Tests
+
+* `test/services/melody_parser_service_test.dart` — a leading comma parses as a
+  tie; a tie does not re-strike (checked through the player: two sounds, and the
+  first runs a beat and a half); `x` parses as silence; a silent slot takes its
+  share of the beat; `X` reads as `x` while the beat keeps the writer's own
+  spelling; a comma after a note still extends it as before.
+* `test/services/carnatic_notation_import_service_test.dart` — `, R ,` converts
+  with a tie, nothing is reported as snapped, and `G , m` converts exactly.
+* Four fixtures that used `X` as their example of an unreadable token moved to
+  `Q`, since `x` now means something.
+* `test/repositories/song_repository_test.dart` — the Ma1 guard now checks per
+  line rather than per token, because a note starting mid-beat sits in a slot of
+  its own (`,-Ma1`).
+
+## Checks
+
+* `flutter analyze` — clean, no issues.
+* `flutter test` — all **742** pass (was 733).
+* All 32 seeded melody lines verified at exactly 7 beats with no problems.
+* `dart format` — applied.
+
+## Still open
+
+* **Slots divide a beat equally.** A 1/3 + 2/3 split needs three slots. Fine in
+  practice — Carnatic subdivision is binary.
+* **`!` and `~` are still not sounded** (phase 3 of the melody feature).
+* **The octave question.** In a run like `nsrgmp` the leading `n` may belong in
+  the lower octave; the source writes no dot, so it is transcribed as written.
+  Needs a musician's ear, not code.

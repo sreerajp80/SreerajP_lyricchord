@@ -212,7 +212,27 @@ void main() {
   testWidgets('Save as copy is not offered for a new song', (tester) async {
     await pumpEditor(tester);
 
-    expect(find.byIcon(Icons.more_vert), findsNothing);
+    // The menu itself is there — it carries "Paste Carnatic notation", which is
+    // useful while writing a new song. Only the copy item is withheld, because
+    // plain Save already creates a new song.
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await settle(tester);
+
+    expect(find.text('Save as copy'), findsNothing);
+    expect(find.text('Paste Carnatic notation'), findsOneWidget);
+  });
+
+  testWidgets('pasting notation needs a tala to check against', (tester) async {
+    await pumpEditor(tester);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await settle(tester);
+    await tester.tap(find.text('Paste Carnatic notation'));
+    await settle(tester);
+
+    // Without a {tala: ...} line there is nothing to check the cycles against,
+    // so the user is told rather than handed a silent wrong answer.
+    expect(find.textContaining('tala'), findsWidgets);
   });
 
   testWidgets('undo reverts a lyrics edit', (tester) async {
@@ -273,6 +293,97 @@ void main() {
 
     expect(find.byType(ChordInserterBar), findsOneWidget);
     expect(repo.currentSongs, hasLength(6));
+  });
+
+  group('melody keypad', () {
+    /// Taps a key in the keypad's button block.
+    ///
+    /// Scoped to the buttons, because the preview grid draws the same swara
+    /// text as the key that wrote it.
+    Future<void> tapKey(WidgetTester tester, String label) async {
+      await tester.tap(
+        find.descendant(of: find.byType(Wrap), matching: find.text(label)),
+      );
+      await settle(tester);
+    }
+
+    Future<void> openKeypad(WidgetTester tester) async {
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await settle(tester);
+      await tester.tap(find.text('Melody keypad'));
+      await settle(tester);
+    }
+
+    testWidgets('the menu offers the keypad', (tester) async {
+      await pumpEditor(tester);
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await settle(tester);
+
+      expect(find.text('Melody keypad'), findsOneWidget);
+    });
+
+    testWidgets('it opens without a tala, unlike the notation paste', (
+      tester,
+    ) async {
+      await pumpEditor(tester);
+      await openKeypad(tester);
+
+      // A melody can be tapped out with no tala — the tala only counts beats.
+      expect(find.text('Melody keypad'), findsOneWidget);
+    });
+
+    testWidgets('inserting adds the line at the caret', (tester) async {
+      await pumpEditor(tester);
+      await openKeypad(tester);
+
+      await tapKey(tester, 'S');
+      await tapKey(tester, 'G3');
+      await tester.tap(find.widgetWithText(FilledButton, 'Insert'));
+      await settle(tester);
+
+      final field = tester.widget<TextField>(lyricsField());
+      expect(field.controller!.text, '{melody} S G3\n');
+    });
+
+    testWidgets('with the caret on a melody line it replaces that line', (
+      tester,
+    ) async {
+      await pumpEditor(tester);
+
+      await tester.enterText(lyricsField(), 'Sing\n{melody} S R2\nMore');
+      await settle(tester);
+
+      // Put the caret inside the melody line.
+      final controller = tester.widget<TextField>(lyricsField()).controller!;
+      controller.selection = const TextSelection.collapsed(offset: 12);
+      await settle(tester);
+
+      await openKeypad(tester);
+      await tapKey(tester, 'G3');
+      await tester.tap(find.widgetWithText(FilledButton, 'Insert'));
+      await settle(tester);
+
+      // The old line is gone, not duplicated, and the lyrics around it stay.
+      expect(controller.text, 'Sing\n{melody} S R2 G3\nMore');
+    });
+
+    testWidgets('with the caret on a lyric line it adds a new line', (
+      tester,
+    ) async {
+      await pumpEditor(tester);
+
+      await tester.enterText(lyricsField(), 'Sing');
+      await settle(tester);
+
+      await openKeypad(tester);
+      await tapKey(tester, 'S');
+      await tester.tap(find.widgetWithText(FilledButton, 'Insert'));
+      await settle(tester);
+
+      final controller = tester.widget<TextField>(lyricsField()).controller!;
+      expect(controller.text, 'Sing\n{melody} S\n');
+    });
   });
 
   group('notation picker', () {

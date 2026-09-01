@@ -38,6 +38,7 @@ class SwaraNotation {
   static const List<String> _swaraAliases = [
     'Re', // Hindustani spelling of Ri
     'Dh', // short Dha
+    'Da', // Dha without the h, the spelling used in this app's sample songs
   ];
 
   /// Characters that only separate swaras and carry no pitch: the beat dash,
@@ -188,6 +189,7 @@ class SwaraNotation {
     'pa': 'P',
     'dha': 'D',
     'dh': 'D',
+    'da': 'D',
     'ni': 'N',
   };
 
@@ -213,6 +215,7 @@ class SwaraNotation {
     'pa': 7,
     'dha': 9,
     'dh': 9,
+    'da': 9,
     'ni': 11,
   };
 

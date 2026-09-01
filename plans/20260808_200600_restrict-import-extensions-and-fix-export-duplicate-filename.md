@@ -1,6 +1,6 @@
 # Restrict Import File Formats & Fix Export Duplicate File Name Extension
 
-**Status:** Completed
+**Status:** completed
 
 ## Issue
 1. **Import File Restriction**: Currently, `FilePicker.platform.pickFiles` in `ImportExportScreen` allows picking any file without restricting file extension choices. The app should strictly restrict selection to ChordPro (`.cho`, `.pro`, `.chordpro`) and plain text (`.txt`) files.

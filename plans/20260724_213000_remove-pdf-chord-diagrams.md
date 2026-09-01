@@ -1,6 +1,6 @@
 # Plan: Remove guitar chord diagrams from the PDF export
 
-**Status:** approval_pending
+**Status:** completed
 
 ## The issue
 

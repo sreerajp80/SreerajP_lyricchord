@@ -71,6 +71,9 @@ class MelodyAudioService implements MelodyAudio {
           .map(
             (span) => PcmTone(
               frequency: span.frequency,
+              fromFrequency: span.fromFrequency,
+              shakeHz: span.shakeHz,
+              shakeDepthSemitones: span.shakeDepthSemitones,
               durationSeconds: span.duration.inMicroseconds / 1000000,
             ),
           )

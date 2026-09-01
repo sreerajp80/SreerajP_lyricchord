@@ -1,6 +1,6 @@
 # Plan: Upgrade Flutter SDK to 3.44.8 and Dart SDK to 3.12.2
 
-**Status:** Proposed
+**Status:** completed
 
 ## Overview
 Upgrade the LyricChord project SDK constraints and documentation to reflect Flutter 3.44.8 (stable channel) and Dart 3.12.2.

@@ -11,8 +11,12 @@ import 'package:lyricchord/providers/lyric_font_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
 import 'package:lyricchord/providers/song_editor_provider.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
+import 'package:lyricchord/services/chord_sheet_parser.dart';
+import 'package:lyricchord/services/melody_parser_service.dart';
 import 'package:lyricchord/services/pitch_naming_service.dart';
+import 'package:lyricchord/widgets/carnatic_notation_sheet.dart';
 import 'package:lyricchord/widgets/chord_inserter_bar.dart';
+import 'package:lyricchord/widgets/melody_keypad_sheet.dart';
 import 'package:lyricchord/widgets/song_meta_fields.dart';
 
 /// Write a new song or change an existing one.
@@ -176,13 +180,31 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
               icon: const Icon(Icons.check),
               label: const Text('Save'),
             ),
-            // "Save as copy" only makes sense for an existing song — for a new
-            // one, plain Save already creates a new song.
-            if (!isNew)
-              PopupMenuButton<VoidCallback>(
-                tooltip: 'More options',
-                onSelected: (action) => action(),
-                itemBuilder: (menuContext) => [
+            PopupMenuButton<VoidCallback>(
+              tooltip: 'More options',
+              onSelected: (action) => action(),
+              itemBuilder: (menuContext) => [
+                PopupMenuItem<VoidCallback>(
+                  value: _openMelodyKeypad,
+                  child: const ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.piano_outlined),
+                    title: Text('Melody keypad'),
+                  ),
+                ),
+                PopupMenuItem<VoidCallback>(
+                  value: _pasteCarnaticNotation,
+                  child: const ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.music_note_outlined),
+                    title: Text('Paste Carnatic notation'),
+                  ),
+                ),
+                // "Save as copy" only makes sense for an existing song — for a
+                // new one, plain Save already creates a new song.
+                if (!isNew)
                   PopupMenuItem<VoidCallback>(
                     value: _saving ? null : _saveAsCopy,
                     enabled: !_saving,
@@ -193,8 +215,8 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
                       title: Text('Save as copy'),
                     ),
                   ),
-                ],
-              ),
+              ],
+            ),
             const SizedBox(width: 8),
           ],
         ),
@@ -294,6 +316,114 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
     _lyricsController.value = updated;
     _editor.setLyrics(updated.text);
     _lyricsFocus.requestFocus();
+  }
+
+  /// Opens the notation sheet and drops the converted lines in at the cursor.
+  ///
+  /// The tala comes from the song's own `{tala: ...}` line, because every cycle
+  /// is checked against its beat count. Without one there is nothing to check
+  /// against, so the user is told rather than given a silent wrong answer.
+  Future<void> _pasteCarnaticNotation() async {
+    const parser = ChordSheetParser();
+    final tala = parser.parseSheet(_lyricsController.text).tala?.trim() ?? '';
+
+    if (tala.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Add a {tala: ...} line first — the notation is checked against '
+            'the tala\'s beats.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final lines = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => CarnaticNotationSheet(tala: tala),
+    );
+    if (lines == null || lines.isEmpty || !mounted) return;
+
+    _insertLines(lines);
+  }
+
+  /// Opens the melody keypad and puts the tapped-out line into the lyrics.
+  ///
+  /// With the caret already on a `{melody}` line, that line is loaded into the
+  /// keypad and replaced when the user inserts — so a typed line can be fixed
+  /// without deleting it first. Anywhere else, a new line is added at the caret.
+  ///
+  /// Unlike the notation paste, a missing tala is not a blocker here: the tala
+  /// is only used to count beats, and a melody can be tapped out without one.
+  Future<void> _openMelodyKeypad() async {
+    const sheetParser = ChordSheetParser();
+    final tala = sheetParser.parseSheet(_lyricsController.text).tala?.trim();
+
+    final existing = _melodyLineAtCaret();
+
+    final line = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => MelodyKeypadSheet(
+        tala: tala ?? '',
+        initialLine: existing == null
+            ? ''
+            : _lyricsController.text.substring(existing.start, existing.end),
+      ),
+    );
+    if (line == null || line.trim().isEmpty || !mounted) return;
+
+    if (existing == null) {
+      _insertLines([line]);
+      return;
+    }
+
+    final value = _lyricsController.value;
+    _lyricsController.value = value.copyWith(
+      text: value.text.replaceRange(existing.start, existing.end, line),
+      selection: TextSelection.collapsed(offset: existing.start + line.length),
+      composing: TextRange.empty,
+    );
+    _editor.setLyrics(_lyricsController.text);
+  }
+
+  /// The `{melody}` line the caret sits on, or `null` when it is not on one.
+  ///
+  /// A field that was never focused has no valid selection, and then there is
+  /// no caret line to speak of — the keypad inserts instead of replacing.
+  TextRange? _melodyLineAtCaret() {
+    final value = _lyricsController.value;
+    if (!value.selection.isValid) return null;
+
+    final text = value.text;
+    final at = value.selection.end.clamp(0, text.length);
+    final start = at == 0 ? 0 : text.lastIndexOf('\n', at - 1) + 1;
+    final lineEnd = text.indexOf('\n', at);
+    final end = lineEnd == -1 ? text.length : lineEnd;
+
+    const melody = MelodyParser();
+    if (!melody.isMelodyLine(text.substring(start, end))) return null;
+    return TextRange(start: start, end: end);
+  }
+
+  /// Drops whole lines into the lyrics at the caret, each on its own line.
+  void _insertLines(List<String> lines) {
+    final value = _lyricsController.value;
+    final at = value.selection.isValid
+        ? value.selection.end
+        : value.text.length;
+    final needsBreak = at > 0 && !value.text.substring(0, at).endsWith('\n');
+    final block = '${needsBreak ? '\n' : ''}${lines.join('\n')}\n';
+
+    _lyricsController.value = value.copyWith(
+      text: value.text.replaceRange(at, at, block),
+      selection: TextSelection.collapsed(offset: at + block.length),
+      composing: TextRange.empty,
+    );
+    _editor.setLyrics(_lyricsController.text);
   }
 
   void _addCustomChord(String chord) {

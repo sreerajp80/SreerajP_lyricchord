@@ -31,12 +31,16 @@ class FakeSongRepository implements SongRepository {
       id: 6,
       title: 'Krishna Nee Begane Baro (Raga Yamunakalyani)',
       artist: 'Vyasatirtha',
-      lyrics: '{raga: Yamunakalyani}\n[Sa]Krishna nee be[Ma]gane baro [Sa]',
+      lyrics:
+          '{raga: Yamunakalyani}\n'
+          '{tala: Misra Chapu}\n'
+          '[Sa]krishna nee bEganE baarO\n'
+          '{melody} , , Sa | Ga3 Ma1 | Ri2 ,',
       key: 'E',
       bpm: 68,
       timestamp: 6,
       raga: 'Yamunakalyani',
-      tala: 'Adi',
+      tala: 'Misra Chapu',
       tradition: PitchTradition.carnatic,
     ),
     const SongNote(

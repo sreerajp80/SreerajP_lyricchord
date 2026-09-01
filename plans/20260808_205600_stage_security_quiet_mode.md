@@ -1,6 +1,6 @@
 # Plan — Stage Security & Quiet Performance Mode
 
-**Status:** Proposed
+**Status:** completed
 
 ## Problem / Feature Context
 In live performance settings, gigging musicians need protection against accidental touches (e.g. changing lyrics, transposing key, or exiting the stage view by mistake) and distractions from incoming calls or notification chimes.

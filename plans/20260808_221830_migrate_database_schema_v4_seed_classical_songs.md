@@ -1,6 +1,6 @@
 # Plan: Migrate Database to Schema v4 for Existing Installs
 
-**Status:** Proposed
+**Status:** completed
 
 ## Issue
 On existing app installations (like the running dev app on the test device), SQLite's `onCreate` callback does not re-run because the database file already exists. As a result, newly added seed songs only appear on clean database creations unless a schema migration is executed.

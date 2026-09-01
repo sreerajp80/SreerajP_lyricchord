@@ -5,13 +5,48 @@ import 'dart:typed_data';
 ///
 /// A frequency of zero is silence that still takes up its time.
 class PcmTone {
-  /// Pitch in Hz, or zero for silence.
+  /// Pitch in Hz, or zero for silence. Where a glide ends up.
   final double frequency;
+
+  /// Where a glide starts, in Hz, or `null` for a tone that holds one pitch.
+  ///
+  /// This is the slide (`!`, jaru) written in a melody line. The glide runs over
+  /// the opening of the tone and then settles on [frequency] — see
+  /// [PcmSynthService.slidePortion].
+  final double? fromFrequency;
 
   /// How long this tone lasts.
   final double durationSeconds;
 
-  const PcmTone({required this.frequency, required this.durationSeconds});
+  /// How fast the pitch swings, in Hz, or `null` for a tone that holds still.
+  ///
+  /// This is the shake (`~`, kampita) written in a melody line. The caller sets
+  /// the rate, because the rate is metrical and only the caller knows the tempo
+  /// — see `MelodyPlayerService.shakeHzFor`.
+  final double? shakeHz;
+
+  /// How far the swing reaches above [frequency], in semitones.
+  final double shakeDepthSemitones;
+
+  const PcmTone({
+    required this.frequency,
+    required this.durationSeconds,
+    this.fromFrequency,
+    this.shakeHz,
+    this.shakeDepthSemitones = 0,
+  });
+
+  /// True when this tone glides rather than holding one pitch.
+  bool get slides =>
+      fromFrequency != null && fromFrequency! > 0 && frequency > 0;
+
+  /// True when this tone's pitch swings.
+  bool get shakes =>
+      (shakeHz ?? 0) > 0 && shakeDepthSemitones > 0 && frequency > 0;
+
+  /// True when the pitch moves at all, and so must be rendered by stepping the
+  /// wave's angle rather than from absolute time.
+  bool get pitchMoves => slides || shakes;
 }
 
 /// Procedural PCM 16-bit stereo/mono audio synthesizer.
@@ -67,6 +102,89 @@ class PcmSynthService {
     final f3 = math.sin(2 * math.pi * (3 * freq) * t) * 0.25;
     final f4 = math.sin(2 * math.pi * (4 * freq) * t) * 0.125;
     return (f1 + f2 + f3 + f4) / 1.875;
+  }
+
+  /// The same four harmonics as [harmonicSample], but read off an angle that
+  /// the caller advances itself.
+  ///
+  /// A gliding tone cannot use [harmonicSample]. That one computes
+  /// `sin(2 * pi * freq * t)` from absolute time, and if `freq` changes with `t`
+  /// the pitch actually heard is `freq + t * dFreq/dt` — a linear glide would
+  /// sweep at roughly twice the rate asked for, and every step would click.
+  /// Stepping the angle by `2 * pi * freq / sampleRate` each sample keeps the
+  /// wave continuous and the pitch honest.
+  ///
+  /// The harmonics are multiples of the same angle, so the timbre holds together
+  /// through the glide.
+  static double harmonicSampleAtPhase(double phase) {
+    final f1 = math.sin(phase) * 1.0;
+    final f2 = math.sin(2 * phase) * 0.5;
+    final f3 = math.sin(3 * phase) * 0.25;
+    final f4 = math.sin(4 * phase) * 0.125;
+    return (f1 + f2 + f3 + f4) / 1.875;
+  }
+
+  /// How much of a gliding tone the glide takes, before it settles.
+  static const double slidePortion = 0.30;
+
+  /// The longest a glide may run, however long the note is.
+  ///
+  /// Without this a held note would glide lazily for half a second instead of
+  /// scooping into pitch.
+  static const double slideMaxSeconds = 0.12;
+
+  /// The pitch part-way through a glide, [progress] running 0 to 1.
+  ///
+  /// Interpolates **in semitones**, not in hertz. Pitch is logarithmic, so a
+  /// glide that is straight in hertz drags at the bottom and rushes at the top.
+  static double slideFrequency(double from, double to, double progress) {
+    final p = progress.clamp(0.0, 1.0);
+    if (from <= 0 || to <= 0) return to;
+    return from * math.pow(to / from, p);
+  }
+
+  /// How much of a shaken tone is sung plain before the swing starts.
+  ///
+  /// The written note has to be established first, or the ear hears a wobbly
+  /// synthesizer instead of a note that is being shaken.
+  static const double shakeOnsetPortion = 0.15;
+
+  /// The longest that plain onset may run, however long the note is.
+  static const double shakeOnsetMaxSeconds = 0.06;
+
+  /// The pitch multiplier for a shake, [seconds] into the tone.
+  ///
+  /// Returns `1.0` (the written note) through the onset, then swings **up to**
+  /// [depthSemitones] above the note and back, over and over. It never goes
+  /// below `1.0`: a kampita written on a note should still sound like that
+  /// note, so the written pitch is the floor the swing leaves from, not the
+  /// middle it wobbles around.
+  ///
+  /// `(1 - cos) / 2` is what gives that shape — it runs 0 → 1 → 0 and leaves
+  /// from rest, so there is no jump at the moment the swing begins. The depth
+  /// also ramps in over the first swing, so the shake grows rather than
+  /// switching on.
+  static double shakeFactor(
+    double seconds,
+    double totalSeconds, {
+    required double rateHz,
+    required double depthSemitones,
+  }) {
+    if (rateHz <= 0 || depthSemitones <= 0 || totalSeconds <= 0) return 1.0;
+
+    final onset = math.min(
+      totalSeconds * shakeOnsetPortion,
+      shakeOnsetMaxSeconds,
+    );
+    final t = seconds - onset;
+    if (t <= 0) return 1.0;
+
+    // One full swing takes 1 / rateHz, and the depth ramps in across it.
+    final swing = 1.0 / rateHz;
+    final ramp = swing <= 0 ? 1.0 : (t / swing).clamp(0.0, 1.0);
+
+    final shape = (1 - math.cos(2 * math.pi * rateHz * t)) / 2;
+    return math.pow(2, depthSemitones * ramp * shape / 12).toDouble();
   }
 
   /// ADSR (Attack, Decay, Sustain, Release) envelope multiplier [0.0, 1.0].
@@ -367,6 +485,21 @@ class PcmSynthService {
       final count = counts[t];
       if (count <= 0) continue;
 
+      // A tone whose pitch moves — a glide, a shake, or both — steps its own
+      // angle; a steady one keeps the original time-based path so its samples
+      // come out exactly as they always have.
+      final moves = tone.pitchMoves;
+      final glides = tone.slides;
+      final shakes = tone.shakes;
+      final glideSamples = glides
+          ? math.min(
+              (count * slidePortion).round(),
+              (sampleRate * slideMaxSeconds).round(),
+            )
+          : 0;
+      var phaseLeft = 0.0;
+      var phaseRight = 0.0;
+
       for (var i = 0; i < count; i++) {
         var left = 0;
         var right = 0;
@@ -374,14 +507,47 @@ class PcmSynthService {
         if (tone.frequency > 0) {
           final env = adsrEnvelope(i, count);
           final amp = 32767 * amplitude * env;
-          left = (harmonicSample(i, tone.frequency, sampleRate) * amp)
-              .clamp(-32768, 32767)
-              .toInt();
-          right =
-              (harmonicSample(i, tone.frequency * stereoDetune, sampleRate) *
-                      amp)
-                  .clamp(-32768, 32767)
-                  .toInt();
+
+          if (moves) {
+            // Where the glide has reached, or the settled pitch once it is over.
+            final glided = !glides || i >= glideSamples || glideSamples <= 0
+                ? tone.frequency
+                : slideFrequency(
+                    tone.fromFrequency!,
+                    tone.frequency,
+                    i / glideSamples,
+                  );
+
+            // The shake rides on top, so a note can slide into pitch and then
+            // be shaken — which `M2!G3~` has always been allowed to say.
+            final freq = shakes
+                ? glided *
+                      shakeFactor(
+                        i / sampleRate,
+                        tone.durationSeconds,
+                        rateHz: tone.shakeHz!,
+                        depthSemitones: tone.shakeDepthSemitones,
+                      )
+                : glided;
+
+            left = (harmonicSampleAtPhase(phaseLeft) * amp)
+                .clamp(-32768, 32767)
+                .toInt();
+            right = (harmonicSampleAtPhase(phaseRight) * amp)
+                .clamp(-32768, 32767)
+                .toInt();
+            phaseLeft += 2 * math.pi * freq / sampleRate;
+            phaseRight += 2 * math.pi * freq * stereoDetune / sampleRate;
+          } else {
+            left = (harmonicSample(i, tone.frequency, sampleRate) * amp)
+                .clamp(-32768, 32767)
+                .toInt();
+            right =
+                (harmonicSample(i, tone.frequency * stereoDetune, sampleRate) *
+                        amp)
+                    .clamp(-32768, 32767)
+                    .toInt();
+          }
         }
 
         bytes.setInt16(offset, left, Endian.little);

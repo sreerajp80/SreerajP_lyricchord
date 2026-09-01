@@ -826,6 +826,9 @@ class _SongPageState extends ConsumerState<_SongPage>
   ///
   /// [semitones] is the active transpose. Sa moves with it, or the tune would
   /// be hummed in the old key while the chords showed the new one.
+  ///
+  /// A `{sruti: madhyama}` song is notated from the shuddha madhyamam rather
+  /// than the adhara shadja, so its written Sa sounds five semitones higher.
   double? _melodyTonicHz(SongNote song, ParsedSheet sheet, int semitones) {
     const naming = PitchNamingService();
 
@@ -837,9 +840,10 @@ class _SongPageState extends ConsumerState<_SongPage>
     final note = naming.noteForTonic(source);
     if (note == null) return null;
 
-    return PcmSynthService.getFrequency(
-      _transposer.transposeKey(note, semitones),
-    );
+    // Shuddha madhyamam sits five semitones above Sa.
+    final shift = semitones + (sheet.isMadhyamaSruti ? 5 : 0);
+
+    return PcmSynthService.getFrequency(_transposer.transposeKey(note, shift));
   }
 
   Widget _sheet(

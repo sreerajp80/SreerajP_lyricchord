@@ -107,22 +107,40 @@ class MelodyParser {
   MelodyBeat _beat(String token, List<String> problems) {
     if (token == '|') return const MelodyBeat.barLine();
     if (token == ',') return const MelodyBeat.hold();
+    // Published notation writes a whole beat of extension as `;` — two
+    // aksharakalas, which is one beat, the same thing our `,` means. Accepting
+    // it means a line pasted straight from a notation page does not hard-fail.
+    // See docs/carnatic_notation.md section 4.
+    if (token == ';') return const MelodyBeat.hold();
 
-    // A group of notes sharing the beat. A single note is just a group of one,
-    // so there is no separate path for it.
-    final parts = token.split('-');
-    final notes = <MelodyNote>[];
-    final slots = <int>[];
+    // A group sharing the beat. A single note is just a group of one, so there
+    // is no separate path for it. A slot can also be silence (`x`) or a tie to
+    // whatever sounded before — that is what lets a note start or stop part-way
+    // through a beat.
+    final pieces = token.split('-');
+    final parts = <MelodySlot>[];
 
-    for (final part in parts) {
+    for (final part in pieces) {
       final piece = part.trim();
       if (piece.isEmpty) continue;
 
       if (piece == ',') {
-        // Extends the note before it. A comma with nothing before it has
-        // nothing to extend, so it is dropped rather than guessed at.
-        if (slots.isEmpty) continue;
-        slots[slots.length - 1] += 1;
+        if (parts.isEmpty) {
+          // Nothing before it *in this beat*, so it carries the previous beat's
+          // sound onward. This is how a note starts part-way through a beat:
+          // `,-Ri2` holds for the first half, then strikes Ri.
+          parts.add(const MelodySlot.tie());
+        } else {
+          // Extends whatever the slot before it holds.
+          parts[parts.length - 1] = parts.last.withCount(parts.last.count + 1);
+        }
+        continue;
+      }
+
+      if (piece == 'x' || piece == 'X') {
+        // Silence. Unlike a tie this *stops* what was ringing, which is how a
+        // note stops part-way through a beat: `Ri2-x`.
+        parts.add(const MelodySlot.silence());
         continue;
       }
 
@@ -131,22 +149,27 @@ class MelodyParser {
         problems.add('Could not read "$piece" in "$token".');
         return MelodyBeat.unknown(token);
       }
-      notes.add(note);
-      slots.add(1);
+      parts.add(MelodySlot.note(note));
     }
 
-    if (notes.isEmpty) {
+    if (parts.isEmpty) {
       problems.add('Nothing to play in "$token".');
       return MelodyBeat.unknown(token);
     }
 
-    return MelodyBeat.notes(notes, token, slots: slots);
+    return MelodyBeat.fromSlots(parts, token);
   }
 
   /// Reads one note, with its slide and shake marks. `null` when unreadable.
   MelodyNote? _note(String token) {
     var text = token;
     var shake = false;
+
+    // Some sources mark the raga's borrowed note (anya svara) with `*`. It
+    // says something about the raga, not about this note's pitch or length, so
+    // it is dropped rather than allowed to make the note unreadable.
+    text = text.replaceAll('*', '');
+    if (text.isEmpty) return null;
 
     // The shake sits at the very end, after any variant digit or octave mark.
     if (text.endsWith('~')) {

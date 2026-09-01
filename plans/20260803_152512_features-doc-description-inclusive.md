@@ -1,6 +1,6 @@
 # Make features.md App Description fully inclusive
 
-**Status:** approval_pending
+**Status:** completed
 
 ## Files to change
 

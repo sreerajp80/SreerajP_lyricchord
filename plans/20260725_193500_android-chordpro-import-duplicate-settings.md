@@ -1,6 +1,6 @@
 # Plan: Android .chordpro Intent & Import Duplicate Settings
 
-**Status:** Approved & Implemented
+**Status:** completed
 
 ## Goal
 Enable opening `.chordpro` files directly from Android file managers into LyricChord, and implement configurable conflict handling settings when imported song titles already exist.

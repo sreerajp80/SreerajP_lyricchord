@@ -3,6 +3,7 @@ import 'package:lyricchord/data/app_database.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/repositories/song_repository.dart';
+import 'package:lyricchord/services/melody_parser_service.dart';
 
 import '../helpers/test_database.dart';
 
@@ -413,6 +414,155 @@ void main() {
       expect(after!.title, 'Edited again');
       expect(after.scrollSpeed, closeTo(0.55, 1e-9));
       expect(after.scrollMeasures, 12);
+    });
+  });
+
+  group('schema v10 — Krishna Nee sample song', () {
+    /// The exact text the sample song carried before version 10.
+    const oldText =
+        '{raga: Yamunakalyani}\n'
+        '\n'
+        'Pallavi:\n'
+        '[Sa]Krishna nee be[Ma]gane baro [Sa]\n'
+        '[Sa]Begane baro mukha[Pa]thanaye baro [Sa]\n'
+        '\n'
+        'Charanam:\n'
+        '[Sa]Jalakaara [Ma]kaalinali [Sa]nartana maadidha\n'
+        '[Sa]Helalalaagaadho [Pa]chinni krish[Sa]na\n'
+        '\n'
+        'Swaram:\n'
+        'Sa - Ri - Ga - Ma - Pa - Dha - Ni - Sa -\n'
+        'Sa - Ni - Dha - Pa - Ma - Ga - Ri - Sa -';
+
+    Future<void> upgradeToV10() =>
+        db.migration.onUpgrade(db.createMigrator(), 9, 10);
+
+    test('the seeded song carries the full words', () async {
+      final songs = await repo.watchAllSongs().first;
+      final krishna = songs.firstWhere((s) => s.title.contains('Krishna Nee'));
+
+      expect(krishna.lyrics, contains('bEganE baarO mukhavannu tOrO'));
+      expect(krishna.lyrics, contains('caraNam 4:'));
+      expect(
+        krishna.lyrics,
+        contains('jagadhOddhaaraka namma uDupi shree krishna'),
+      );
+      expect(krishna.lyrics, isNot(contains('Jalakaara')));
+    });
+
+    test('every lyric line with a melody carries four avartas', () async {
+      // The notation spreads one lyric line over four misra chapu cycles, so
+      // each line that has a melody carries four {melody} lines. caraNam 1 is
+      // the exception: the source gives its words but no notation, so it
+      // deliberately ships without one.
+      final songs = await repo.watchAllSongs().first;
+      final krishna = songs.firstWhere((s) => s.title.contains('Krishna Nee'));
+
+      final lines = krishna.lyrics.split('\n');
+      final melodyLines = lines.where((l) => l.startsWith('{melody}')).length;
+
+      expect(melodyLines, 32);
+      expect(krishna.lyrics, contains('Anupallavi:'));
+      expect(krishna.lyrics, contains('caraNam 1:'));
+    });
+
+    test(
+      'every melody line is readable and fills one misra chapu cycle',
+      () async {
+        const parser = MelodyParser();
+        final songs = await repo.watchAllSongs().first;
+        final krishna = songs.firstWhere(
+          (s) => s.title.contains('Krishna Nee'),
+        );
+
+        final melodyLines = krishna.lyrics
+            .split('\n')
+            .where(parser.isMelodyLine);
+
+        expect(melodyLines, hasLength(32));
+        for (final line in melodyLines) {
+          final parsed = parser.parse(line);
+          expect(parsed.problems, isEmpty, reason: line);
+          expect(parsed.beatCount, 7, reason: line);
+        }
+      },
+    );
+
+    test(
+      'the melody uses shuddha madhyamam only in the G-M-R phrase',
+      () async {
+        // Yamunakalyani is a bhashanga raga: Ma1 is the anya svara and belongs
+        // only to the descending Ga3 -> Ma1 -> Ri2 vishesha prayoga. Everywhere
+        // else the madhyamam is Ma2. Guarding this stops a careless edit from
+        // spreading Ma1 through the song.
+        final songs = await repo.watchAllSongs().first;
+        final krishna = songs.firstWhere(
+          (s) => s.title.contains('Krishna Nee'),
+        );
+
+        final melody = krishna.lyrics
+            .split('\n')
+            .where((l) => l.startsWith('{melody}'))
+            .join(' ');
+
+        expect(melody, contains('Ma1'));
+        expect(melody, contains('Ma2'));
+        // No line may carry the borrowed note without the gandharam that
+        // licenses it. Checked per line rather than per token: a note that
+        // starts part-way through a beat sits in a slot of its own
+        // (`,-Ma1`), so the two are not always in the same token.
+        for (final line
+            in krishna.lyrics
+                .split('\n')
+                .where((l) => l.startsWith('{melody}'))) {
+          if (line.contains('Ma1')) {
+            expect(line, contains('Ga3'), reason: line);
+          }
+        }
+      },
+    );
+
+    test('the upgrade replaces the old seeded text', () async {
+      final id = await repo.insert(
+        _newSong(
+          title: 'Krishna Nee Begane Baro (Raga Yamunakalyani)',
+          lyrics: oldText,
+        ),
+      );
+
+      await upgradeToV10();
+
+      final song = (await repo.findById(id))!;
+      expect(song.lyrics, contains('Anupallavi:'));
+      expect(song.lyrics, contains('caraNam 4:'));
+      expect(song.tala, 'Misra Chapu');
+      expect(song.raga, 'Yamunakalyani');
+    });
+
+    test('the upgrade leaves an edited song alone', () async {
+      // Same title, but the words are the user's. Matching is on the text, not
+      // the title, so this must survive untouched.
+      final id = await repo.insert(
+        _newSong(
+          title: 'Krishna Nee Begane Baro (Raga Yamunakalyani)',
+          lyrics: 'MY OWN VERSION\n[Sa]Krishna nee begane baro',
+        ),
+      );
+
+      await upgradeToV10();
+
+      final song = (await repo.findById(id))!;
+      expect(song.lyrics, startsWith('MY OWN VERSION'));
+      expect(song.lyrics, isNot(contains('caraNam 4:')));
+    });
+
+    test('the upgrade does not reorder the songbook', () async {
+      final before = await repo.watchAllSongs().first;
+
+      await upgradeToV10();
+
+      final after = await repo.watchAllSongs().first;
+      expect(after.map((s) => s.title), before.map((s) => s.title));
     });
   });
 

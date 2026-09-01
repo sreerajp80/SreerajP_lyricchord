@@ -163,8 +163,8 @@ void main() {
   });
 
   testWidgets('shows a problem with an unreadable beat', (tester) async {
-    await pumpRow(tester, melody: '{melody} S X G');
+    await pumpRow(tester, melody: '{melody} S Q G');
     expect(find.textContaining('Could not read'), findsOneWidget);
-    expect(find.text('X'), findsOneWidget);
+    expect(find.text('Q'), findsOneWidget);
   });
 }

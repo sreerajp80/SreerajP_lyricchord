@@ -1,6 +1,6 @@
 # Plan: Import Preview & Intent Stream Resolution
 
-**Status:** Approved & Implemented
+**Status:** completed
 
 ## Problem
 1. When double-tapping or opening a `.chordpro` file from an external Android app/file manager, the app was auto-importing all songs into the database without letting the user preview or selectively import.

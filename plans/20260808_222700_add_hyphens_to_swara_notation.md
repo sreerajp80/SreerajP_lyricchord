@@ -1,6 +1,6 @@
 # Plan: Add Hyphens to Swara Notation in Classical Songs
 
-**Status:** Proposed
+**Status:** completed
 
 ## Issue
 In Indian classical music (Carnatic and Hindustani), Swara notation uses hyphens (`-`) between swaras (e.g. `S - R - G - P - N - S -`) to denote beat timing and note separation. Currently, the swara lines in the seed songs lack hyphens.

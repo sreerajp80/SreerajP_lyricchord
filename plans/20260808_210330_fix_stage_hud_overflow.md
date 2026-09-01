@@ -1,6 +1,6 @@
 # Fix Stage Mode Floating HUD Layout Overflow
 
-**Status:** Proposed
+**Status:** completed
 
 ## Issue
 In Stage Mode (full-screen song view), the bottom translucent floating control HUD (`StageHud`) overflows horizontally by 56 pixels on standard phone screens in portrait mode (`RIGHT OVERFLOWED BY 56 PIXELS`). This happens because 7 control action buttons, 2 mode buttons (M & T), and the speed/bars stepper row are laid out in a single fixed `Row` with a `Spacer()`.

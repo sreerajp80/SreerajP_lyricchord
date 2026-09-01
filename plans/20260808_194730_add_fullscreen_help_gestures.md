@@ -1,6 +1,6 @@
 # Add Gesture Icons & Descriptions to Full Screen Help Page
 
-**Status:** Proposed
+**Status:** completed
 
 ## Problem
 The "Full screen" help page currently lists gestures only as text bullet points. When first entering full screen mode (Stage Mode), a custom overlay (`StageHelpOverlay`) displays visual gesture items with icons, titles, and short explanations. Users expect to see these same visual gesture icons and explanations on the "Full screen" help page under "The gestures" section.

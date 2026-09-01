@@ -1,6 +1,6 @@
 # Plan: Use Full Swara Names in Classical Seed Songs (Database Schema v6)
 
-**Status:** Proposed
+**Status:** completed
 
 ## Task Summary
 Update all classical seed songs to use full Swara note names (`Sa`, `Ri`/`Re`, `Ga`, `Ma`, `Pa`, `Dha`, `Ni`) instead of single-letter abbreviations (`S`, `R`, `G`, `M`, `P`, `D`, `N`).

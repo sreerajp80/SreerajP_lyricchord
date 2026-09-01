@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lyricchord/models/melody_beat.dart';
+import 'package:lyricchord/services/melody_player_service.dart';
 import 'package:lyricchord/services/melody_parser_service.dart';
 
 void main() {
@@ -198,7 +199,7 @@ void main() {
     }
 
     test('an unreadable token keeps its place in the line', () {
-      final line = parser.parse('{melody} S X G');
+      final line = parser.parse('{melody} S Q G');
       expect(line.beats.length, 3);
       expect(line.beats[1].kind, MelodyBeatKind.unknown);
       expect(line.beats[2].notes.single.position, 4);
@@ -226,6 +227,149 @@ void main() {
 
     test('a line covering two cycles still fits', () {
       expect(parser.parse('{melody} S R G M P D N S').fitsTala(4), isTrue);
+    });
+  });
+
+  group('notes that start or stop inside a beat', () {
+    const parser = MelodyParser();
+
+    test('a leading comma ties the beat to what came before', () {
+      // `,-Ri2` is half a beat carrying the previous sound on, then Ri.
+      final beat = parser.parse('{melody} Sa ,-Ri2').beats.last;
+
+      expect(beat.parts, hasLength(2));
+      expect(beat.parts.first.kind, MelodySlotKind.tie);
+      expect(beat.parts.last.kind, MelodySlotKind.note);
+      expect(beat.parts.last.note!.text, 'Ri2');
+      expect(beat.totalSlots, 2);
+    });
+
+    test('a tie does not strike the note again', () {
+      const player = MelodyPlayerService();
+      final schedule = player.schedule(
+        parser.parse('{melody} Sa ,-Ri2'),
+        tonicHz: 240,
+        tempoBpm: 60,
+      );
+
+      // Sa, then Ri — two sounds, not three. The tie lengthens Sa instead of
+      // adding a strike of its own.
+      final struck = schedule.spans.where((s) => !s.isSilence).length;
+      expect(struck, 2);
+      // Sa runs a beat and a half: its own beat plus the tied half.
+      expect(schedule.spans.first.duration.inMilliseconds, closeTo(1500, 50));
+    });
+
+    test('x is a silent slot and stops the sound', () {
+      final beat = parser.parse('{melody} Ri2-x').beats.single;
+
+      expect(beat.parts, hasLength(2));
+      expect(beat.parts.first.kind, MelodySlotKind.note);
+      expect(beat.parts.last.kind, MelodySlotKind.silence);
+    });
+
+    test('a silent slot takes its share of the beat', () {
+      const player = MelodyPlayerService();
+      final schedule = player.schedule(
+        parser.parse('{melody} Ri2-x'),
+        tonicHz: 240,
+        tempoBpm: 60,
+      );
+
+      expect(schedule.spans, hasLength(2));
+      expect(schedule.spans.first.isSilence, isFalse);
+      expect(schedule.spans.last.isSilence, isTrue);
+      expect(schedule.spans.first.duration.inMilliseconds, closeTo(500, 50));
+      expect(schedule.spans.last.duration.inMilliseconds, closeTo(500, 50));
+    });
+
+    test('X reads the same as x, while keeping the writer spelling', () {
+      final upper = parser.parse('{melody} Ri2-X').beats.single;
+      final lower = parser.parse('{melody} Ri2-x').beats.single;
+
+      expect(upper.parts, lower.parts);
+      // The beat still shows what was typed, so the grid draws it back.
+      expect(upper.text, 'Ri2-X');
+      expect(lower.text, 'Ri2-x');
+    });
+
+    test('a comma after a note still extends it, as it always did', () {
+      final beat = parser.parse('{melody} Ga3-,-Ri2').beats.single;
+
+      expect(beat.notes.map((n) => n.text), ['Ga3', 'Ri2']);
+      expect(beat.slots, [2, 1]);
+      expect(beat.totalSlots, 3);
+    });
+  });
+
+  group('symbols from published notation', () {
+    const parser = MelodyParser();
+
+    test('a semicolon holds a beat, the same as a comma', () {
+      final withSemis = parser.parse('{melody} ; ; Sa | Ga3 Ma1 | Ri2 ;');
+      final withCommas = parser.parse('{melody} , , Sa | Ga3 Ma1 | Ri2 ,');
+
+      expect(withSemis.problems, isEmpty);
+      expect(withSemis.beatCount, 7);
+      expect(
+        withSemis.beats.map((b) => b.notes.map((n) => n.position).toList()),
+        withCommas.beats.map((b) => b.notes.map((n) => n.position).toList()),
+      );
+    });
+
+    test('an anya svara star does not make the note unreadable', () {
+      final marked = parser.parse('{melody} , , Sa | Ga3 Ma1* | Ri2 ,');
+      final plain = parser.parse('{melody} , , Sa | Ga3 Ma1 | Ri2 ,');
+
+      expect(marked.problems, isEmpty);
+      expect(marked.beatCount, 7);
+      expect(
+        marked.beats.map((b) => b.notes.map((n) => n.position).toList()),
+        plain.beats.map((b) => b.notes.map((n) => n.position).toList()),
+      );
+    });
+
+    test('a star on its own is still unreadable', () {
+      expect(parser.parse('{melody} * , Sa').problems, isNotEmpty);
+    });
+  });
+
+  group('full swara names', () {
+    const parser = MelodyParser();
+
+    test('a full-name line reads the same as the short-letter line', () {
+      final full = parser.parse('{melody} Pa , Ma2 | Ga3 Ri2 | Sa ,');
+      final short = parser.parse('{melody} P , M2 | G3 R2 | S ,');
+
+      expect(full.problems, isEmpty);
+      expect(full.beatCount, short.beatCount);
+      expect(
+        full.beats.map((b) => b.notes.map((n) => n.position).toList()),
+        short.beats.map((b) => b.notes.map((n) => n.position).toList()),
+      );
+    });
+
+    test('Da2 reads as the same note as D2', () {
+      final withDa = parser.parse('{melody} Ga3 Ma2 Pa | Da2 Pa | Ma2 Ga3');
+      final withD = parser.parse('{melody} G3 M2 P | D2 P | M2 G3');
+
+      expect(withDa.problems, isEmpty);
+      expect(
+        withDa.beats.map((b) => b.notes.map((n) => n.position).toList()),
+        withD.beats.map((b) => b.notes.map((n) => n.position).toList()),
+      );
+    });
+
+    test('full names carry their octave marks', () {
+      final line = parser.parse("{melody} Pa Da2 Ni3 | Sa' , | Ni3 Da2");
+
+      expect(line.problems, isEmpty);
+      expect(line.beatCount, 7);
+      // The fourth beat is upper Sa.
+      final upper = line.beats.firstWhere(
+        (b) => b.notes.isNotEmpty && b.notes.first.octave == 1,
+      );
+      expect(upper.notes.first.position, 0);
     });
   });
 }

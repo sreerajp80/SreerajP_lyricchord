@@ -129,6 +129,26 @@ class ParsedSheet {
   /// The tala name, or `null` when the song does not name one.
   String? get tala => directives['tala'];
 
+  /// The sruti the song is sung in, or `null` when it does not say.
+  ///
+  /// Written `{sruti: madhyama}`. Only meaningful for Indian songs.
+  String? get sruti => directives['sruti'];
+
+  /// True when the song is sung in **madhyama sruti**.
+  ///
+  /// Some ragas — Yamunakalyani, Kurinji, Nadanamakriya, Chenchurutti — are
+  /// traditionally sung with the tambura's Pa string dropped to shuddha
+  /// madhyamam, and that note taken as the base Sa. Such a song is notated
+  /// starting on `Sa`, but its Sa is **not** the singer's adhara shadja: it is
+  /// the shuddha madhyamam five semitones above it.
+  ///
+  /// Without this the melody player would hum the tune a fourth too low against
+  /// the drone. See `docs/carnatic_notation.md` section 5.
+  bool get isMadhyamaSruti {
+    final value = sruti?.trim().toLowerCase() ?? '';
+    return value.startsWith('madhyam') || value.startsWith('madyam');
+  }
+
   /// True when the song is written in Indian notation — it names a raga.
   bool get isIndianNotation => raga != null;
 }

@@ -95,7 +95,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -150,6 +150,12 @@ class AppDatabase extends _$AppDatabase {
         // Heal the data before anything reads it back.
         await _healNullSongColumns();
         await _backfillSongTraditions();
+      }
+      if (from < 10) {
+        // The sample song shipped as a stub: two invented charanams, a wrong
+        // second line, and no melody. Replace it with the real words plus a
+        // `{melody}` line for each, so the melody player has something to show.
+        await _rewriteKrishnaSample();
       }
     },
     beforeOpen: (details) async {
@@ -410,6 +416,35 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  /// Replaces the Krishna Nee sample song's stub text with the full words and
+  /// melody lines (schema version 10).
+  ///
+  /// Matching is on the **text**, not the title. The older
+  /// [_rewriteClassicalSongsInSwaraNotation] matched by title alone, which
+  /// would throw away a song the user had written or edited under the same
+  /// name. Here, a song is only touched when its lyrics still equal the text
+  /// version 9 seeded, so any edit of the user's survives untouched.
+  Future<void> _rewriteKrishnaSample() async {
+    final existingSongs = await getAllSongs();
+
+    for (final song in existingSongs) {
+      if (song.lyrics.trim() != _krishnaNeeLyricsV9.trim()) continue;
+
+      // A targeted write, not `replace()`: the songbook is ordered by
+      // `timestamp`, and fixing the seeded text must not push the song to the
+      // top of the list as if the user had just edited it. `tala` is written
+      // too because the new text adds a `{tala}` header the old text did not
+      // have, and the column has to agree with the words.
+      await (update(songNotes)..where((t) => t.id.equals(song.id))).write(
+        const SongNotesCompanion(
+          lyrics: Value(_krishnaNeeLyrics),
+          raga: Value('Yamunakalyani'),
+          tala: Value('Misra Chapu'),
+        ),
+      );
+    }
+  }
+
   /// Every `song_notes` column drift declares non-null, with the SQL literal to
   /// put back when a row holds NULL instead.
   ///
@@ -639,6 +674,73 @@ const String _raghupatiLyrics =
     'Sa - Sa - Pa - Pa - | Ni - Ni - Sa - Sa -';
 
 const String _krishnaNeeLyrics =
+    '{raga: Yamunakalyani}\n'
+    '{tala: Misra Chapu}\n'
+    '{sruti: madhyama}\n'
+    '\n'
+    'Pallavi:\n'
+    '[Sa]krishna nee bEganE baarO\n'
+    '{melody} , , Sa | Ga3 ,-Ma1 | Ri2 ,\n'
+    '{melody} Sa-Ni3 Ri2-Sa Ni3-Da2 | , Ni3 | ,-Ri2 ,\n'
+    '{melody} , , Ga3-Ma1 | Ri2 , | Sa ,\n'
+    '{melody} Da2-Ni3 Ri2-Da2 Sa | , , | , ,\n'
+    '\n'
+    'Anupallavi:\n'
+    '[Ga3]bEganE baarO mukhavannu tOrO\n'
+    '{melody} , , Ga3 | Ga3 Ri2 | Ga3 Ma2\n'
+    '{melody} Pa , , | Ga3-Ma2 Pa | Pa ,\n'
+    '{melody} , , Ma2-Pa | Da2 , | Da2 Pa\n'
+    '{melody} Pa , ,-Ni3 | Da2-Pa-Pa-, , | Ma2-Da2 Pa-Ma2\n'
+    '\n'
+    'caraNam 1:\n'
+    'kaalaalandhugE gejje nIlada baavuli\n'
+    'nIlavarNane naaTya vaaduta baarO\n'
+    '\n'
+    'caraNam 2:\n'
+    '[Ma2]Udiyalli udigejje beraLalli ungura\n'
+    '{melody} , , Ma2-Da2 | Pa-Ma2 Ri2 | Ga3 Ma2\n'
+    '{melody} Pa Pa , | Ga3-Ma2 Pa | Pa ,\n'
+    '{melody} , , Ma2-Pa | Da2 , | Da2 Pa\n'
+    '{melody} Pa , ,-Ni3 | Da2-Pa-Pa-, , | Ma2-Da2 Pa-Ma2\n'
+    '[Ga3]koraLalli haakida vaijayantiya maalE\n'
+    '{melody} Ga3 , Ga3-Ma2 | Ga3 , | Ga3 ,\n'
+    '{melody} Ga3 , , | Ga3 Ri2 | Ga3-Ma2 Da2-Pa\n'
+    '{melody} Pa , Ga3-Ma2 | Ga3 Ri2 | Ri2 Sa\n'
+    '{melody} Ni3-Sa Ri2-Ga3 Ma2-Pa | Ri2 , | Sa ,\n'
+    '\n'
+    'caraNam 3:\n'
+    '[Ma2]kaashi peethambara kaiyalli koLalu\n'
+    '{melody} , , Ma2-Da2 | Pa-Ma2 Ri2 | , Ga3-Ma2\n'
+    '{melody} Pa , , | Pa , | Pa ,\n'
+    '{melody} , , Ma2-Pa | Da2 , | Da2 Pa\n'
+    '{melody} Pa , ,-Ni3 | Da2-Pa-Pa-, , | Ma2-Da2 Pa-Ma2\n'
+    '[Ga3]pUsida shreegandha mayyOLagamma\n'
+    '{melody} Ga3 , Ga3-Ma2 | Ga3 , | Ga3 ,\n'
+    '{melody} Ga3 Ri2-Ga3 ,-Ri2 | , Ri2-Ga3 | Ma2-Pa ,\n'
+    '{melody} Pa , Ga3-Ma2 | Ga3 Ri2 | Ri2 Sa\n'
+    '{melody} Ni3-Sa Ri2-Ga3 Ma2-Da2-Pa-Pa | Ri2 , | Sa ,\n'
+    '\n'
+    'caraNam 4:\n'
+    '[Ma2]taayige baayalli jagavannu torida\n'
+    '{melody} , , Ma2-Da2 | Pa-Ma2 Ga3-Ri2 | Ga3 Ma2\n'
+    '{melody} Pa , , | Pa , | Pa ,\n'
+    '{melody} , , Ma2-Pa | Da2 , | Da2 Pa\n'
+    '{melody} Pa , ,-Ni3 | Da2-Pa-Pa-, , | Ma2-Da2 Pa-Ma2\n'
+    '[Ga3]jagadhOddhaaraka namma uDupi shree krishna\n'
+    '{melody} Ga3 , Ga3-Ma2 | Ga3 , | Ga3 ,\n'
+    '{melody} Ga3 Ri2-Ga3 ,-Ri2 | , Ri2-Ga3 | Ga3-Ma2 Da2-Pa\n'
+    '{melody} Pa , Ga3-Ma2 | Ga3 Ri2 | Ri2 Sa\n'
+    '{melody} Ni3-Sa Ri2-Ga3 Ma2-Da2-Pa-Pa | Ri2 , | Sa ,\n'
+    '\n'
+    'Swaram:\n'
+    'Sa - Ri2 - Ga3 - Ma2 - Pa - Da2 - Ni3 - Sa -\n'
+    'Sa - Ni3 - Da2 - Pa - Ma2 - Ga3 - Ri2 - Sa -';
+
+/// The text the Krishna Nee sample song carried before schema version 10.
+///
+/// Kept so the version 10 upgrade can tell an untouched seeded song from one
+/// the user has edited or written themselves, and only rewrite the former.
+const String _krishnaNeeLyricsV9 =
     '{raga: Yamunakalyani}\n'
     '\n'
     'Pallavi:\n'

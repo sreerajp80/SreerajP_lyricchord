@@ -1,6 +1,6 @@
 # Share selected song(s) as ChordPro or PDF
 
-**Status:** proposed
+**Status:** completed
 
 ## The issue
 

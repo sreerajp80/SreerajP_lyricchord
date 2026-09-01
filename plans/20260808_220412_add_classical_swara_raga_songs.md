@@ -1,6 +1,6 @@
 # Plan: Add Classical Songs with Swara and Raga
 
-**Status:** Proposed
+**Status:** completed
 
 ## Task Summary
 Add classical Indian songs featuring Raga metadata and Swara notation to the LyricChord seed database and test seed repositories.

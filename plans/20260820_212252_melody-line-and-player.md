@@ -1,6 +1,6 @@
 # Melody line and melody player
 
-**Status:** in_progress
+**Status:** completed
 
 Date: 2026-08-20
 Slug: `melody-line-and-player`
@@ -10,8 +10,8 @@ Slug: `melody-line-and-player`
 | Phase | State |
 |---|---|
 | 1 — read and play | **done** (2026-08-20) — [change log](../change_log/20260820_214500_melody-line-and-player-phase-1.md) |
-| 2 — keypad entry | not started |
-| 3 — gamaka and true-ratio tuning | not started |
+| 2 — keypad entry | **done** (2026-09-01) — [plan](20260901_064116_melody-keypad-phase-2.md), [change log](../change_log/20260901_070500_melody-keypad-phase-2.md) |
+| 3 — gamaka and true-ratio tuning | **done** (2026-09-01) — [plan](20260901_070119_melody-phase-3-gamaka-and-tuning.md), [change log](../change_log/20260901_073000_melody-phase-3-gamaka-and-tuning.md) |
 
 One deviation worth noting: a trailing apostrophe means **upper octave** in a
 melody line, never tivra Ma. The parser takes octave marks off before the pitch

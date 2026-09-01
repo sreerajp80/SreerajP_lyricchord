@@ -1,6 +1,6 @@
 # Plan: Clean Up Swaram Lines (Database Schema v6)
 
-**Status:** Proposed
+**Status:** completed
 
 ## Problem Explanation
 In LyricChord:
