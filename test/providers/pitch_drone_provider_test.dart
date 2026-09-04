@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/models/pitch_drone_settings.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/providers/pitch_drone_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
@@ -185,4 +186,54 @@ void main() {
 
     expect(container.read(pitchDroneProvider).fontScaleIndex, 0);
   });
+
+  test('reads saved droneMode and chordQuality', () async {
+    final container = await makeContainer({
+      'pitch_drone_mode': 'western',
+      'pitch_drone_chord_quality': 'minor',
+    });
+    addTearDown(container.dispose);
+
+    final settings = container.read(pitchDroneProvider);
+    expect(settings.droneMode, DroneMode.western);
+    expect(settings.chordQuality, ChordQuality.minor);
+  });
+
+  test(
+    'Western chord drone plays chord and switches quality while running',
+    () async {
+      final container = await makeContainer({'pitch_drone_mode': 'western'});
+      addTearDown(container.dispose);
+      final notifier = container.read(pitchDroneProvider.notifier);
+
+      final started = await notifier.toggleDrone(key: 'A');
+      expect(started, isTrue);
+      expect(audio.chordDroneStarts, ['A/major']);
+
+      // Changing chord quality while playing restarts drone
+      await notifier.setChordQuality(ChordQuality.minor);
+      expect(audio.chordDroneStarts, ['A/major', 'A/minor']);
+
+      // Playing chord cue in western mode
+      final cuePlayed = await notifier.playPitchCue(key: 'D');
+      expect(cuePlayed, isTrue);
+      expect(audio.chordCueKeys, ['D/minor']);
+    },
+  );
+
+  test(
+    'switching between Classical and Western mode switches drone type',
+    () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(pitchDroneProvider.notifier);
+
+      await notifier.toggleDrone(key: 'G');
+      expect(audio.droneStarts, ['G/Pa']);
+
+      // Switch to Western mode while playing
+      await notifier.setDroneMode(DroneMode.western);
+      expect(audio.chordDroneStarts, ['G/major']);
+    },
+  );
 }

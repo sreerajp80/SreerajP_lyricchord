@@ -39,9 +39,10 @@ abstract class MelodyAudio {
 /// timing is decided in arithmetic, not by the scheduler, and what comes out is
 /// what `MelodyPlayerService` worked out.
 ///
-/// Follows the drone's playback sequence for the same reasons documented there:
-/// low-latency mode, `setSource` then `resume`, and a unique file name per
-/// rendered line so `audioplayers` never replays a cached older version.
+/// Uses `PlayerMode.mediaPlayer` with `setSource` then `resume`, and a unique
+/// file name per rendered line so `audioplayers` never replays a cached older
+/// version. Media player mode avoids the 1 MB buffer limit of Android's
+/// `SoundPool` so long melody lines play completely.
 class MelodyAudioService implements MelodyAudio {
   MelodyAudioService({this._synth = const PcmSynthService()});
 
@@ -87,7 +88,7 @@ class MelodyAudioService implements MelodyAudio {
 
       final player = _player ??= AudioPlayer();
       await player.stop();
-      await player.setPlayerMode(PlayerMode.lowLatency);
+      await player.setPlayerMode(PlayerMode.mediaPlayer);
       await player.setReleaseMode(loop ? ReleaseMode.loop : ReleaseMode.stop);
       await player.setVolume(_volume);
 

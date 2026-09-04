@@ -281,10 +281,16 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
             ),
             // HUD Matrix & Progress Panel (Bottom)
             Positioned(
-              bottom: 24,
               left: 16,
               right: 16,
-              child: _buildHudPanel(progress),
+              bottom: 0,
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: _buildHudPanel(progress),
+                ),
+              ),
             ),
           ],
         ),

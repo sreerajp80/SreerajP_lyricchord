@@ -18,6 +18,7 @@ class ChordSheetView extends StatelessWidget {
     required this.lines,
     required this.fontSize,
     this.showChords = true,
+    this.showMelody = true,
     this.lyricFontFamily,
     this.melodyTonicHz,
     this.melodyTempoBpm,
@@ -41,6 +42,13 @@ class ChordSheetView extends StatelessWidget {
 
   /// False hides the chord badges and leaves the lyrics only.
   final bool showChords;
+
+  /// False drops the `{melody}` rows completely — no beat grid, no play
+  /// button, and no gap where the row used to be.
+  ///
+  /// Only `{melody}` lines go: a swaram passage and the swara markers written
+  /// as chords are part of the written notation, so they follow [showChords].
+  final bool showMelody;
 
   /// Font family for the lyric words, or `null` for the theme default. Chords
   /// keep their own monospace font regardless.
@@ -97,6 +105,12 @@ class ChordSheetView extends StatelessWidget {
         for (final line in lines)
           if (line.isBlank)
             SizedBox(height: fontSize)
+          // Hidden melody rows leave nothing behind, so the lyrics close up
+          // instead of scrolling past a column of gaps.
+          else if (line.kind == ChordLineKind.melody &&
+              line.melody != null &&
+              !showMelody)
+            const SizedBox.shrink()
           else if (line.kind == ChordLineKind.melody && line.melody != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 4, top: 2),

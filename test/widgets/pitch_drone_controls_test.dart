@@ -219,4 +219,127 @@ void main() {
       expect(find.text('Could not play the pitch cue.'), findsOneWidget);
     });
   });
+
+  group('Western chord drone', () {
+    testWidgets(
+      'switching to Western mode shows Major and Minor options and Chord Drone',
+      (tester) async {
+        await tester.pumpWidget(await wrap(songKey: 'G'));
+        await tester.pumpAndSettle();
+
+        // Initially Classical
+        expect(find.text('Sa + Pa (5th)'), findsOneWidget);
+        expect(find.text('Shruti Drone'), findsOneWidget);
+
+        // Tap Western mode
+        await tester.tap(find.text('Western (Chords)'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Major (maj)'), findsOneWidget);
+        expect(find.text('Minor (min)'), findsOneWidget);
+        expect(find.text('Chord Drone'), findsOneWidget);
+        expect(find.text('Chord Cue (2s)'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'opening a minor song key pre-selects Minor and root pitch in Western mode',
+      (tester) async {
+        await tester.pumpWidget(
+          await wrap(songKey: 'Am', prefs: {'pitch_drone_mode': 'western'}),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Chord Drone'), findsOneWidget);
+
+        // Tap Chord Cue
+        await tester.tap(find.text('Chord Cue (2s)'));
+        await tester.pumpAndSettle();
+        expect(audio.chordCueKeys, ['A/minor']);
+
+        // Tap Chord Drone
+        await tester.tap(find.text('Chord Drone'));
+        await tester.pumpAndSettle();
+        expect(audio.chordDroneStarts, ['A/minor']);
+        expect(find.text('Stop Drone'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'switching quality from Minor to Major updates running chord drone',
+      (tester) async {
+        await tester.pumpWidget(
+          await wrap(songKey: 'Am', prefs: {'pitch_drone_mode': 'western'}),
+        );
+        await tester.pumpAndSettle();
+
+        // Start drone on A minor
+        await tester.tap(find.text('Chord Drone'));
+        await tester.pumpAndSettle();
+        expect(audio.chordDroneStarts, ['A/minor']);
+
+        // Tap Major
+        await tester.tap(find.text('Major (maj)'));
+        await tester.pumpAndSettle();
+        expect(audio.chordDroneStarts, ['A/minor', 'A/major']);
+
+        // Tap key C
+        await tester.tap(find.widgetWithText(ChoiceChip, 'C'));
+        await tester.pumpAndSettle();
+        expect(audio.chordDroneStarts, ['A/minor', 'A/major', 'C/major']);
+      },
+    );
+
+    testWidgets(
+      'stopping the drone and restarting it on the same key works cleanly',
+      (tester) async {
+        await tester.pumpWidget(
+          await wrap(songKey: 'C', prefs: {'pitch_drone_mode': 'western'}),
+        );
+        await tester.pumpAndSettle();
+
+        // Start drone on C
+        await tester.tap(find.text('Chord Drone'));
+        await tester.pumpAndSettle();
+        expect(audio.chordDroneStarts, ['C/major']);
+        expect(find.text('Stop Drone'), findsOneWidget);
+
+        // Stop drone
+        await tester.tap(find.text('Stop Drone'));
+        await tester.pumpAndSettle();
+        expect(audio.stopCount, 1);
+        expect(find.text('Chord Drone'), findsOneWidget);
+
+        // Restart drone on same key C
+        await tester.tap(find.text('Chord Drone'));
+        await tester.pumpAndSettle();
+        expect(audio.chordDroneStarts, ['C/major', 'C/major']);
+        expect(find.text('Stop Drone'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'switching from Western to Classical while drone is playing transitions cleanly',
+      (tester) async {
+        await tester.pumpWidget(
+          await wrap(songKey: 'C', prefs: {'pitch_drone_mode': 'western'}),
+        );
+        await tester.pumpAndSettle();
+
+        // Start Western chord drone
+        await tester.tap(find.text('Chord Drone'));
+        await tester.pumpAndSettle();
+        expect(audio.chordDroneStarts, ['C/major']);
+
+        // Switch to Classical mode
+        await tester.tap(find.text('Classical (Shruti)'));
+        await tester.pumpAndSettle();
+
+        // Should have stopped Western and started Classical drone on C
+        expect(audio.stopCount, 1);
+        expect(audio.droneStarts, ['C/Pa']);
+        expect(find.text('Stop Drone'), findsOneWidget);
+      },
+    );
+  });
 }

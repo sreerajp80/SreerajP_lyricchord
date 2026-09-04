@@ -49,11 +49,17 @@ class AppConstants {
   /// shared_preferences key for import duplicate strategy.
   static const String prefImportDuplicateStrategy = 'import_duplicate_strategy';
 
-  /// shared_preferences keys for pitch pipe, shruti drone, and stage font scale.
+  /// shared_preferences key for the manual auto-scroll speed a song starts at
+  /// when it has none of its own.
+  static const String prefDefaultScrollSpeed = 'default_scroll_speed';
+
+  /// shared_preferences keys for pitch pipe, shruti drone, western chord drone, and stage font scale.
   static const String prefPitchDroneKey = 'pitch_drone_key';
   static const String prefPitchDroneInterval = 'pitch_drone_interval';
   static const String prefPitchDroneVolume = 'pitch_drone_volume';
   static const String prefFontScaleIndex = 'stage_font_scale_index';
+  static const String prefDroneMode = 'pitch_drone_mode';
+  static const String prefChordQuality = 'pitch_drone_chord_quality';
 
   /// shared_preferences key for where the singer's **Sa** sits, held as a pitch
   /// name (`G` = 5 kattai = safed 5).

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -21,65 +22,70 @@ class ImportExportScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text('Import & Export')),
-      body: ListView(
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              'Import',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.purple,
+      body: SafeArea(
+        child: ListView(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Import',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
               ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.file_open_outlined),
-            title: const Text('Import ChordPro file(s)'),
-            subtitle: const Text(
-              'Pick one or more .cho, .pro, or text files to add songs.',
+            ListTile(
+              leading: const Icon(Icons.file_open_outlined),
+              title: const Text('Import ChordPro file(s)'),
+              subtitle: const Text(
+                'Pick one or more .cho, .pro, or text files to add songs.',
+              ),
+              onTap: () => _importChordPro(context, ref),
             ),
-            onTap: () => _importChordPro(context, ref),
-          ),
-          ListTile(
-            leading: const Icon(
-              Icons.qr_code_scanner_rounded,
-              color: Colors.cyan,
+            ListTile(
+              leading: const Icon(
+                Icons.qr_code_scanner_rounded,
+                color: Colors.cyan,
+              ),
+              title: const Text('AirQR Scan Import (Camera / Photo)'),
+              subtitle: const Text(
+                'Scan an animated QR song stream from a bandmate\'s screen.',
+              ),
+              onTap: () => context.push('/air-qr-receive'),
             ),
-            title: const Text('AirQR Scan Import (Camera / Photo)'),
-            subtitle: const Text(
-              'Scan an animated QR song stream from a bandmate\'s screen.',
-            ),
-            onTap: () => context.push('/air-qr-receive'),
-          ),
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              'Export',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.purple,
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Export',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
               ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.output_rounded),
-            title: const Text('Export all songs (ChordPro)'),
-            subtitle: const Text(
-              'Save your entire songbook as a single ChordPro file.',
+            ListTile(
+              leading: const Icon(Icons.output_rounded),
+              title: const Text('Export all songs (ChordPro)'),
+              subtitle: const Text(
+                'Save your entire songbook as a single ChordPro file.',
+              ),
+              onTap: () => _exportAllChordPro(context, ref),
             ),
-            onTap: () => _exportAllChordPro(context, ref),
-          ),
-          ListTile(
-            leading: const Icon(Icons.qr_code_2_rounded, color: Colors.purple),
-            title: const Text('Export all songs via AirQR Stream'),
-            subtitle: const Text(
-              'Broadcast entire songbook as an animated QR stream.',
+            ListTile(
+              leading: const Icon(
+                Icons.qr_code_2_rounded,
+                color: Colors.purple,
+              ),
+              title: const Text('Export all songs via AirQR Stream'),
+              subtitle: const Text(
+                'Broadcast entire songbook as an animated QR stream.',
+              ),
+              onTap: () => _exportAllAirQr(context, ref),
             ),
-            onTap: () => _exportAllAirQr(context, ref),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -121,9 +127,14 @@ class ImportExportScreen extends ConsumerWidget {
       for (var i = 0; i < validFiles.length; i++) {
         final file = validFiles[i];
         if (i == 0) firstFileName = file.name;
-        final bytes = file.bytes;
+        var bytes = file.bytes;
+        if (bytes == null && file.path != null) {
+          try {
+            bytes = File(file.path!).readAsBytesSync();
+          } catch (_) {}
+        }
         if (bytes == null) continue;
-        final content = utf8.decode(bytes, allowMalformed: true);
+        final content = decodeImportedBytes(bytes);
         combinedContent.writeln(content);
         combinedContent.writeln('\n{new_song}\n');
         final parsed = const ChordProService().parseMultiple(content);
@@ -211,4 +222,35 @@ class ImportExportScreen extends ConsumerWidget {
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
+}
+
+/// Decodes file bytes into a string, supporting UTF-8 (with BOM stripping)
+/// and UTF-16 (little-endian and big-endian).
+String decodeImportedBytes(Uint8List bytes) {
+  // UTF-16 LE BOM (FF FE)
+  if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+    return String.fromCharCodes(
+      Uint16List.view(
+        bytes.buffer,
+        bytes.offsetInBytes + 2,
+        (bytes.length - 2) ~/ 2,
+      ),
+    );
+  }
+  // UTF-16 BE BOM (FE FF)
+  if (bytes.length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF) {
+    final length = (bytes.length - 2) ~/ 2;
+    final u16 = Uint16List(length);
+    for (var i = 0; i < length; i++) {
+      final offset = 2 + (i * 2);
+      u16[i] = (bytes[offset] << 8) | bytes[offset + 1];
+    }
+    return String.fromCharCodes(u16);
+  }
+  // UTF-8 with optional BOM stripping
+  var decoded = utf8.decode(bytes, allowMalformed: true);
+  if (decoded.startsWith('\uFEFF')) {
+    decoded = decoded.substring(1);
+  }
+  return decoded;
 }

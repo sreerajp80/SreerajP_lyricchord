@@ -305,7 +305,7 @@ body { font-family: $stack; color: #000; line-height: 1.30; }
     final b64 = base64Encode(data.buffer.asUint8List());
     final weight = bold ? 700 : 400;
     return "@font-face{font-family:'$family';font-weight:$weight;"
-        "font-style:normal;src:url(data:font/ttf;base64,$b64) "
+        'font-style:normal;src:url(data:font/ttf;base64,$b64) '
         'format("truetype");}';
   }
 

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../core/config/app_config.dart';
-import '../providers/config_provider.dart';
+import 'package:lyricchord/core/config/app_config.dart';
+import 'package:lyricchord/core/constants/app_version.g.dart';
+import 'package:lyricchord/core/constants/build_date.g.dart';
+import 'package:lyricchord/providers/config_provider.dart';
 
 /// About screen. Fully data-driven: it reads [AppConfig] and renders each
 /// entry in `details` as its own row. Adding or removing a key in
@@ -16,10 +18,12 @@ class AboutScreen extends ConsumerWidget {
     final configAsync = ref.watch(appConfigProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('About')),
-      body: configAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => _AboutBody(config: AppConfig.fallback),
-        data: (config) => _AboutBody(config: config),
+      body: SafeArea(
+        child: configAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => const _AboutBody(config: AppConfig.fallback),
+          data: (config) => _AboutBody(config: config),
+        ),
       ),
     );
   }
@@ -29,6 +33,21 @@ class _AboutBody extends StatelessWidget {
   const _AboutBody({required this.config});
 
   final AppConfig config;
+
+  /// Version text for display. The generated [kAppVersion] comes straight from
+  /// `pubspec.yaml`, so it can never drift from the real build. The values in
+  /// `app_config.json` are only a fallback if the generated string is empty.
+  String _versionLabel(AppConfig config) {
+    final generated = kAppVersion.trim();
+    if (generated.isEmpty) {
+      return '${config.version} (build ${config.build})';
+    }
+    final parts = generated.split('+');
+    if (parts.length == 2 && parts[1].isNotEmpty) {
+      return '${parts[0]} (build ${parts[1]})';
+    }
+    return generated;
+  }
 
   Future<void> _openMail(String address) async {
     final uri = Uri(scheme: 'mailto', path: address);
@@ -62,11 +81,16 @@ class _AboutBody extends StatelessWidget {
         ),
         Center(
           child: Text(
-            'Version ${config.version} (build ${config.build})',
+            'Version ${_versionLabel(config)}',
             style: theme.textTheme.bodySmall,
           ),
         ),
         const Divider(height: 32),
+        const ListTile(
+          leading: Icon(Icons.calendar_today_outlined),
+          title: Text('Build date'),
+          subtitle: Text(kBuildDate),
+        ),
         for (final entry in config.details.entries)
           if (entry.key.trim().isNotEmpty && entry.value.trim().isNotEmpty)
             ListTile(
@@ -84,7 +108,7 @@ class _AboutBody extends StatelessWidget {
           onTap: () => showLicensePage(
             context: context,
             applicationName: config.appName,
-            applicationVersion: 'Version ${config.version}',
+            applicationVersion: 'Version ${_versionLabel(config)}',
           ),
         ),
       ],

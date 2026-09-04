@@ -12,46 +12,48 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          _SettingsCard(
-            icon: Icons.tune,
-            title: 'General',
-            subtitle: 'Import and metronome',
-            onTap: () => context.push('/settings/general'),
-          ),
-          _SettingsCard(
-            icon: Icons.palette_outlined,
-            title: 'Themes',
-            subtitle: 'System, light, or dark look',
-            onTap: () => context.push('/settings/themes'),
-          ),
-          _SettingsCard(
-            icon: Icons.music_note_outlined,
-            title: 'Chords',
-            subtitle: 'Your own chord notations for the editor',
-            onTap: () => context.push('/settings/chords'),
-          ),
-          _SettingsCard(
-            icon: Icons.font_download_outlined,
-            title: 'Fonts',
-            subtitle: 'Pick the lyric font (English and Malayalam)',
-            onTap: () => context.push('/settings/fonts'),
-          ),
-          _SettingsCard(
-            icon: Icons.help_outline,
-            title: 'Help',
-            subtitle: 'How to use setlists, metronome, export and more',
-            onTap: () => context.push('/settings/help'),
-          ),
-          _SettingsCard(
-            icon: Icons.info_outline,
-            title: 'About',
-            subtitle: 'App version, author, and licenses',
-            onTap: () => context.push('/about'),
-          ),
-        ],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(12),
+          children: [
+            _SettingsCard(
+              icon: Icons.tune,
+              title: 'General',
+              subtitle: 'Import and metronome',
+              onTap: () => context.push('/settings/general'),
+            ),
+            _SettingsCard(
+              icon: Icons.palette_outlined,
+              title: 'Themes',
+              subtitle: 'System, light, or dark look',
+              onTap: () => context.push('/settings/themes'),
+            ),
+            _SettingsCard(
+              icon: Icons.music_note_outlined,
+              title: 'Chords',
+              subtitle: 'Your own chord notations for the editor',
+              onTap: () => context.push('/settings/chords'),
+            ),
+            _SettingsCard(
+              icon: Icons.font_download_outlined,
+              title: 'Fonts',
+              subtitle: 'Pick the lyric font (English and Malayalam)',
+              onTap: () => context.push('/settings/fonts'),
+            ),
+            _SettingsCard(
+              icon: Icons.help_outline,
+              title: 'Help',
+              subtitle: 'How to use setlists, metronome, export and more',
+              onTap: () => context.push('/settings/help'),
+            ),
+            _SettingsCard(
+              icon: Icons.info_outline,
+              title: 'About',
+              subtitle: 'App version, author, and licenses',
+              onTap: () => context.push('/about'),
+            ),
+          ],
+        ),
       ),
     );
   }

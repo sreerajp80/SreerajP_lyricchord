@@ -23,6 +23,16 @@ abstract class PitchDroneAudio {
   /// Returns false if it failed, so the caller must not claim it is playing.
   Future<bool> startDrone({required String noteKey, required String interval});
 
+  /// Starts the looping Western chord drone on [noteKey] with [isMinor].
+  /// Returns false if it failed.
+  Future<bool> startChordDrone({
+    required String noteKey,
+    required bool isMinor,
+  });
+
+  /// Plays a one-off Western chord cue for [noteKey] with [isMinor].
+  Future<bool> playChordCue({required String noteKey, required bool isMinor});
+
   /// Stops the drone. Safe to call when nothing is playing.
   Future<void> stopDrone();
 
@@ -35,24 +45,16 @@ abstract class PitchDroneAudio {
 
 /// Plays the synthesized pitch cue and shruti drone.
 ///
-/// **Why this exists.** The drone used to be played straight from the provider
-/// with a single `play()` call on a default `AudioPlayer`. On a real device that
-/// created a `MediaPlayer` which loaded the file, looped over it, and never once
-/// reached the started state — `dumpsys audio` showed the format being re-read
-/// every four seconds but no `event:started`, so nothing was ever heard.
+/// **Audio player modes:**
+/// * Cues use [PlayerMode.mediaPlayer] or low-latency playback for short one-shot
+///   tones.
+/// * Continuous drones (Shruti and Western chords) use [PlayerMode.mediaPlayer]
+///   with [ReleaseMode.loop]. SoundPool (`lowLatency`) has a 1 MB uncompressed buffer
+///   cap and low-priority stream handling on Android which can cause continuous loops
+///   to drop out after 2 seconds. MediaPlayer streams from file and loops seamlessly.
 ///
-/// The metronome had already solved this. It uses [PlayerMode.lowLatency] and
-/// starts the sound with `setSource()` then `resume()`, and on the same device
-/// that logs a real start for every beat. This service copies that sequence.
-///
-/// Two other things the old code got wrong are fixed here:
-///
-/// * **Unique file names.** `audioplayers` caches a source by its path, so
-///   always writing to `shruti_drone.wav` meant a changed key could keep
-///   sounding the old note. Each key and interval now gets its own file.
-/// * **Nothing is silent about failing.** Every call is wrapped. A failure
-///   returns false and, in debug builds only, says why. Song content is never
-///   logged.
+/// Every method reports whether the sound really started. A failure returns
+/// false and, in debug builds only, logs the error. Song content is never logged.
 class PitchDroneAudioService implements PitchDroneAudio {
   PitchDroneAudioService({this._synth = const PcmSynthService()});
 
@@ -62,10 +64,6 @@ class PitchDroneAudioService implements PitchDroneAudio {
   AudioPlayer? _dronePlayer;
 
   double _volume = 0.8;
-
-  /// The drone source currently loaded, so re-pressing the same key does not
-  /// rebuild a 700 KB file for nothing.
-  String? _loadedDronePath;
 
   @override
   Future<bool> playCue(String noteKey) async {
@@ -89,47 +87,84 @@ class PitchDroneAudioService implements PitchDroneAudio {
   }
 
   @override
+  Future<bool> playChordCue({
+    required String noteKey,
+    required bool isMinor,
+  }) async {
+    try {
+      final quality = isMinor ? 'minor' : 'major';
+      final file = await _writeIfNeeded(
+        name: 'western_chord_cue_${_slug(noteKey)}_$quality.wav',
+        build: () => _synth.generateWesternChordCueWav(
+          noteKey: noteKey,
+          isMinor: isMinor,
+        ),
+      );
+
+      final player = _cuePlayer ??= AudioPlayer();
+      await player.setPlayerMode(PlayerMode.lowLatency);
+      await player.setReleaseMode(ReleaseMode.stop);
+      await player.setVolume(_volume);
+      await player.setSource(DeviceFileSource(file.path));
+      await player.resume();
+      return true;
+    } catch (error, stack) {
+      _report('playChordCue', error, stack);
+      return false;
+    }
+  }
+
+  @override
   Future<bool> startDrone({
     required String noteKey,
     required String interval,
   }) async {
     try {
       final file = await _writeIfNeeded(
-        name: 'shruti_drone_${_slug(noteKey)}_${_slug(interval)}.wav',
+        name: 'shruti_drone_v2_${_slug(noteKey)}_${_slug(interval)}.wav',
         build: () =>
             _synth.generateShrutiDroneWav(noteKey: noteKey, interval: interval),
       );
 
       final player = _dronePlayer ??= AudioPlayer();
       await player.stop();
-      // Low latency, i.e. SoundPool — the same path the metronome uses.
-      //
-      // The obvious choice for a long pad is the default media player, and that
-      // is what this used to do. On a real device it never worked: the player
-      // loaded the file, looped over it, and never once reached the started
-      // state, so nothing came out. The pitch cue on SoundPool played fine from
-      // the same process at the same moment, which is what pinned it down.
-      //
-      // SoundPool caps a sample at roughly 1 MB, which is why the drone buffer
-      // is two seconds rather than four.
-      await player.setPlayerMode(PlayerMode.lowLatency);
+      await player.setPlayerMode(PlayerMode.mediaPlayer);
       await player.setReleaseMode(ReleaseMode.loop);
       await player.setVolume(_volume);
-
-      // Only reload when the sound actually changed. Re-setting the same source
-      // is what used to leave the player sitting idle.
-      if (_loadedDronePath != file.path) {
-        await player.setSource(DeviceFileSource(file.path));
-        _loadedDronePath = file.path;
-      } else {
-        await player.seek(Duration.zero);
-      }
-
+      await player.setSource(DeviceFileSource(file.path));
       await player.resume();
       return true;
     } catch (error, stack) {
       _report('startDrone', error, stack);
-      _loadedDronePath = null;
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> startChordDrone({
+    required String noteKey,
+    required bool isMinor,
+  }) async {
+    try {
+      final quality = isMinor ? 'minor' : 'major';
+      final file = await _writeIfNeeded(
+        name: 'western_chord_drone_v2_${_slug(noteKey)}_$quality.wav',
+        build: () => _synth.generateWesternChordDroneWav(
+          noteKey: noteKey,
+          isMinor: isMinor,
+        ),
+      );
+
+      final player = _dronePlayer ??= AudioPlayer();
+      await player.stop();
+      await player.setPlayerMode(PlayerMode.mediaPlayer);
+      await player.setReleaseMode(ReleaseMode.loop);
+      await player.setVolume(_volume);
+      await player.setSource(DeviceFileSource(file.path));
+      await player.resume();
+      return true;
+    } catch (error, stack) {
+      _report('startChordDrone', error, stack);
       return false;
     }
   }
@@ -138,6 +173,7 @@ class PitchDroneAudioService implements PitchDroneAudio {
   Future<void> stopDrone() async {
     try {
       await _dronePlayer?.stop();
+      await _dronePlayer?.release();
     } catch (error, stack) {
       _report('stopDrone', error, stack);
     }
@@ -164,7 +200,6 @@ class PitchDroneAudioService implements PitchDroneAudio {
     }
     _cuePlayer = null;
     _dronePlayer = null;
-    _loadedDronePath = null;
   }
 
   /// Writes [name] into the temp folder unless it is already there.
@@ -172,6 +207,11 @@ class PitchDroneAudioService implements PitchDroneAudio {
   /// The synth is deterministic — the same key and interval always produce the
   /// same bytes — so a file that exists is already correct and rebuilding it
   /// would only cost time on the button press.
+  ///
+  /// The flip side: nothing here notices that the synth itself changed. A device
+  /// that already played a drone holds the old sound for good. So the drone
+  /// names carry a `_v2` marker — bump it whenever a generator's output changes,
+  /// or the fix never reaches anyone who already ran the app.
   Future<File> _writeIfNeeded({
     required String name,
     required List<int> Function() build,

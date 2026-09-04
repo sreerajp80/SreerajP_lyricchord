@@ -5,7 +5,58 @@ import 'package:lyricchord/models/pitch_tradition.dart';
 /// Supported 5-tier dynamic stage font scales.
 const List<double> fontScaleTiers = [0.85, 0.95, 1.00, 1.15, 1.30];
 
-/// Settings and state model for Pitch Pipe, Shruti Box Drone, and Dynamic Font Scale.
+/// Which drone tradition to play: Classical Shruti drone or Western backing chord.
+enum DroneMode {
+  classical,
+  western;
+
+  String get displayName => switch (this) {
+    DroneMode.classical => 'Classical (Shruti)',
+    DroneMode.western => 'Western (Chords)',
+  };
+
+  String get storageKey => name;
+
+  static DroneMode fromStorage(
+    String? value, {
+    DroneMode fallback = DroneMode.classical,
+  }) {
+    for (final mode in DroneMode.values) {
+      if (mode.storageKey == value) return mode;
+    }
+    return fallback;
+  }
+}
+
+/// Western chord quality for chord drone playback.
+enum ChordQuality {
+  major,
+  minor;
+
+  String get displayName => switch (this) {
+    ChordQuality.major => 'Major',
+    ChordQuality.minor => 'Minor',
+  };
+
+  String get shortName => switch (this) {
+    ChordQuality.major => 'maj',
+    ChordQuality.minor => 'min',
+  };
+
+  String get storageKey => name;
+
+  static ChordQuality fromStorage(
+    String? value, {
+    ChordQuality fallback = ChordQuality.major,
+  }) {
+    for (final quality in ChordQuality.values) {
+      if (quality.storageKey == value) return quality;
+    }
+    return fallback;
+  }
+}
+
+/// Settings and state model for Pitch Pipe, Shruti Box Drone, Western Chord Drone, and Dynamic Font Scale.
 @immutable
 class PitchDroneSettings {
   const PitchDroneSettings({
@@ -13,6 +64,8 @@ class PitchDroneSettings {
     this.saKey = 'C',
     this.pitchNaming = PitchTradition.carnatic,
     this.droneInterval = 'Pa',
+    this.droneMode = DroneMode.classical,
+    this.chordQuality = ChordQuality.major,
     this.volume = 0.8,
     this.fontScaleIndex = 2,
     this.dronePlaying = false,
@@ -33,8 +86,14 @@ class PitchDroneSettings {
   /// and how the Settings screen itself is labelled.
   final PitchTradition pitchNaming;
 
-  /// `Pa` for the fifth, `Ma` for the fourth.
+  /// `Pa` for the fifth, `Ma` for the fourth (used in [DroneMode.classical]).
   final String droneInterval;
+
+  /// Whether the drone sounds as Classical Shruti (Sa + Pa/Ma) or Western chords.
+  final DroneMode droneMode;
+
+  /// Chord quality when in [DroneMode.western] (Major or Minor).
+  final ChordQuality chordQuality;
 
   final double volume;
   final int fontScaleIndex;
@@ -58,6 +117,8 @@ class PitchDroneSettings {
     String? saKey,
     PitchTradition? pitchNaming,
     String? droneInterval,
+    DroneMode? droneMode,
+    ChordQuality? chordQuality,
     double? volume,
     int? fontScaleIndex,
     bool? dronePlaying,
@@ -69,6 +130,8 @@ class PitchDroneSettings {
       saKey: saKey ?? this.saKey,
       pitchNaming: pitchNaming ?? this.pitchNaming,
       droneInterval: droneInterval ?? this.droneInterval,
+      droneMode: droneMode ?? this.droneMode,
+      chordQuality: chordQuality ?? this.chordQuality,
       volume: volume ?? this.volume,
       fontScaleIndex: fontScaleIndex ?? this.fontScaleIndex,
       dronePlaying: dronePlaying ?? this.dronePlaying,
@@ -85,6 +148,8 @@ class PitchDroneSettings {
           saKey == other.saKey &&
           pitchNaming == other.pitchNaming &&
           droneInterval == other.droneInterval &&
+          droneMode == other.droneMode &&
+          chordQuality == other.chordQuality &&
           volume == other.volume &&
           fontScaleIndex == other.fontScaleIndex &&
           dronePlaying == other.dronePlaying &&
@@ -96,6 +161,8 @@ class PitchDroneSettings {
     saKey,
     pitchNaming,
     droneInterval,
+    droneMode,
+    chordQuality,
     volume,
     fontScaleIndex,
     dronePlaying,

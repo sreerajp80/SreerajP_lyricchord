@@ -385,6 +385,22 @@ void main() {
       expect(song.scrollMeasures, 64);
     });
 
+    test('a fresh song has no speed of its own', () async {
+      final id = await repo.insert(_newSong(title: 'Brand New'));
+
+      final song = await repo.findById(id);
+      expect(song!.scrollSpeedSet, isFalse);
+    });
+
+    test('saveScrollSettings marks the song as having its own speed', () async {
+      final id = await repo.insert(_newSong(title: 'Now Mine'));
+
+      await repo.saveScrollSettings(id, speed: 0.25, measures: 32);
+
+      final song = await repo.findById(id);
+      expect(song!.scrollSpeedSet, isTrue);
+    });
+
     test('saveScrollSettings leaves the rest of the song alone', () async {
       final original = _newSong(title: 'Untouched');
       final id = await repo.insert(original);

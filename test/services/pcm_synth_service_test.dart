@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -416,6 +417,126 @@ void main() {
                 .toInt();
         expect(data.getInt16(44 + i * 4, Endian.little), expected);
       }
+    });
+  });
+
+  group('a looping drone', () {
+    const synth = PcmSynthService();
+    const rate = 44100;
+    const headerBytes = 44;
+
+    /// The left channel of a stereo WAV, as signed samples.
+    List<int> leftChannel(Uint8List wav) {
+      final data = ByteData.sublistView(wav);
+      final count = (wav.length - headerBytes) ~/ 4;
+      return [
+        for (var i = 0; i < count; i++)
+          data.getInt16(headerBytes + i * 4, Endian.little),
+      ];
+    }
+
+    /// The loudest sample between [from] and [to].
+    int peakBetween(List<int> samples, int from, int to) {
+      var peak = 0;
+      for (var i = from; i < to; i++) {
+        final level = samples[i].abs();
+        if (level > peak) peak = level;
+      }
+      return peak;
+    }
+
+    test('snapToLoopGrid lands on a whole number of cycles', () {
+      for (final freq in [130.81, 261.63, 392.0, 440.0, 466.16]) {
+        for (final seconds in [2.0, 4.0]) {
+          final snapped = PcmSynthService.snapToLoopGrid(freq, seconds);
+          final cycles = snapped * seconds;
+
+          // A whole number of cycles is the whole point: that is what lets the
+          // end of the buffer join its own start.
+          expect(
+            cycles,
+            closeTo(cycles.roundToDouble(), 1e-9),
+            reason: '$freq Hz over ${seconds}s must fit whole cycles',
+          );
+
+          // And the pitch must not audibly move. 5 cents is roughly the
+          // smallest difference an ear can pick up; this stays well inside it.
+          final cents = 1200 * (math.log(snapped / freq) / math.ln2);
+          expect(cents.abs(), lessThan(3.0));
+        }
+      }
+    });
+
+    test('snapToLoopGrid leaves nonsense input alone', () {
+      expect(PcmSynthService.snapToLoopGrid(0, 4.0), 0);
+      expect(PcmSynthService.snapToLoopGrid(-440, 4.0), -440);
+      expect(PcmSynthService.snapToLoopGrid(440, 0), 440);
+    });
+
+    test('generateShrutiDroneWav does not fade out at the loop seam', () {
+      final samples = leftChannel(synth.generateShrutiDroneWav(noteKey: 'C'));
+      final fadeWindow = (rate * 0.005).round();
+      final middle = samples.length ~/ 2;
+
+      final middlePeak = peakBetween(samples, middle, middle + fadeWindow);
+      final endPeak = peakBetween(
+        samples,
+        samples.length - fadeWindow,
+        samples.length,
+      );
+      final startPeak = peakBetween(samples, 0, fadeWindow);
+
+      // A fade at the edges would drop these to near silence, and the drone
+      // would dip to nothing on every pass of the loop.
+      expect(endPeak, greaterThan(middlePeak ~/ 2));
+      expect(startPeak, greaterThan(middlePeak ~/ 2));
+    });
+
+    test('generateShrutiDroneWav joins its own start with no step', () {
+      final samples = leftChannel(synth.generateShrutiDroneWav(noteKey: 'C'));
+
+      var biggestStep = 0;
+      for (var i = 1; i < samples.length; i++) {
+        final step = (samples[i] - samples[i - 1]).abs();
+        if (step > biggestStep) biggestStep = step;
+      }
+      final seamStep = (samples.first - samples.last).abs();
+
+      // The jump from the last sample back to the first is what the ear hears
+      // as a click. It must be no worse than an ordinary step inside the
+      // buffer, which is only true when every voice fits whole cycles.
+      expect(seamStep, lessThanOrEqualTo(biggestStep));
+    });
+
+    test('generateWesternChordDroneWav loops without a dip or a step', () {
+      final samples = leftChannel(
+        synth.generateWesternChordDroneWav(noteKey: 'C'),
+      );
+      final fadeWindow = (rate * 0.005).round();
+      final middle = samples.length ~/ 2;
+
+      final middlePeak = peakBetween(samples, middle, middle + fadeWindow);
+      expect(
+        peakBetween(samples, samples.length - fadeWindow, samples.length),
+        greaterThan(middlePeak ~/ 2),
+      );
+
+      var biggestStep = 0;
+      for (var i = 1; i < samples.length; i++) {
+        final step = (samples[i] - samples[i - 1]).abs();
+        if (step > biggestStep) biggestStep = step;
+      }
+      expect(
+        (samples.first - samples.last).abs(),
+        lessThanOrEqualTo(biggestStep),
+      );
+    });
+
+    test('the default drone length fits whole cycles of the tremolo', () {
+      // The 1.5 Hz tremolo has to line up across the seam as well, or the
+      // wobble itself jumps once per loop.
+      const defaultSeconds = 4.0;
+      expect((1.5 * defaultSeconds) % 1, 0);
     });
   });
 }

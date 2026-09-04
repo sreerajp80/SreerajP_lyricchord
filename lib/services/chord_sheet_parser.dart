@@ -8,6 +8,7 @@
 /// marker) is kept as plain lyric text, which is CLAUDE.md hard rule 4.
 library;
 
+import 'package:lyricchord/core/utils/line_break_utils.dart';
 import 'package:lyricchord/models/melody_line.dart';
 import 'package:lyricchord/services/melody_parser_service.dart';
 import 'package:lyricchord/services/swara_notation_service.dart';
@@ -177,10 +178,7 @@ class ChordSheetParser {
     final directives = <String, String>{};
     final lines = <ChordLine>[];
 
-    final rawLines = lyrics
-        .replaceAll('\r\n', '\n')
-        .replaceAll('\r', '\n')
-        .split('\n');
+    final rawLines = normalizeLineBreaks(lyrics).split('\n');
 
     for (final raw in rawLines) {
       // Checked before the directive test on purpose: `{melody: ...}` would

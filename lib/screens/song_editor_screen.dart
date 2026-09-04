@@ -220,90 +220,93 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
             const SizedBox(width: 8),
           ],
         ),
-        body: draftAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32),
-              child: Text('This song could not be opened.'),
+        body: SafeArea(
+          top: false,
+          child: draftAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text('This song could not be opened.'),
+              ),
             ),
-          ),
-          data: (draft) => Column(
-            children: [
-              // The meta block folds away while the lyrics field is focused so
-              // the lyrics area gets the room. A compact summary takes its place
-              // and can be tapped to open the fields back up. AnimatedSize keeps
-              // the height change smooth while the child swaps.
-              AnimatedSize(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                alignment: Alignment.topCenter,
-                child: _metaCollapsed
-                    ? _MetaSummary(
-                        titleController: _titleController,
-                        keyController: _keyController,
-                        bpmController: _bpmController,
-                        onTap: () => setState(() => _metaCollapsed = false),
-                      )
-                    : SongMetaFields(
-                        titleController: _titleController,
-                        artistController: _artistController,
-                        keyController: _keyController,
-                        bpmController: _bpmController,
-                        onTitleChanged: _editor.setTitle,
-                        onArtistChanged: _editor.setArtist,
-                        onKeyChanged: _editor.setKey,
-                        onBpmChanged: _editor.setBpmText,
-                        tradition: draft.tradition,
-                        ragaController: _ragaController,
-                        talaController: _talaController,
-                        onTraditionChanged: _editor.setTradition,
-                        onRagaChanged: _editor.setRaga,
-                        onTalaChanged: _editor.setTala,
-                        talaWarning: _talaWarning(draft),
-                        selectedSetlistId: _selectedSetlistId,
-                        availableSetlists: setlists,
-                        onSetlistChanged: (id) =>
-                            setState(() => _selectedSetlistId = id),
+            data: (draft) => Column(
+              children: [
+                // The meta block folds away while the lyrics field is focused so
+                // the lyrics area gets the room. A compact summary takes its place
+                // and can be tapped to open the fields back up. AnimatedSize keeps
+                // the height change smooth while the child swaps.
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  alignment: Alignment.topCenter,
+                  child: _metaCollapsed
+                      ? _MetaSummary(
+                          titleController: _titleController,
+                          keyController: _keyController,
+                          bpmController: _bpmController,
+                          onTap: () => setState(() => _metaCollapsed = false),
+                        )
+                      : SongMetaFields(
+                          titleController: _titleController,
+                          artistController: _artistController,
+                          keyController: _keyController,
+                          bpmController: _bpmController,
+                          onTitleChanged: _editor.setTitle,
+                          onArtistChanged: _editor.setArtist,
+                          onKeyChanged: _editor.setKey,
+                          onBpmChanged: _editor.setBpmText,
+                          tradition: draft.tradition,
+                          ragaController: _ragaController,
+                          talaController: _talaController,
+                          onTraditionChanged: _editor.setTradition,
+                          onRagaChanged: _editor.setRaga,
+                          onTalaChanged: _editor.setTala,
+                          talaWarning: _talaWarning(draft),
+                          selectedSetlistId: _selectedSetlistId,
+                          availableSetlists: setlists,
+                          onSetlistChanged: (id) =>
+                              setState(() => _selectedSetlistId = id),
+                        ),
+                ),
+                const SizedBox(height: 12),
+                ChordInserterBar(
+                  chords: draft.chordSuggestionsWith(
+                    ref.watch(customChordsProvider),
+                  ),
+                  onChordTap: _insertChord,
+                  onCustomChord: _addCustomChord,
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: _lyricsController,
+                      focusNode: _lyricsFocus,
+                      undoController: _undoController,
+                      onChanged: _editor.setLyrics,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      keyboardType: TextInputType.multiline,
+                      textCapitalization: TextCapitalization.sentences,
+                      style: TextStyle(
+                        fontFamily: ref.watch(lyricFontProvider).family,
                       ),
-              ),
-              const SizedBox(height: 12),
-              ChordInserterBar(
-                chords: draft.chordSuggestionsWith(
-                  ref.watch(customChordsProvider),
-                ),
-                onChordTap: _insertChord,
-                onCustomChord: _addCustomChord,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: TextField(
-                    controller: _lyricsController,
-                    focusNode: _lyricsFocus,
-                    undoController: _undoController,
-                    onChanged: _editor.setLyrics,
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    keyboardType: TextInputType.multiline,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: TextStyle(
-                      fontFamily: ref.watch(lyricFontProvider).family,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText:
-                          'Write your lyrics here.\n'
-                          'Tap a chord above to drop it in at the cursor.',
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText:
+                            'Write your lyrics here.\n'
+                            'Tap a chord above to drop it in at the cursor.',
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

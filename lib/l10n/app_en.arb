@@ -1,0 +1,43 @@
+{
+  "@@locale": "en",
+  "appTitle": "LyricChord",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "about": "About",
+  "@about": {
+    "description": "Title of the About screen"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Title of the Settings screen"
+  },
+  "songs": "Songs",
+  "@songs": {
+    "description": "Title of the songs list view"
+  },
+  "setlists": "Setlists",
+  "@setlists": {
+    "description": "Title of the setlists view"
+  },
+  "search": "Search",
+  "@search": {
+    "description": "Placeholder hint for search fields"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Label for cancel actions"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Label for save actions"
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Label for delete actions"
+  },
+  "edit": "Edit",
+  "@edit": {
+    "description": "Label for edit actions"
+  }
+}

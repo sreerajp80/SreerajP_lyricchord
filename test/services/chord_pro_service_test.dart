@@ -426,4 +426,48 @@ Pallavi:
       expect(parsed.single.lyrics.contains('{tonic: 1 kattai}'), isTrue);
     });
   });
+
+  group('line break normalization', () {
+    test('preserves line breaks with CRLF', () {
+      const text = 'Line 1\r\nLine 2\r\nLine 3';
+      final song = service.parse(text);
+      expect(song.lyrics, 'Line 1\nLine 2\nLine 3');
+    });
+
+    test('preserves line breaks with classic Mac CR', () {
+      const text = 'Line 1\rLine 2\rLine 3';
+      final song = service.parse(text);
+      expect(song.lyrics, 'Line 1\nLine 2\nLine 3');
+    });
+
+    test('preserves line breaks with Unicode line separator (U+2028)', () {
+      const text = 'Line 1\u2028Line 2\u2028Line 3';
+      final song = service.parse(text);
+      expect(song.lyrics, 'Line 1\nLine 2\nLine 3');
+    });
+
+    test('preserves line breaks with Unicode paragraph separator (U+2029)', () {
+      const text = 'Verse 1\u2029Verse 2';
+      final song = service.parse(text);
+      expect(song.lyrics, 'Verse 1\n\nVerse 2');
+    });
+
+    test('preserves line breaks with next-line and form-feed', () {
+      const text = 'Line 1\u0085Line 2\u000CLine 3';
+      final song = service.parse(text);
+      expect(song.lyrics, 'Line 1\nLine 2\nLine 3');
+    });
+
+    test('preserves escaped newlines when no raw newlines exist', () {
+      const text = r'Line 1\nLine 2\nLine 3';
+      final song = service.parse(text);
+      expect(song.lyrics, 'Line 1\nLine 2\nLine 3');
+    });
+
+    test('parseMultiple preserves verse gaps and line breaks', () {
+      const text = 'Line 1\u2028Line 2\n\nLine 3\r\nLine 4';
+      final songs = service.parseMultiple(text);
+      expect(songs.single.lyrics, 'Line 1\nLine 2\n\nLine 3\nLine 4');
+    });
+  });
 }

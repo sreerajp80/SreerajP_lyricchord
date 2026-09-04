@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lyricchord/services/chord_sheet_parser.dart';
+import 'package:lyricchord/services/melody_audio_service.dart';
+import 'package:lyricchord/services/melody_parser_service.dart';
+import 'package:lyricchord/services/melody_player_service.dart';
+import 'package:lyricchord/widgets/melody_line_row.dart';
 import 'package:lyricchord/theme/app_colors.dart';
 import 'package:lyricchord/theme/app_theme.dart';
 import 'package:lyricchord/widgets/chord_sheet_view.dart';
@@ -122,4 +127,68 @@ void main() {
       expect(find.byType(Wrap), findsOneWidget);
     });
   });
+
+  group('show melody', () {
+    const parser = MelodyParser();
+
+    ChordLine melodyLine() {
+      final melody = parser.parse('{melody} P , M2 | R2 S');
+      return ChordLine(
+        [ChordSegment(text: melody.source)],
+        kind: ChordLineKind.melody,
+        melody: melody,
+      );
+    }
+
+    Future<void> pumpSheet(WidgetTester tester, {required bool showMelody}) {
+      return tester.pumpWidget(
+        ProviderScope(
+          overrides: [melodyAudioProvider.overrideWithValue(_SilentAudio())],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            home: Scaffold(
+              body: ChordSheetView(
+                lines: [line, melodyLine()],
+                fontSize: 16,
+                showMelody: showMelody,
+                melodyTonicHz: 261.63,
+                melodyTempoBpm: 68,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('draws the melody row when on', (tester) async {
+      await pumpSheet(tester, showMelody: true);
+
+      expect(find.byType(MelodyLineRow), findsOneWidget);
+    });
+
+    testWidgets('drops the melody row when off, keeping the lyrics', (
+      tester,
+    ) async {
+      await pumpSheet(tester, showMelody: false);
+
+      expect(find.byType(MelodyLineRow), findsNothing);
+      expect(find.text('Amazing '), findsOneWidget);
+    });
+  });
+}
+
+/// A melody audio device that makes no sound, so the row can be built in a
+/// test without touching a real audio player.
+class _SilentAudio implements MelodyAudio {
+  @override
+  Future<bool> play(MelodySchedule schedule, {bool loop = false}) async => true;
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<void> dispose() async {}
 }

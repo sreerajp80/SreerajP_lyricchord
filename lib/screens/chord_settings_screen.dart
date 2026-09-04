@@ -37,7 +37,7 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
       _controller.clear();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
             'Could not add that chord. Use at most '
             '${CustomChordsNotifier.maxChordLength} characters and no '
@@ -63,73 +63,75 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Chords')),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              'Add your own chord notations. They always appear in the '
-              "editor's chord bar, after the key's own chords.",
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Add your own chord notations. They always appear in the '
+                "editor's chord bar, after the key's own chords.",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    maxLength: CustomChordsNotifier.maxChordLength,
-                    decoration: const InputDecoration(
-                      labelText: 'Chord notation',
-                      hintText: 'F#m7, Cmaj7, D/F#',
-                      border: OutlineInputBorder(),
-                      counterText: '',
-                    ),
-                    onSubmitted: (_) => _add(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                FilledButton.icon(
-                  onPressed: _add,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add'),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: chords.isEmpty
-                ? Center(
-                    child: Text(
-                      'No custom chords yet.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      maxLength: CustomChordsNotifier.maxChordLength,
+                      decoration: const InputDecoration(
+                        labelText: 'Chord notation',
+                        hintText: 'F#m7, Cmaj7, D/F#',
+                        border: OutlineInputBorder(),
+                        counterText: '',
                       ),
+                      onSubmitted: (_) => _add(),
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: chords.length,
-                    itemBuilder: (context, index) {
-                      final chord = chords[index];
-                      return ListTile(
-                        key: ValueKey(chord),
-                        leading: const Icon(Icons.music_note_outlined),
-                        title: Text(chord),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.close),
-                          tooltip: 'Remove $chord',
-                          onPressed: () => _remove(chord),
-                        ),
-                      );
-                    },
                   ),
-          ),
-        ],
+                  const SizedBox(width: 12),
+                  FilledButton.icon(
+                    onPressed: _add,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: chords.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No custom chords yet.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: chords.length,
+                      itemBuilder: (context, index) {
+                        final chord = chords[index];
+                        return ListTile(
+                          key: ValueKey(chord),
+                          leading: const Icon(Icons.music_note_outlined),
+                          title: Text(chord),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.close),
+                            tooltip: 'Remove $chord',
+                            onPressed: () => _remove(chord),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

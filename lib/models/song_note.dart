@@ -37,6 +37,12 @@ class SongNote {
   /// Tempo-Auto length in measures last used for this song.
   final int scrollMeasures;
 
+  /// True once a manual scroll speed has been set for this song.
+  ///
+  /// False means "never set", so the song opens at the starting speed from
+  /// Settings rather than at [scrollSpeed].
+  final bool scrollSpeedSet;
+
   /// Raga name for an Indian song, empty for a Western one (schema version 9).
   final String raga;
 
@@ -67,6 +73,7 @@ class SongNote {
     required this.timestamp,
     this.scrollSpeed = 1.0,
     this.scrollMeasures = 32,
+    this.scrollSpeedSet = false,
     this.raga = '',
     this.tala = '',
     this.tradition,
@@ -92,6 +99,7 @@ class SongNote {
     int? timestamp,
     double? scrollSpeed,
     int? scrollMeasures,
+    bool? scrollSpeedSet,
     String? raga,
     String? tala,
     PitchTradition? tradition,
@@ -107,6 +115,7 @@ class SongNote {
       timestamp: timestamp ?? this.timestamp,
       scrollSpeed: scrollSpeed ?? this.scrollSpeed,
       scrollMeasures: scrollMeasures ?? this.scrollMeasures,
+      scrollSpeedSet: scrollSpeedSet ?? this.scrollSpeedSet,
       raga: raga ?? this.raga,
       tala: tala ?? this.tala,
       tradition: tradition ?? this.tradition,
@@ -127,6 +136,7 @@ class SongNote {
         other.timestamp == timestamp &&
         other.scrollSpeed == scrollSpeed &&
         other.scrollMeasures == scrollMeasures &&
+        other.scrollSpeedSet == scrollSpeedSet &&
         other.raga == raga &&
         other.tala == tala &&
         other.tradition == tradition;
@@ -144,6 +154,7 @@ class SongNote {
     timestamp,
     scrollSpeed,
     scrollMeasures,
+    scrollSpeedSet,
     raga,
     tala,
     tradition,

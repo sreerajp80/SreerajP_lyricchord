@@ -9,10 +9,13 @@ import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/screens/song_performance_screen.dart';
+import 'package:lyricchord/services/melody_audio_service.dart';
+import 'package:lyricchord/services/melody_player_service.dart';
 import 'package:lyricchord/widgets/chord_sheet_view.dart';
 import 'package:lyricchord/widgets/harmonium_chord_diagram.dart';
 import 'package:lyricchord/widgets/swara_keyboard_diagram.dart';
 import 'package:lyricchord/widgets/performance_controls.dart';
+import 'package:lyricchord/widgets/scroll_gesture_layer.dart';
 
 import '../helpers/fake_song_repository.dart';
 
@@ -28,13 +31,20 @@ void main() {
   });
 
   /// Opens Amazing Grace (id 1, key G).
-  Future<void> pumpPerformance(WidgetTester tester, {int songId = 1}) async {
+  Future<void> pumpPerformance(
+    WidgetTester tester, {
+    int songId = 1,
+    double? startingSpeed,
+    Size viewSize = const Size(500, 1000),
+  }) async {
     tester.view.devicePixelRatio = 1.0;
-    tester.view.physicalSize = const Size(500, 1000);
+    tester.view.physicalSize = viewSize;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({
+      AppConstants.prefDefaultScrollSpeed: ?startingSpeed,
+    });
     final prefs = await SharedPreferences.getInstance();
 
     await tester.pumpWidget(
@@ -42,6 +52,9 @@ void main() {
         overrides: [
           songRepositoryProvider.overrideWithValue(repo),
           sharedPreferencesProvider.overrideWithValue(prefs),
+          // A melody row builds the player, so keep any real audio device out
+          // of the test.
+          melodyAudioProvider.overrideWithValue(_SilentMelodyAudio()),
         ],
         child: MaterialApp(home: SongPerformanceScreen(songId: songId)),
       ),
@@ -70,6 +83,37 @@ void main() {
   String sheetText(WidgetTester tester) => sheet(
     tester,
   ).lines.expand((line) => line.segments).map((segment) => segment.text).join();
+
+  /// The live auto-scroll values of the running screen. The speed is not
+  /// written on screen any more — it is changed by tapping the sheet — so the
+  /// provider is what the tests check.
+  AutoScrollSettings scrollState(WidgetTester tester) =>
+      ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+        listen: false,
+      ).read(autoScrollProvider);
+
+  /// Where to double-tap on the sheet. The gesture layer fills the space under
+  /// the header, so its own halves — not the screen's — decide faster/slower.
+  Offset sheetSpot(WidgetTester tester, {required bool upper}) {
+    final rect = tester.getRect(find.byType(ScrollGestureLayer));
+    return Offset(
+      rect.center.dx,
+      upper ? rect.top + rect.height * 0.25 : rect.top + rect.height * 0.75,
+    );
+  }
+
+  /// Two quick taps at the same spot, inside the double-tap window.
+  Future<void> doubleTapSheet(
+    WidgetTester tester, {
+    required bool upper,
+  }) async {
+    final spot = sheetSpot(tester, upper: upper);
+    await tester.tapAt(spot);
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.tapAt(spot);
+    await tester.pump();
+  }
 
   testWidgets('shows the song and its written chords', (tester) async {
     await pumpPerformance(tester);
@@ -312,15 +356,16 @@ void main() {
     // The mode toggle uses single-letter labels (M / T) to save width.
     expect(find.text('M'), findsOneWidget);
     expect(find.text('T'), findsOneWidget);
-    // Manual mode by default: the speed stepper starts at 1.00x.
-    expect(find.text('1.00x'), findsOneWidget);
+    // Manual mode by default, at the starting speed.
+    expect(scrollState(tester).speed, 1.00);
+    expect(scrollState(tester).mode, AutoScrollMode.manual);
   });
 
   testWidgets('the controls row fits on a narrow phone', (tester) async {
-    // 360 dp is the common small-phone width. The row is tight — mode toggle,
-    // play, full screen and the stepper — so this guards against an overflow
-    // if any of them grows again. The metronome is switched on because that is
-    // the widest the row ever gets.
+    // 360 dp is the common small-phone width. The row holds the mode toggle,
+    // play and full screen, so this guards against an overflow if any of them
+    // grows again. The metronome is switched on because that is the widest the
+    // row ever gets.
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(360, 800);
     addTearDown(tester.view.resetPhysicalSize);
@@ -336,6 +381,9 @@ void main() {
         overrides: [
           songRepositoryProvider.overrideWithValue(repo),
           sharedPreferencesProvider.overrideWithValue(prefs),
+          // A melody row builds the player, so keep any real audio device out
+          // of the test.
+          melodyAudioProvider.overrideWithValue(_SilentMelodyAudio()),
         ],
         child: const MaterialApp(home: SongPerformanceScreen(songId: 1)),
       ),
@@ -344,20 +392,19 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byTooltip('Full screen'), findsOneWidget);
-    expect(find.text('1.00x'), findsOneWidget);
   });
 
-  testWidgets('the speed stepper changes the manual speed', (tester) async {
+  testWidgets('double-tapping the sheet changes the manual speed', (
+    tester,
+  ) async {
     await pumpPerformance(tester);
 
-    await tester.tap(find.byTooltip('Faster'));
-    await tester.pumpAndSettle();
-    expect(find.text('1.05x'), findsOneWidget);
+    await doubleTapSheet(tester, upper: true);
+    expect(scrollState(tester).speed, closeTo(1.05, 1e-9));
 
-    await tester.tap(find.byTooltip('Slower'));
-    await tester.tap(find.byTooltip('Slower'));
-    await tester.pumpAndSettle();
-    expect(find.text('0.95x'), findsOneWidget);
+    await doubleTapSheet(tester, upper: false);
+    await doubleTapSheet(tester, upper: false);
+    expect(scrollState(tester).speed, closeTo(0.95, 1e-9));
   });
 
   testWidgets('a song opens at the speed saved for it', (tester) async {
@@ -371,19 +418,19 @@ void main() {
         timestamp: 1,
         scrollSpeed: 0.60,
         scrollMeasures: 48,
+        scrollSpeedSet: true,
       ),
     ]);
 
     await pumpPerformance(tester);
 
-    expect(find.text('0.60x'), findsOneWidget);
-    expect(find.text('1.00x'), findsNothing);
+    expect(scrollState(tester).speed, closeTo(0.60, 1e-9));
   });
 
   testWidgets('changing the speed saves it against the song', (tester) async {
     await pumpPerformance(tester);
 
-    await tester.tap(find.byTooltip('Faster'));
+    await doubleTapSheet(tester, upper: true);
     await tester.pumpAndSettle();
 
     // Wait past the debounce so the write goes through. (That the write waits
@@ -451,53 +498,168 @@ void main() {
     });
   });
 
-  testWidgets('switching to Tempo mode shows the measures stepper', (
+  testWidgets('in Tempo mode the double-taps change the bars', (tester) async {
+    await pumpPerformance(tester);
+
+    await tester.tap(find.text('T'));
+    await tester.pumpAndSettle();
+    final start = scrollState(tester).measures;
+
+    await doubleTapSheet(tester, upper: true);
+    expect(
+      scrollState(tester).measures,
+      start + AutoScrollSettings.measuresStep,
+    );
+
+    await doubleTapSheet(tester, upper: false);
+    await doubleTapSheet(tester, upper: false);
+    expect(
+      scrollState(tester).measures,
+      start - AutoScrollSettings.measuresStep,
+    );
+
+    // The status line still names the bars and the computed length. The
+    // gesture's own flash says "24 bars" too, so more than one match is right.
+    expect(find.textContaining('bars'), findsWidgets);
+    expect(find.textContaining('BPM'), findsOneWidget);
+  });
+
+  // Play and pause is a two-finger tap on the sheet now — there is no button
+  // to press. That gesture is tested in scroll_gesture_layer_test.dart, where
+  // the real scrolling ticker (which keeps scheduling frames and never settles)
+  // is not running.
+
+  testWidgets('the header shows the speed and follows a double-tap', (
     tester,
   ) async {
+    await pumpPerformance(tester);
+    expect(find.text('1.00x'), findsOneWidget);
+
+    await doubleTapSheet(tester, upper: true);
+    await tester.pump();
+
+    // Both the header read-out and the gesture's flash say the new value.
+    expect(find.text('1.05x'), findsWidgets);
+  });
+
+  testWidgets('the header shows no speed in Tempo mode', (tester) async {
     await pumpPerformance(tester);
 
     await tester.tap(find.text('T'));
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('More measures'), findsOneWidget);
-    expect(find.byTooltip('Fewer measures'), findsOneWidget);
-    expect(find.textContaining('BPM'), findsOneWidget);
+    // The status line carries the bars and the length there instead.
+    expect(find.text('1.00x'), findsNothing);
+    expect(find.textContaining('bars'), findsOneWidget);
   });
 
-  // Play/pause is tested against PerformanceControls on its own, so the real
-  // scrolling ticker (which keeps scheduling frames and never settles) is not
-  // started by the full screen.
-  testWidgets('tapping play flips the auto-scroll playing state', (
+  testWidgets('the header chords icon hides and shows the chords', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    final container = ProviderContainer(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-    );
-    addTearDown(container.dispose);
+    await pumpPerformance(tester);
+    expect(sheet(tester).showChords, isTrue);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const MaterialApp(
-          home: Scaffold(
-            body: PerformanceControls(currentKey: 'C', bpm: 120, active: true),
-          ),
-        ),
+    await tester.tap(find.byTooltip('Hide chords'));
+    await tester.pumpAndSettle();
+    expect(sheet(tester).showChords, isFalse);
+
+    await tester.tap(find.byTooltip('Show chords'));
+    await tester.pumpAndSettle();
+    expect(sheet(tester).showChords, isTrue);
+  });
+
+  testWidgets('a song with no tune has no melody icon', (tester) async {
+    // Amazing Grace has no {melody} line, so an icon there would do nothing.
+    await pumpPerformance(tester);
+
+    expect(find.byTooltip('Hide melody'), findsNothing);
+    expect(find.byTooltip('Show melody'), findsNothing);
+  });
+
+  testWidgets('the header melody icon hides the melody rows', (tester) async {
+    // Song 6 (Krishna Nee Begane Baro) is the fixture with a {melody} line.
+    await pumpPerformance(tester, songId: 6);
+
+    await tester.tap(find.byTooltip('Hide melody'));
+    await tester.pumpAndSettle();
+
+    expect(sheet(tester).showMelody, isFalse);
+  });
+
+  testWidgets('a one-finger drag moves the sheet while auto-scroll plays', (
+    tester,
+  ) async {
+    // A song far taller than the window, so there is plenty to scroll through.
+    repo = FakeSongRepository([
+      SongNote(
+        id: 1,
+        title: 'Long One',
+        lyrics: List.generate(120, (i) => '[G]Line number $i').join('\n'),
+        key: 'G',
+        bpm: 80,
+        timestamp: 1,
       ),
+    ]);
+
+    // The ticker never settles, so every wait here is an explicit pump.
+    await pumpPerformance(tester, viewSize: const Size(500, 400));
+    final scroll = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+      listen: false,
+    ).read(autoScrollProvider.notifier);
+
+    // The sheet's own scroll view — a melody row has scrollables of its own.
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .ancestor(
+                of: find.byType(ChordSheetView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    expect(position.maxScrollExtent, greaterThan(100));
+
+    scroll.play();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    final afterScrolling = position.pixels;
+    expect(afterScrolling, greaterThan(0), reason: 'auto-scroll is running');
+
+    // Put a finger down. The ticker must stand aside rather than jump the
+    // sheet out from under the drag.
+    final spot = sheetSpot(tester, upper: true);
+    final finger = await tester.startGesture(spot);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      position.pixels,
+      afterScrolling,
+      reason: 'a held finger stops the ticker',
     );
 
-    // The controls are always visible now — no expand tap needed.
-    expect(container.read(autoScrollProvider).isPlaying, isFalse);
+    // Drag downwards, which pulls the sheet back up the song. Several small
+    // moves, the way a real finger travels.
+    for (var i = 0; i < 4; i++) {
+      await finger.moveBy(const Offset(0, 20));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(
+      position.pixels,
+      lessThan(afterScrolling),
+      reason: 'the drag scrolls the page',
+    );
 
-    await tester.tap(find.byTooltip('Play'));
+    // Let go: auto-scroll carries on from where the finger left the sheet.
+    final droppedAt = position.pixels;
+    await finger.up();
     await tester.pump();
-    expect(container.read(autoScrollProvider).isPlaying, isTrue);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(position.pixels, greaterThan(droppedAt));
 
-    await tester.tap(find.byTooltip('Pause'));
+    // Stop the ticker so the test can finish.
+    scroll.pause();
     await tester.pump();
-    expect(container.read(autoScrollProvider).isPlaying, isFalse);
   });
 
   testWidgets('vertical drag over lyrics locks out horizontal page swipe', (
@@ -543,4 +705,101 @@ void main() {
       expect(find.text('Amazing Grace'), findsOneWidget);
     },
   );
+
+  group('show / hide melody', () {
+    // Song 6 (Krishna Nee Begane Baro) is the fixture with a {melody} line.
+    const melodySongId = 6;
+
+    testWidgets('the switch is only offered for a song with a tune', (
+      tester,
+    ) async {
+      await pumpPerformance(tester);
+      await openControlsSheet(tester);
+
+      // Amazing Grace has no {melody} line, so no switch that would do nothing.
+      expect(find.text('Show melody'), findsNothing);
+      expect(find.text('Show chords'), findsOneWidget);
+    });
+
+    testWidgets('turning the switch off drops the melody rows', (tester) async {
+      await pumpPerformance(tester, songId: melodySongId);
+      expect(sheet(tester).showMelody, isTrue);
+
+      await openControlsSheet(tester);
+      expect(find.text('Show melody'), findsOneWidget);
+
+      await tester.tap(find.text('Show melody'));
+      await tester.pumpAndSettle();
+
+      expect(sheet(tester).showMelody, isFalse);
+      // The lyrics are untouched — only the tune rows go.
+      expect(find.textContaining('krishna'), findsWidgets);
+    });
+
+    testWidgets('full screen never draws the melody rows', (tester) async {
+      await pumpPerformance(tester, songId: melodySongId);
+
+      await tester.tap(find.byTooltip('Full screen'));
+      await tester.pumpAndSettle();
+
+      expect(sheet(tester).showMelody, isFalse);
+    });
+  });
+
+  group('starting scroll speed from Settings', () {
+    testWidgets('a song with no speed of its own opens at the set speed', (
+      tester,
+    ) async {
+      repo = FakeSongRepository([
+        const SongNote(
+          id: 1,
+          title: 'Never Set',
+          lyrics: '[G]Take it easy',
+          key: 'G',
+          bpm: 80,
+          timestamp: 1,
+        ),
+      ]);
+
+      await pumpPerformance(tester, startingSpeed: 0.20);
+
+      expect(scrollState(tester).speed, closeTo(0.20, 1e-9));
+    });
+
+    testWidgets('a song with its own speed ignores the setting', (
+      tester,
+    ) async {
+      repo = FakeSongRepository([
+        const SongNote(
+          id: 1,
+          title: 'Set By Hand',
+          lyrics: '[G]Take it easy',
+          key: 'G',
+          bpm: 80,
+          timestamp: 1,
+          scrollSpeed: 0.60,
+          scrollSpeedSet: true,
+        ),
+      ]);
+
+      await pumpPerformance(tester, startingSpeed: 0.20);
+
+      expect(scrollState(tester).speed, closeTo(0.60, 1e-9));
+    });
+  });
+}
+
+/// A melody audio device that makes no sound.
+class _SilentMelodyAudio implements MelodyAudio {
+  @override
+  Future<bool> play(MelodySchedule schedule, {bool loop = false}) async => true;
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<void> dispose() async {}
 }

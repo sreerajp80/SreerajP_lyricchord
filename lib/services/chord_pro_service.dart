@@ -9,6 +9,7 @@
 /// imported file is the one untrusted input, so parsing must never crash.
 library;
 
+import 'package:lyricchord/core/utils/line_break_utils.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/services/chord_transposer.dart';
@@ -54,7 +55,7 @@ class ChordProService {
     String? tala;
     final lyricLines = <String>[];
 
-    final normalized = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalized = normalizeLineEndings(content);
     for (final line in normalized.split('\n')) {
       final directive = _matchDirective(line);
       if (directive == null) {
@@ -173,7 +174,7 @@ class ChordProService {
   /// their text. [format] now writes them from the columns, so leaving the old
   /// copies in would export each one twice.
   String _withoutRagaAndTalaLines(String lyrics) {
-    final kept = lyrics
+    final kept = normalizeLineEndings(lyrics)
         .split('\n')
         .where((line) => !_ragaOrTalaLine.hasMatch(line.trim()))
         .toList();
@@ -192,7 +193,7 @@ class ChordProService {
   /// Reads ChordPro [content] that may contain multiple songs separated by
   /// `{new_song}` / `{ns}` directives or separate `{title}` headers.
   List<SongNote> parseMultiple(String content) {
-    final normalized = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalized = normalizeLineEndings(content);
     final lines = normalized.split('\n');
     final songs = <SongNote>[];
 
@@ -340,4 +341,8 @@ class ChordProService {
     final value = colon < 0 ? '' : inner.substring(colon + 1).trim();
     return _Directive(name, value);
   }
+
+  /// Normalizes all forms of line endings to standard Unix `\n`.
+  static String normalizeLineEndings(String content) =>
+      normalizeLineBreaks(content);
 }

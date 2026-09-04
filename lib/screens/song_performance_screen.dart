@@ -17,8 +17,10 @@ import 'package:lyricchord/models/lyric_font.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/lyric_font_provider.dart';
+import 'package:lyricchord/providers/melody_player_provider.dart';
 import 'package:lyricchord/providers/performance_provider.dart';
 import 'package:lyricchord/providers/pitch_drone_provider.dart';
+import 'package:lyricchord/providers/scroll_speed_settings_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
@@ -27,14 +29,16 @@ import 'package:lyricchord/services/chord_pro_service.dart';
 import 'package:lyricchord/services/chord_sheet_parser.dart';
 import 'package:lyricchord/services/chord_transposer.dart';
 import 'package:lyricchord/services/html_pdf_service.dart';
+import 'package:lyricchord/services/melody_parser_service.dart';
 import 'package:lyricchord/services/pcm_synth_service.dart';
 import 'package:lyricchord/services/pdf_export_service.dart';
 import 'package:lyricchord/services/pitch_naming_service.dart';
 import 'package:lyricchord/services/swara_notation_service.dart';
 import 'package:lyricchord/widgets/chord_reference_dialog.dart';
 import 'package:lyricchord/widgets/chord_sheet_view.dart';
+import 'package:lyricchord/widgets/gestures_help_dialog.dart';
 import 'package:lyricchord/widgets/performance_controls.dart';
-import 'package:lyricchord/widgets/stage_gesture_layer.dart';
+import 'package:lyricchord/widgets/scroll_gesture_layer.dart';
 import 'package:lyricchord/widgets/stage_help_overlay.dart';
 import 'package:lyricchord/widgets/stage_hud.dart';
 import 'package:lyricchord/widgets/transpose_sheet.dart';
@@ -407,7 +411,7 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
           _OverflowMenu(songId: id),
         ],
       ),
-      body: body,
+      body: SafeArea(top: false, child: body),
     );
   }
 
@@ -605,6 +609,9 @@ class _SongPageState extends ConsumerState<_SongPage>
   /// The song's tempo, kept from the last build for the off-build ticker.
   int _bpm = 0;
 
+  /// True when the user manually opens the Stage Mode gestures guide via the HUD.
+  bool _showStageHelp = false;
+
   @override
   void initState() {
     super.initState();
@@ -638,6 +645,13 @@ class _SongPageState extends ConsumerState<_SongPage>
         Duration.microsecondsPerSecond;
     _lastElapsed = elapsed;
     if (dtSeconds <= 0) return;
+
+    // A finger on the sheet takes over. The ticker's `jumpTo` would cancel the
+    // drag every frame, so the sheet would fight the hand moving it. Stepping
+    // aside lets the normal scroll physics do the work; the clock has already
+    // been advanced, so auto-scroll simply carries on from wherever the finger
+    // let go.
+    if (_pointersDown > 0) return;
 
     final position = _scrollController.position;
     final maxExtent = position.maxScrollExtent;
@@ -693,13 +707,20 @@ class _SongPageState extends ConsumerState<_SongPage>
         ? AutoScrollSettings.defaultBeatsPerMeasure
         : _swara.talaBeats(tala) ?? AutoScrollSettings.defaultBeatsPerMeasure;
 
+    // A song nobody has set a speed for starts at the speed chosen in
+    // Settings. Once a speed has been set for the song, the song's own speed
+    // wins and this is ignored.
+    final speed = song.scrollSpeedSet
+        ? song.scrollSpeed
+        : ref.read(defaultScrollSpeedProvider);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.active) return;
       ref
           .read(autoScrollProvider.notifier)
           .loadForSong(
             song.id,
-            speed: song.scrollSpeed,
+            speed: speed,
             measures: song.scrollMeasures,
             beatsPerMeasure: beats,
           );
@@ -793,16 +814,23 @@ class _SongPageState extends ConsumerState<_SongPage>
               currentKey: currentKey,
               bpm: song.bpm,
               active: widget.active,
+              hasMelody: lines.any((line) => line.melody != null),
               showFullScreenButton: !widget.embedded,
               raga: raga,
               tala: tala,
             ),
             Expanded(
-              child: _sheet(
-                settings,
-                lines,
-                tonicHz: tonicHz,
-                tempoBpm: tempoBpm,
+              // The same taps as full screen: double-tap high to speed up, low
+              // to slow down, two fingers to play or pause. `singleTapTogglesHud`
+              // is off because there is no HUD on this screen.
+              child: ScrollGestureLayer(
+                singleTapTogglesHud: false,
+                child: _sheet(
+                  settings,
+                  lines,
+                  tonicHz: tonicHz,
+                  tempoBpm: tempoBpm,
+                ),
               ),
             ),
           ],
@@ -853,6 +881,11 @@ class _SongPageState extends ConsumerState<_SongPage>
     double? tonicHz,
     double? tempoBpm,
   }) {
+    // Full screen never draws the melody rows: the beat grid eats the space the
+    // lyrics need, and its play button is too easy to hit by accident on stage.
+    final showMelody = settings.showMelody && !stageMode;
+    _stopMelodyIfHidden(showMelody: showMelody);
+
     return Listener(
       onPointerDown: (_) => setState(() => _pointersDown++),
       onPointerUp: (_) => _releasePointer(),
@@ -883,6 +916,7 @@ class _SongPageState extends ConsumerState<_SongPage>
                 settings.fontSize *
                 ref.watch(pitchDroneProvider.select((s) => s.fontScaleFactor)),
             showChords: settings.showChords,
+            showMelody: showMelody,
             lyricFontFamily: ref.watch(lyricFontProvider).family,
             melodyTonicHz: tonicHz,
             melodyTempoBpm: tempoBpm,
@@ -890,6 +924,22 @@ class _SongPageState extends ConsumerState<_SongPage>
         ),
       ),
     );
+  }
+
+  /// Stops a tune that is still playing after its row has been taken off
+  /// screen — the switch turned off, or Stage Mode entered.
+  ///
+  /// The melody player is a provider, so it would otherwise keep humming with
+  /// no visible way to stop it. Done after the frame because a provider must
+  /// not be changed while widgets are building.
+  void _stopMelodyIfHidden({required bool showMelody}) {
+    if (showMelody || !widget.active) return;
+    if (!ref.read(melodyPlayerProvider).playing) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(melodyPlayerProvider.notifier).stop();
+    });
   }
 
   /// Stage Mode: lyrics edge to edge, the gesture layer over them, the HUD
@@ -908,7 +958,7 @@ class _SongPageState extends ConsumerState<_SongPage>
 
     return Stack(
       children: [
-        Positioned.fill(child: StageGestureLayer(child: sheet)),
+        Positioned.fill(child: ScrollGestureLayer(child: sheet)),
         Positioned(
           left: 0,
           right: 0,
@@ -920,13 +970,20 @@ class _SongPageState extends ConsumerState<_SongPage>
             bpm: bpm,
             raga: raga,
             tala: tala,
+            onHelpPressed: () => setState(() => _showStageHelp = true),
           ),
         ),
-        if (!helpSeen)
+        if (!helpSeen || _showStageHelp)
           Positioned.fill(
             child: StageHelpOverlay(
-              onDismiss: () =>
-                  ref.read(stageHelpSeenProvider.notifier).markSeen(),
+              onDismiss: () {
+                if (!helpSeen) {
+                  ref.read(stageHelpSeenProvider.notifier).markSeen();
+                }
+                if (_showStageHelp) {
+                  setState(() => _showStageHelp = false);
+                }
+              },
             ),
           ),
       ],
@@ -980,6 +1037,7 @@ class _OverflowMenu extends ConsumerWidget {
   final int? songId;
 
   static const ChordTransposer _transposer = ChordTransposer();
+  static const MelodyParser _melody = MelodyParser();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1001,6 +1059,7 @@ class _OverflowMenu extends ConsumerWidget {
                   writtenKey: song.key,
                   // A swara sheet has nothing to transpose.
                   showTranspose: !song.isIndian,
+                  showMelodyToggle: _hasMelodyLines(song.lyrics),
                 ),
           child: const ListTile(
             dense: true,
@@ -1046,6 +1105,15 @@ class _OverflowMenu extends ConsumerWidget {
         ),
         const PopupMenuDivider(),
         PopupMenuItem<VoidCallback>(
+          value: () => showGesturesHelpDialog(context),
+          child: const ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.touch_app_outlined),
+            title: Text('Gestures help'),
+          ),
+        ),
+        PopupMenuItem<VoidCallback>(
           value: () => context.push('/settings'),
           child: const ListTile(
             dense: true,
@@ -1057,6 +1125,11 @@ class _OverflowMenu extends ConsumerWidget {
       ],
     );
   }
+
+  /// True when the song has at least one `{melody}` line, which is what makes
+  /// the Show melody switch worth offering.
+  bool _hasMelodyLines(String lyrics) =>
+      const LineSplitter().convert(lyrics).any(_melody.isMelodyLine);
 
   /// The Chord Reference Guide item. It reads the current song and the live
   /// transpose amount, works out the chords in the key the sheet sounds in, and

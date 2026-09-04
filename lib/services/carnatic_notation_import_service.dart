@@ -208,7 +208,11 @@ class CarnaticNotationImporter {
     }
 
     if (events.isEmpty) {
-      return _Avarta(line: '', problems: ['nothing readable'], fits: false);
+      return const _Avarta(
+        line: '',
+        problems: ['nothing readable'],
+        fits: false,
+      );
     }
 
     if (applyAnyaSvaraRule) _applyAnyaSvaraRule(events);

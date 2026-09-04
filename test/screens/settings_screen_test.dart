@@ -107,13 +107,33 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(HelpScreen), findsOneWidget);
-    expect(find.text('Setlists'), findsOneWidget);
-    expect(find.text('Metronome'), findsOneWidget);
-    expect(find.text('Pitch Pipe & Shruti Box'), findsOneWidget);
-    expect(find.text('Select Songs'), findsOneWidget);
-    expect(find.text('Export'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Import'), 200);
-    expect(find.text('Import'), findsOneWidget);
+
+    // Every topic gets a card. The hub is taller than one screen, so the list
+    // is scrolled a step at a time and each title is ticked off as it appears.
+    final missing = <String>[
+      'Your songbook',
+      'Write a song',
+      'Setlists',
+      'Transpose & chord shapes',
+      'Auto-scroll',
+      'Full screen',
+      'Metronome',
+      'Pitch Pipe & Shruti Box',
+      'Melody Lines',
+      'Carnatic & Hindustani songs',
+      'Select Songs',
+      'Import',
+      'Export',
+      'AirQR — songs screen to screen',
+      'Themes, fonts & text size',
+    ];
+    for (var step = 0; step < 30 && missing.isNotEmpty; step++) {
+      missing.removeWhere((title) => find.text(title).evaluate().isNotEmpty);
+      if (missing.isEmpty) break;
+      await tester.drag(find.byType(ListView), const Offset(0, -200));
+      await tester.pumpAndSettle();
+    }
+    expect(missing, isEmpty, reason: 'help topics with no card on the hub');
   });
 
   testWidgets('a Help topic card opens its detail page', (tester) async {

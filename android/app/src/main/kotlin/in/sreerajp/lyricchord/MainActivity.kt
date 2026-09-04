@@ -122,7 +122,7 @@ class MainActivity : FlutterActivity() {
             }
             try {
                 openInputStream(uri)?.use { inputStream ->
-                    val reader = BufferedReader(InputStreamReader(inputStream))
+                    val reader = BufferedReader(InputStreamReader(inputStream, Charsets.UTF_8))
                     val content = reader.readText()
                     val fileName = getFileNameFromUri(uri)
                     lastHandledUri = uriStr

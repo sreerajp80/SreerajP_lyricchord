@@ -14,6 +14,7 @@ void main() {
     bool visible = true,
     String? raga,
     String? tala,
+    VoidCallback? onHelpPressed,
   }) async {
     container = ProviderContainer();
     addTearDown(container.dispose);
@@ -31,6 +32,7 @@ void main() {
               bpm: 120,
               raga: raga,
               tala: tala,
+              onHelpPressed: onHelpPressed,
             ),
           ),
         ),
@@ -135,5 +137,17 @@ void main() {
     await tester.pump();
 
     expect(container.read(stageModeProvider).enabled, isTrue);
+  });
+
+  testWidgets('tapping help button invokes onHelpPressed callback', (
+    tester,
+  ) async {
+    var helped = false;
+    await pumpHud(tester, onHelpPressed: () => helped = true);
+
+    await tester.tap(find.byTooltip('Gestures help'));
+    await tester.pump();
+
+    expect(helped, isTrue);
   });
 }

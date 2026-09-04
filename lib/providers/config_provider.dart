@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/config/app_config.dart';
-import '../core/config/config_service.dart';
+import 'package:lyricchord/core/config/app_config.dart';
+import 'package:lyricchord/core/config/config_service.dart';
 
 /// The About-config loader.
 final configServiceProvider = Provider<ConfigService>((ref) {

@@ -21,8 +21,8 @@ class HomeShell extends StatelessWidget {
         final isTablet = constraints.maxWidth >= AppConstants.tabletBreakpoint;
         if (!isTablet) return const SongListScreen();
 
-        return Row(
-          children: const [
+        return const Row(
+          children: [
             Expanded(flex: 38, child: SongListScreen(dualPane: true)),
             VerticalDivider(width: 1),
             Expanded(flex: 62, child: _DetailPane()),

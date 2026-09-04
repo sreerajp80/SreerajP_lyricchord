@@ -26,29 +26,35 @@ class HelpDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(topic.title)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        children: [
-          Row(
-            children: [
-              Icon(topic.icon, color: theme.colorScheme.primary, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(topic.title, style: theme.textTheme.headlineSmall),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            topic.intro,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.4,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          children: [
+            Row(
+              children: [
+                Icon(topic.icon, color: theme.colorScheme.primary, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    topic.title,
+                    style: theme.textTheme.headlineSmall,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          for (final section in topic.sections) _SectionBlock(section: section),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              topic.intro,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final section in topic.sections)
+              _SectionBlock(section: section),
+          ],
+        ),
       ),
     );
   }

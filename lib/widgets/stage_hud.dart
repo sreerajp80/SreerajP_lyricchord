@@ -26,7 +26,11 @@ class StageHud extends ConsumerWidget {
     required this.bpm,
     this.raga,
     this.tala,
+    this.onHelpPressed,
   });
+
+  /// Called when the gestures help button is pressed.
+  final VoidCallback? onHelpPressed;
 
   /// True while the bar should be on screen.
   final bool visible;
@@ -126,6 +130,12 @@ class StageHud extends ConsumerWidget {
                                     : null,
                               ),
                             ),
+                            if (onHelpPressed != null)
+                              IconButton(
+                                tooltip: 'Gestures help',
+                                onPressed: onHelpPressed,
+                                icon: const Icon(Icons.help_outline),
+                              ),
                             _ModeButton(
                               label: 'M',
                               selected: !isTempo,

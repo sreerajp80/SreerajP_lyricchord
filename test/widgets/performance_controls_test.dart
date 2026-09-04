@@ -17,6 +17,7 @@ void main() {
     String currentKey = 'G',
     String? raga,
     String? tala,
+    bool hasMelody = false,
   }) async {
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(500, 1000);
@@ -35,6 +36,7 @@ void main() {
               currentKey: currentKey,
               bpm: 120,
               active: true,
+              hasMelody: hasMelody,
               raga: raga,
               tala: tala,
             ),
@@ -44,6 +46,27 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('the read-out and the icons sit at the right edge', (
+    tester,
+  ) async {
+    // The mode buttons hold the left edge; the speed, the two toggles and the
+    // pitch button belong hard against the right, not bunched up beside them.
+    await pumpControls(tester, hasMelody: true);
+
+    final modes = tester.getRect(find.text('M'));
+    final speed = tester.getRect(find.text('1.00x'));
+    final pitch = tester.getRect(find.byTooltip('Pitch pipe & shruti box'));
+    final row = tester.getRect(find.byType(PerformanceControls));
+
+    expect(speed.left, greaterThan(modes.right));
+    expect(find.byTooltip('Hide chords'), findsOneWidget);
+    expect(find.byTooltip('Hide melody'), findsOneWidget);
+    // The last icon ends within 20 px of the right edge of the header.
+    expect(row.right - pitch.right, lessThan(20));
+    // And they are all on one line with the mode buttons.
+    expect(speed.center.dy, closeTo(modes.center.dy, 1));
+  });
 
   testWidgets('a Western song shows its key', (tester) async {
     await pumpControls(tester);

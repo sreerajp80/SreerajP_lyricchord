@@ -6,10 +6,21 @@ sealed class AppException implements Exception {
   /// Human-readable message safe to show or log.
   final String message;
 
-  /// The underlying error, if any (kept for debugging; never shown to users).
+  /// The underlying error, if any.
   final Object? cause;
 
   const AppException(this.message, {this.cause});
+
+  /// The friendly message plus the real reason underneath it.
+  ///
+  /// A failure that only happens on a phone, in a release build, is impossible
+  /// to fix from the friendly message alone — that is how the file-open import
+  /// bug stayed a dead end. Screens that catch an [AppException] show this
+  /// instead, so the reason travels with the report.
+  ///
+  /// The cause is a database or file error, never song text, so this stays
+  /// within the rule that song content is not logged.
+  String get debugDetails => cause == null ? message : '$message ($cause)';
 
   @override
   String toString() => '$runtimeType: $message';

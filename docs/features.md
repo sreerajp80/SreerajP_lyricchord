@@ -15,7 +15,7 @@ The application addresses three core musical workflows:
 2. **Setlist & Gig Management:** Grouping and ordering songs into setlists for a gig, rehearsal, or service, with drag-and-drop reordering and a sequential "Perform Setlist" mode that binds song swiping to the setlist order.
 3. **Live Stage Performance & Stage Mode:** Hands-free stage performance featuring real-time semitone key transposition, dual-mode auto-scrolling (Manual speed multiplier and Tempo duration math), full-screen Stage HUD with gesture controls, visual edge-flash/audio metronome, and interactive chord reference diagrams (6-string Guitar fretboard & Harmonium/Piano keyboard).
 
-The app is fully self-serve: a Settings hub lets a musician define custom chord shortcuts, pick a lyric font (including dedicated Malayalam typefaces), choose a Light/Dark/System theme, and set up the metronome — backed by an in-app Help Center covering setlists, metronome, auto-scroll, full screen, selecting songs, export, and import.
+The app is fully self-serve: a Settings hub lets a musician define custom chord shortcuts, pick a lyric font (including dedicated Malayalam typefaces), choose a Light/Dark/System theme, and set up the metronome — backed by an in-app Help Center covering the songbook, the editor, setlists, transposition and chord shapes, auto-scroll, full screen, the metronome, the pitch pipe and shruti box, melody lines, Carnatic/Hindustani songs, selecting songs, import, export, AirQR, and appearance.
 
 Songs and setlists move in and out of the app through **ChordPro (`.chordpro`/`.cho`/`.pro`/`.txt`) file import/export and printable PDF export**, so a musician can bring songs in from other tools or band members, and share or print a set for a gig.
 
@@ -202,6 +202,7 @@ Songs and setlists move in and out of the app through **ChordPro (`.chordpro`/`.
   * User choice is persisted globally and drives both on-screen performance text and generated PDF document rendering.
   * **Fonts Settings Screen (`font_settings_screen.dart`):** Each font option in the picker shows a live preview line rendered in English and Malayalam, so the letter shapes are visible before choosing.
 * **Integrated Documentation & Help Center (`help_screen.dart`, `help_content.dart`, `help_detail_screen.dart`):**
-  * In-app documentation hub covering 7 distinct topic areas: Setlists, Metronome, Auto-scroll, Full screen, Select Songs, Export, and Import.
+  * In-app documentation hub covering 15 topic areas, in hub order: Your songbook, Write a song, Setlists, Transpose & chord shapes, Auto-scroll, Full screen, Metronome, Pitch Pipe & Shruti Box, Melody Lines, Carnatic & Hindustani songs, Select Songs, Import, Export, AirQR, and Themes/fonts/text size.
+  * Topic ids are stable route segments (`/settings/help/<id>`); `test/screens/help_content_test.dart` guards uniqueness, id shape, and that no topic or section is left empty.
   * Dedicated detail screens for each topic providing step-by-step operational instructions.
 * **About Screen (`about_screen.dart`):** Fully data-driven from `assets/config/app_config.json` — renders app name, description, version/build, and every key in the config's `details` map (currently Author, Email, License, AI used, IDE used) as its own row, so adding a field to the config is the only change needed. The Email row is tappable and opens the device's mail app via a `mailto:` link (`url_launcher`). Also links to Flutter's built-in licenses page, which lists the bundled fonts' Open Font Licence (Noto, Manjari, Gayathri) registered at startup (`main.dart`).

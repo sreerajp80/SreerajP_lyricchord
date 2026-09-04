@@ -11,16 +11,23 @@ import 'package:lyricchord/services/chord_transposer.dart';
 ///
 /// Pass `showTranspose: false` for a song written in swaras. See
 /// [TransposeSheet.showTranspose].
+///
+/// Pass `showMelodyToggle: true` only for a song that has `{melody}` lines. See
+/// [TransposeSheet.showMelodyToggle].
 Future<void> showTransposeSheet(
   BuildContext context, {
   required String writtenKey,
   bool showTranspose = true,
+  bool showMelodyToggle = false,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
-    builder: (_) =>
-        TransposeSheet(writtenKey: writtenKey, showTranspose: showTranspose),
+    builder: (_) => TransposeSheet(
+      writtenKey: writtenKey,
+      showTranspose: showTranspose,
+      showMelodyToggle: showMelodyToggle,
+    ),
   );
 }
 
@@ -34,6 +41,7 @@ class TransposeSheet extends ConsumerWidget {
     super.key,
     required this.writtenKey,
     this.showTranspose = true,
+    this.showMelodyToggle = false,
   });
 
   /// The key the song is stored in ("as written").
@@ -46,6 +54,10 @@ class TransposeSheet extends ConsumerWidget {
   /// nothing. Show chords stays, because hiding the swara markers is still
   /// useful.
   final bool showTranspose;
+
+  /// True when the song has `{melody}` lines, which adds the Show melody
+  /// switch. A song with no tune does not get a switch that does nothing.
+  final bool showMelodyToggle;
 
   static const ChordTransposer _transposer = ChordTransposer();
 
@@ -112,6 +124,14 @@ class TransposeSheet extends ConsumerWidget {
               value: settings.showChords,
               onChanged: (_) => controls.toggleChords(),
             ),
+            if (showMelodyToggle)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Show melody'),
+                subtitle: const Text('Full screen never shows the melody'),
+                value: settings.showMelody,
+                onChanged: (_) => controls.toggleMelody(),
+              ),
             const SizedBox(height: 4),
             Text(
               'Tip: pinch the lyrics with two fingers to change the text size.',

@@ -39,6 +39,14 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
       droneInterval:
           prefs.getString(AppConstants.prefPitchDroneInterval) ??
           defaults.droneInterval,
+      droneMode: DroneMode.fromStorage(
+        prefs.getString(AppConstants.prefDroneMode),
+        fallback: defaults.droneMode,
+      ),
+      chordQuality: ChordQuality.fromStorage(
+        prefs.getString(AppConstants.prefChordQuality),
+        fallback: defaults.chordQuality,
+      ),
       volume:
           prefs.getDouble(AppConstants.prefPitchDroneVolume) ?? defaults.volume,
       fontScaleIndex:
@@ -80,8 +88,30 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
     await prefs.setString(AppConstants.prefPitchDroneInterval, interval);
     state = state.copyWith(droneInterval: interval);
 
-    if (state.dronePlaying) {
+    if (state.dronePlaying && state.droneMode == DroneMode.classical) {
       await _startDrone(_soundingKey ?? state.selectedKey);
+    }
+  }
+
+  /// Sets whether the drone plays Classical Shruti or Western Chords.
+  Future<void> setDroneMode(DroneMode mode) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setString(AppConstants.prefDroneMode, mode.storageKey);
+    state = state.copyWith(droneMode: mode);
+
+    if (state.dronePlaying) {
+      await _startDrone(_soundingKey ?? state.selectedKey, mode: mode);
+    }
+  }
+
+  /// Sets chord quality (Major or Minor) when in Western chords mode.
+  Future<void> setChordQuality(ChordQuality quality) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setString(AppConstants.prefChordQuality, quality.storageKey);
+    state = state.copyWith(chordQuality: quality);
+
+    if (state.dronePlaying && state.droneMode == DroneMode.western) {
+      await _startDrone(_soundingKey ?? state.selectedKey, quality: quality);
     }
   }
 
@@ -107,36 +137,67 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
     await setFontScaleIndex(nextIndex);
   }
 
-  /// Plays a synthesized reference pitch cue for [key].
+  /// Plays a synthesized reference pitch or chord cue for [key].
   ///
   /// [key] is the pitch to sound and does **not** become the saved default —
   /// a song opening on its own key must not overwrite the user's setting.
   /// Returns false when no sound was produced, so the caller can say so.
-  Future<bool> playPitchCue({String? key}) async {
+  Future<bool> playPitchCue({
+    String? key,
+    DroneMode? mode,
+    ChordQuality? quality,
+  }) async {
     await _audio.setVolume(state.volume);
-    final played = await _audio.playCue(key ?? state.selectedKey);
+    final targetMode = mode ?? state.droneMode;
+    final targetKey = key ?? state.selectedKey;
+    final targetQuality = quality ?? state.chordQuality;
+
+    final played = targetMode == DroneMode.western
+        ? await _audio.playChordCue(
+            noteKey: targetKey,
+            isMinor: targetQuality == ChordQuality.minor,
+          )
+        : await _audio.playCue(targetKey);
+
     state = played
         ? state.copyWith(clearError: true)
-        : state.copyWith(lastError: 'Could not play the pitch cue.');
+        : state.copyWith(
+            lastError: targetMode == DroneMode.western
+                ? 'Could not play the chord cue.'
+                : 'Could not play the pitch cue.',
+          );
     return played;
   }
 
-  /// Toggles the continuous Shruti Box drone. Returns false if starting failed.
-  Future<bool> toggleDrone({String? key}) async {
+  /// Toggles the continuous drone (Shruti or Western chord). Returns false if starting failed.
+  Future<bool> toggleDrone({
+    String? key,
+    DroneMode? mode,
+    ChordQuality? quality,
+  }) async {
     if (state.dronePlaying) {
       await stopDrone();
       return true;
     }
-    return _startDrone(key ?? state.selectedKey);
+    return _startDrone(key ?? state.selectedKey, mode: mode, quality: quality);
   }
 
   /// Starts the drone on [key]. Only reports playing when sound really began.
-  Future<bool> _startDrone(String key) async {
+  Future<bool> _startDrone(
+    String key, {
+    DroneMode? mode,
+    ChordQuality? quality,
+  }) async {
     await _audio.setVolume(state.volume);
-    final started = await _audio.startDrone(
-      noteKey: key,
-      interval: state.droneInterval,
-    );
+    final targetMode = mode ?? state.droneMode;
+    final targetQuality = quality ?? state.chordQuality;
+
+    final started = targetMode == DroneMode.western
+        ? await _audio.startChordDrone(
+            noteKey: key,
+            isMinor: targetQuality == ChordQuality.minor,
+          )
+        : await _audio.startDrone(noteKey: key, interval: state.droneInterval);
 
     _soundingKey = started ? key : null;
     state = started
@@ -148,7 +209,7 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
     return started;
   }
 
-  /// Stops continuous Shruti Box drone playback.
+  /// Stops continuous drone playback.
   Future<void> stopDrone() async {
     await _audio.stopDrone();
     _soundingKey = null;

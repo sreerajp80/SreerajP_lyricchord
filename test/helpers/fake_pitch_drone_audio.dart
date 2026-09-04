@@ -15,20 +15,40 @@ class FakePitchDroneAudio implements PitchDroneAudio {
   /// Every cue pitch asked for, in order.
   final List<String> cueKeys = [];
 
+  /// Every chord cue asked for, in order, as `key/quality`.
+  final List<String> chordCueKeys = [];
+
   /// Every drone start asked for, in order, as `key/interval`.
   final List<String> droneStarts = [];
+
+  /// Every chord drone start asked for, in order, as `key/quality`.
+  final List<String> chordDroneStarts = [];
 
   int stopCount = 0;
   int disposeCount = 0;
   double? volume;
 
   /// The pitch the last successful drone start used.
-  String? get lastDroneKey =>
-      droneStarts.isEmpty ? null : droneStarts.last.split('/').first;
+  String? get lastDroneKey {
+    if (droneStarts.isNotEmpty) return droneStarts.last.split('/').first;
+    if (chordDroneStarts.isNotEmpty) {
+      return chordDroneStarts.last.split('/').first;
+    }
+    return null;
+  }
 
   @override
   Future<bool> playCue(String noteKey) async {
     cueKeys.add(noteKey);
+    return succeed;
+  }
+
+  @override
+  Future<bool> playChordCue({
+    required String noteKey,
+    required bool isMinor,
+  }) async {
+    chordCueKeys.add('$noteKey/${isMinor ? 'minor' : 'major'}');
     return succeed;
   }
 
@@ -38,6 +58,15 @@ class FakePitchDroneAudio implements PitchDroneAudio {
     required String interval,
   }) async {
     droneStarts.add('$noteKey/$interval');
+    return succeed;
+  }
+
+  @override
+  Future<bool> startChordDrone({
+    required String noteKey,
+    required bool isMinor,
+  }) async {
+    chordDroneStarts.add('$noteKey/${isMinor ? 'minor' : 'major'}');
     return succeed;
   }
 

@@ -7,15 +7,19 @@ import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
 import 'package:lyricchord/widgets/auto_scroll_controls.dart';
 
-/// The Stage Mode gesture layer: the taps that control the sheet with no
-/// buttons on screen, plus the big flash that says what just changed.
+/// The scroll gesture layer: the taps that control the sheet with no buttons on
+/// screen, plus the big flash that says what just changed.
 ///
 /// | Gesture | Does |
 /// |---|---|
-/// | Single tap | Show / hide the control bar |
+/// | Single tap | Show / hide the control bar (Stage Mode only) |
 /// | Double-tap, upper half | Faster (Manual) / more bars (Tempo) |
 /// | Double-tap, lower half | Slower (Manual) / fewer bars (Tempo) |
 /// | Two-finger tap | Play / pause |
+///
+/// It sits over the sheet in both views. Stage Mode has a HUD for a single tap
+/// to show and hide; the normal song view has none, so it passes
+/// [singleTapTogglesHud] as `false` and a lone tap there does nothing.
 ///
 /// Up for more and down for less is the same direction as volume and
 /// brightness, so it needs no teaching.
@@ -26,17 +30,28 @@ import 'package:lyricchord/widgets/auto_scroll_controls.dart';
 /// fingers; adding tap recognisers to that contest makes both flaky. A
 /// [Listener] never claims a gesture, so scrolling and pinching keep working
 /// exactly as before and the taps are simply read off the pointer stream.
-class StageGestureLayer extends ConsumerStatefulWidget {
-  const StageGestureLayer({super.key, required this.child});
+class ScrollGestureLayer extends ConsumerStatefulWidget {
+  const ScrollGestureLayer({
+    super.key,
+    required this.child,
+    this.singleTapTogglesHud = true,
+  });
 
   /// The lyrics sheet this layer sits over.
   final Widget child;
 
+  /// Whether one tap shows and hides the Stage Mode control bar.
+  ///
+  /// `false` in the normal song view, which has no such bar — a lone tap there
+  /// is left alone so it cannot disturb the sheet. Double-taps and the
+  /// two-finger tap work the same either way.
+  final bool singleTapTogglesHud;
+
   @override
-  ConsumerState<StageGestureLayer> createState() => _StageGestureLayerState();
+  ConsumerState<ScrollGestureLayer> createState() => _ScrollGestureLayerState();
 }
 
-class _StageGestureLayerState extends ConsumerState<StageGestureLayer> {
+class _ScrollGestureLayerState extends ConsumerState<ScrollGestureLayer> {
   /// Longest a one-finger touch can last and still count as a tap. Kept short
   /// because the double-tap window hangs off it.
   static const Duration _tapTimeout = Duration(milliseconds: 300);
@@ -183,6 +198,7 @@ class _StageGestureLayerState extends ConsumerState<StageGestureLayer> {
       _singleTapTimer = null;
       _pendingTapPosition = null;
       if (!mounted) return;
+      if (!widget.singleTapTogglesHud) return;
       ref.read(stageModeProvider.notifier).toggleHud();
     });
   }

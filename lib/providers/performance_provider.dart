@@ -12,6 +12,11 @@ class PerformanceSettings {
   /// False hides the chord badges so only lyrics are left.
   final bool showChords;
 
+  /// False hides the `{melody}` beat-grid rows, leaving the lyrics and chords.
+  ///
+  /// Full screen (Stage Mode) always hides them, whatever this says.
+  final bool showMelody;
+
   /// Lyric text size in logical pixels, always between [minFontSize] and
   /// [maxFontSize].
   final double fontSize;
@@ -28,6 +33,7 @@ class PerformanceSettings {
   const PerformanceSettings({
     this.semitones = 0,
     this.showChords = true,
+    this.showMelody = true,
     this.fontSize = defaultFontSize,
   });
 
@@ -37,11 +43,13 @@ class PerformanceSettings {
   PerformanceSettings copyWith({
     int? semitones,
     bool? showChords,
+    bool? showMelody,
     double? fontSize,
   }) {
     return PerformanceSettings(
       semitones: semitones ?? this.semitones,
       showChords: showChords ?? this.showChords,
+      showMelody: showMelody ?? this.showMelody,
       fontSize: fontSize ?? this.fontSize,
     );
   }
@@ -51,15 +59,16 @@ class PerformanceSettings {
       other is PerformanceSettings &&
       other.semitones == semitones &&
       other.showChords == showChords &&
+      other.showMelody == showMelody &&
       other.fontSize == fontSize;
 
   @override
-  int get hashCode => Object.hash(semitones, showChords, fontSize);
+  int get hashCode => Object.hash(semitones, showChords, showMelody, fontSize);
 
   @override
   String toString() =>
       'PerformanceSettings(semitones: $semitones, showChords: $showChords, '
-      'fontSize: $fontSize)';
+      'showMelody: $showMelody, fontSize: $fontSize)';
 }
 
 /// Drives the Performance Controls card.
@@ -85,6 +94,9 @@ class PerformanceSettingsNotifier extends Notifier<PerformanceSettings> {
 
   /// Shows or hides the chord badges.
   void toggleChords() => state = state.copyWith(showChords: !state.showChords);
+
+  /// Shows or hides the `{melody}` rows.
+  void toggleMelody() => state = state.copyWith(showMelody: !state.showMelody);
 
   /// Pinch zoom: sets the size to [startSize] × [factor], clamped to
   /// [PerformanceSettings.minFontSize]–[PerformanceSettings.maxFontSize].

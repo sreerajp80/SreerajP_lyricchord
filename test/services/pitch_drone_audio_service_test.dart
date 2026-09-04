@@ -73,9 +73,9 @@ void main() {
 
     expect(names, [
       'pitch_cue_A.wav',
-      'shruti_drone_Csharp_Pa.wav',
-      'shruti_drone_G_Ma.wav',
-      'shruti_drone_G_Pa.wav',
+      'shruti_drone_v2_Csharp_Pa.wav',
+      'shruti_drone_v2_G_Ma.wav',
+      'shruti_drone_v2_G_Pa.wav',
     ]);
   });
 
@@ -85,7 +85,7 @@ void main() {
 
     await service.startDrone(noteKey: 'G', interval: 'Pa');
 
-    final file = File('${tempDir.path}/shruti_drone_G_Pa.wav');
+    final file = File('${tempDir.path}/shruti_drone_v2_G_Pa.wav');
     expect(file.existsSync(), isTrue);
 
     final bytes = file.readAsBytesSync();
@@ -106,11 +106,47 @@ void main() {
     addTearDown(service.dispose);
 
     await service.startDrone(noteKey: 'G', interval: 'Pa');
-    final file = File('${tempDir.path}/shruti_drone_G_Pa.wav');
+    final file = File('${tempDir.path}/shruti_drone_v2_G_Pa.wav');
     final firstWrite = file.lastModifiedSync();
 
     await service.startDrone(noteKey: 'G', interval: 'Pa');
 
     expect(file.lastModifiedSync(), firstWrite);
   });
+
+  test(
+    'Western chord drone and cue generate valid distinct WAV files',
+    () async {
+      final service = PitchDroneAudioService();
+      addTearDown(service.dispose);
+
+      await service.startChordDrone(noteKey: 'C', isMinor: false);
+      await service.startChordDrone(noteKey: 'A', isMinor: true);
+      await service.playChordCue(noteKey: 'E', isMinor: false);
+
+      final names =
+          tempDir.listSync().map((e) => e.uri.pathSegments.last).toList()
+            ..sort();
+
+      expect(names, [
+        'western_chord_cue_E_major.wav',
+        'western_chord_drone_v2_A_minor.wav',
+        'western_chord_drone_v2_C_major.wav',
+      ]);
+
+      final file = File('${tempDir.path}/western_chord_drone_v2_C_major.wav');
+      expect(file.existsSync(), isTrue);
+
+      final bytes = file.readAsBytesSync();
+      final header = ByteData.sublistView(bytes);
+
+      expect(String.fromCharCodes(bytes.sublist(0, 4)), 'RIFF');
+      expect(String.fromCharCodes(bytes.sublist(8, 12)), 'WAVE');
+      expect(header.getUint16(20, Endian.little), 1, reason: 'PCM');
+      expect(header.getUint16(22, Endian.little), 2, reason: 'stereo');
+      expect(header.getUint32(24, Endian.little), 44100);
+      expect(header.getUint16(34, Endian.little), 16, reason: '16-bit');
+      expect(header.getUint32(4, Endian.little), bytes.length - 8);
+    },
+  );
 }

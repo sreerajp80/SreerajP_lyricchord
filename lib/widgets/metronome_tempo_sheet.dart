@@ -179,7 +179,7 @@ class _MetronomeTempoSheetState extends ConsumerState<MetronomeTempoSheet> {
               icon: const Icon(Icons.restore),
               label: Text(
                 widget.songBpm > 0
-                    ? "Use song tempo (${widget.songBpm} BPM)"
+                    ? 'Use song tempo (${widget.songBpm} BPM)'
                     : 'No song tempo to go back to',
               ),
             ),

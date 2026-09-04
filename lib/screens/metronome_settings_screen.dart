@@ -87,91 +87,93 @@ class _MetronomeSettingsScreenState
 
     return Scaffold(
       appBar: AppBar(title: const Text('Metronome')),
-      body: ListView(
-        children: [
-          SwitchListTile(
-            secondary: const Icon(Icons.av_timer),
-            title: const Text('Enable metronome'),
-            subtitle: const Text('Keep the beat at the song tempo'),
-            value: settings.enabled,
-            onChanged: notifier.setEnabled,
-          ),
-          const Divider(),
-          SwitchListTile(
-            secondary: const Icon(Icons.flash_on),
-            title: const Text('Flash'),
-            subtitle: const Text('Blink on every beat (good when muted)'),
-            value: settings.flash,
-            onChanged: on ? notifier.setFlash : null,
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.volume_up_outlined),
-            title: const Text('Click'),
-            subtitle: const Text('Play a tick on every beat'),
-            value: settings.click,
-            onChanged: on ? notifier.setClick : null,
-          ),
-          ListTile(
-            enabled: on && settings.click,
-            leading: const Icon(Icons.graphic_eq),
-            title: const Text('Click volume'),
-            subtitle: Slider(
-              value: settings.volume,
-              min: MetronomeSettings.minVolume,
-              max: MetronomeSettings.maxVolume,
-              divisions: 10,
-              label: '${(settings.volume * 100).round()}%',
-              onChanged: on && settings.click ? notifier.setVolume : null,
+      body: SafeArea(
+        child: ListView(
+          children: [
+            SwitchListTile(
+              secondary: const Icon(Icons.av_timer),
+              title: const Text('Enable metronome'),
+              subtitle: const Text('Keep the beat at the song tempo'),
+              value: settings.enabled,
+              onChanged: notifier.setEnabled,
             ),
-          ),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              'Bar',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: on
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
+            const Divider(),
+            SwitchListTile(
+              secondary: const Icon(Icons.flash_on),
+              title: const Text('Flash'),
+              subtitle: const Text('Blink on every beat (good when muted)'),
+              value: settings.flash,
+              onChanged: on ? notifier.setFlash : null,
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.volume_up_outlined),
+              title: const Text('Click'),
+              subtitle: const Text('Play a tick on every beat'),
+              value: settings.click,
+              onChanged: on ? notifier.setClick : null,
+            ),
+            ListTile(
+              enabled: on && settings.click,
+              leading: const Icon(Icons.graphic_eq),
+              title: const Text('Click volume'),
+              subtitle: Slider(
+                value: settings.volume,
+                min: MetronomeSettings.minVolume,
+                max: MetronomeSettings.maxVolume,
+                divisions: 10,
+                label: '${(settings.volume * 100).round()}%',
+                onChanged: on && settings.click ? notifier.setVolume : null,
               ),
             ),
-          ),
-          ListTile(
-            enabled: on,
-            leading: const Icon(Icons.straighten),
-            title: const Text('Beats in a bar'),
-            subtitle: const Text('Beat 1 is the one you count on'),
-            trailing: SegmentedButton<int>(
-              segments: [
-                for (final choice in MetronomeSettings.beatsPerBarChoices)
-                  ButtonSegment<int>(value: choice, label: Text('$choice')),
-              ],
-              selected: {settings.beatsPerBar},
-              showSelectedIcon: false,
-              onSelectionChanged: on
-                  ? (selected) => notifier.setBeatsPerBar(selected.first)
-                  : null,
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                'Bar',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: on
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.music_note_outlined),
-            title: const Text('Accent beat 1'),
-            subtitle: const Text('Louder, higher click on the first beat'),
-            value: settings.accent,
-            onChanged: on ? notifier.setAccent : null,
-          ),
-          const Divider(),
-          ListTile(
-            enabled: on,
-            leading: Icon(_testing ? Icons.hourglass_top : Icons.play_arrow),
-            title: const Text('Test the sound'),
-            subtitle: Text(
-              'Plays one bar at $_testBpm BPM. If you hear nothing, raise the '
-              'media volume.',
+            ListTile(
+              enabled: on,
+              leading: const Icon(Icons.straighten),
+              title: const Text('Beats in a bar'),
+              subtitle: const Text('Beat 1 is the one you count on'),
+              trailing: SegmentedButton<int>(
+                segments: [
+                  for (final choice in MetronomeSettings.beatsPerBarChoices)
+                    ButtonSegment<int>(value: choice, label: Text('$choice')),
+                ],
+                selected: {settings.beatsPerBar},
+                showSelectedIcon: false,
+                onSelectionChanged: on
+                    ? (selected) => notifier.setBeatsPerBar(selected.first)
+                    : null,
+              ),
             ),
-            onTap: on && !_testing ? _playTestBar : null,
-          ),
-        ],
+            SwitchListTile(
+              secondary: const Icon(Icons.music_note_outlined),
+              title: const Text('Accent beat 1'),
+              subtitle: const Text('Louder, higher click on the first beat'),
+              value: settings.accent,
+              onChanged: on ? notifier.setAccent : null,
+            ),
+            const Divider(),
+            ListTile(
+              enabled: on,
+              leading: Icon(_testing ? Icons.hourglass_top : Icons.play_arrow),
+              title: const Text('Test the sound'),
+              subtitle: const Text(
+                'Plays one bar at $_testBpm BPM. If you hear nothing, raise the '
+                'media volume.',
+              ),
+              onTap: on && !_testing ? _playTestBar : null,
+            ),
+          ],
+        ),
       ),
     );
   }

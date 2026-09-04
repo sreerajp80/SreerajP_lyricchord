@@ -12,35 +12,43 @@ class GeneralSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('General')),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          _GeneralCard(
-            icon: Icons.import_export,
-            title: 'Import',
-            subtitle: 'Bring in ChordPro files as songs',
-            onTap: () => context.push('/settings/general/import'),
-          ),
-          _GeneralCard(
-            icon: Icons.tune,
-            title: 'Import Settings',
-            subtitle: 'Configure duplicate song handling for ChordPro files',
-            onTap: () => context.push('/settings/general/import-settings'),
-          ),
-          _GeneralCard(
-            icon: Icons.av_timer,
-            title: 'Metronome',
-            subtitle: 'Turn the beat on or off',
-            onTap: () => context.push('/settings/general/metronome'),
-          ),
-          _GeneralCard(
-            icon: Icons.graphic_eq,
-            title: 'Pitch Pipe & Shruti Box',
-            subtitle:
-                'Reference pitch tones, a steady drone, and your Sa (kattai)',
-            onTap: () => context.push('/settings/general/pitch-drone'),
-          ),
-        ],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(12),
+          children: [
+            _GeneralCard(
+              icon: Icons.import_export,
+              title: 'Import',
+              subtitle: 'Bring in ChordPro files as songs',
+              onTap: () => context.push('/settings/general/import'),
+            ),
+            _GeneralCard(
+              icon: Icons.tune,
+              title: 'Import Settings',
+              subtitle: 'Configure duplicate song handling for ChordPro files',
+              onTap: () => context.push('/settings/general/import-settings'),
+            ),
+            _GeneralCard(
+              icon: Icons.swap_vert,
+              title: 'Auto-scroll',
+              subtitle: 'Starting speed for manual scrolling',
+              onTap: () => context.push('/settings/general/auto-scroll'),
+            ),
+            _GeneralCard(
+              icon: Icons.av_timer,
+              title: 'Metronome',
+              subtitle: 'Turn the beat on or off',
+              onTap: () => context.push('/settings/general/metronome'),
+            ),
+            _GeneralCard(
+              icon: Icons.graphic_eq,
+              title: 'Pitch Pipe & Shruti Box',
+              subtitle:
+                  'Reference pitch tones, a steady drone, and your Sa (kattai)',
+              onTap: () => context.push('/settings/general/pitch-drone'),
+            ),
+          ],
+        ),
       ),
     );
   }

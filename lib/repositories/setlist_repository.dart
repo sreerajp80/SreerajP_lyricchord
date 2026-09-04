@@ -142,6 +142,7 @@ class SetlistRepository {
     timestamp: row.timestamp,
     scrollSpeed: row.scrollSpeed,
     scrollMeasures: row.scrollMeasures,
+    scrollSpeedSet: row.scrollSpeedSet,
     raga: row.raga,
     tala: row.tala,
     // An empty column means "not classified yet"; `SongNote.isIndian` then

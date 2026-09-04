@@ -28,19 +28,21 @@ class ThemeSettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Themes')),
-      body: RadioGroup<ThemeMode>(
-        groupValue: current,
-        onChanged: (chosen) {
-          if (chosen != null) {
-            ref.read(themeModeProvider.notifier).setMode(chosen);
-          }
-        },
-        child: ListView(
-          children: [
-            option('System theme', Icons.brightness_auto, ThemeMode.system),
-            option('Light theme', Icons.light_mode, ThemeMode.light),
-            option('Dark theme', Icons.dark_mode, ThemeMode.dark),
-          ],
+      body: SafeArea(
+        child: RadioGroup<ThemeMode>(
+          groupValue: current,
+          onChanged: (chosen) {
+            if (chosen != null) {
+              ref.read(themeModeProvider.notifier).setMode(chosen);
+            }
+          },
+          child: ListView(
+            children: [
+              option('System theme', Icons.brightness_auto, ThemeMode.system),
+              option('Light theme', Icons.light_mode, ThemeMode.light),
+              option('Dark theme', Icons.dark_mode, ThemeMode.dark),
+            ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,8 @@
-import java.util.Properties
+import java.io.File
 import java.io.FileInputStream
+import java.time.LocalDate
+import java.util.Properties
+import org.gradle.api.GradleException
 
 plugins {
     id("com.android.application")
@@ -17,6 +20,77 @@ val keystorePropertiesFile = rootProject.file("key.properties")
 val hasReleaseSigning = keystorePropertiesFile.exists()
 if (hasReleaseSigning) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    FileInputStream(localPropertiesFile).use(localProperties::load)
+}
+
+// Regenerate the About-screen build metadata (app version + build date) before
+// the Dart code is compiled, so every build ships the right values.
+val flutterSdkPath = localProperties.getProperty("flutter.sdk")
+    ?: System.getenv("FLUTTER_ROOT")
+    ?: throw GradleException(
+        "Flutter SDK path not found. Set flutter.sdk in android/local.properties or FLUTTER_ROOT."
+    )
+
+val isWindowsHost = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
+val dartExecutable = File(
+    flutterSdkPath,
+    if (isWindowsHost) "bin/dart.bat" else "bin/dart",
+)
+val projectRootDir = rootProject.projectDir.parentFile
+
+fun registerMetadataGenerator(taskName: String, scriptPath: String, outputPath: String) =
+    tasks.register<Exec>(taskName) {
+        group = "build setup"
+        description = "Generates About-screen build metadata before Android builds."
+
+        inputs.file(projectRootDir.resolve("pubspec.yaml"))
+        inputs.file(projectRootDir.resolve(scriptPath))
+        inputs.property("metadataBuildDate", LocalDate.now().toString())
+        outputs.file(projectRootDir.resolve(outputPath))
+
+        workingDir = projectRootDir
+        commandLine(dartExecutable.absolutePath, "run", scriptPath)
+
+        doFirst {
+            if (!dartExecutable.exists()) {
+                throw GradleException(
+                    "Could not find Dart executable at ${dartExecutable.absolutePath}. " +
+                        "Check android/local.properties flutter.sdk or FLUTTER_ROOT."
+                )
+            }
+        }
+    }
+
+val generateAppVersion = registerMetadataGenerator(
+    "generateAppVersion",
+    "tool/generate_app_version.dart",
+    "lib/core/constants/app_version.g.dart",
+)
+val generateBuildDate = registerMetadataGenerator(
+    "generateBuildDate",
+    "tool/generate_build_date.dart",
+    "lib/core/constants/build_date.g.dart",
+)
+
+val generateBuildMetadata = tasks.register("generateBuildMetadata") {
+    group = "build setup"
+    description = "Generates all About-screen build metadata."
+    dependsOn(generateAppVersion, generateBuildDate)
+}
+
+tasks.named("preBuild") {
+    dependsOn(generateBuildMetadata)
+}
+
+tasks.matching { task ->
+    task.name.startsWith("compileFlutterBuild")
+}.configureEach {
+    dependsOn(generateBuildMetadata)
 }
 
 android {

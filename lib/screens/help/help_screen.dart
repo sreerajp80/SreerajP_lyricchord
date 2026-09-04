@@ -14,17 +14,19 @@ class HelpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Help')),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          for (final topic in helpTopics)
-            _HelpCard(
-              icon: topic.icon,
-              title: topic.title,
-              subtitle: topic.summary,
-              onTap: () => context.push('/settings/help/${topic.id}'),
-            ),
-        ],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(12),
+          children: [
+            for (final topic in helpTopics)
+              _HelpCard(
+                icon: topic.icon,
+                title: topic.title,
+                subtitle: topic.summary,
+                onTap: () => context.push('/settings/help/${topic.id}'),
+              ),
+          ],
+        ),
       ),
     );
   }

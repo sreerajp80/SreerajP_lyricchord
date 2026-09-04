@@ -121,6 +121,21 @@ class $SongNotesTable extends SongNotes
     requiredDuringInsert: false,
     defaultValue: const Constant(32),
   );
+  static const VerificationMeta _scrollSpeedSetMeta = const VerificationMeta(
+    'scrollSpeedSet',
+  );
+  @override
+  late final GeneratedColumn<bool> scrollSpeedSet = GeneratedColumn<bool>(
+    'scroll_speed_set',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("scroll_speed_set" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _ragaMeta = const VerificationMeta('raga');
   @override
   late final GeneratedColumn<String> raga = GeneratedColumn<String>(
@@ -165,6 +180,7 @@ class $SongNotesTable extends SongNotes
     timestamp,
     scrollSpeed,
     scrollMeasures,
+    scrollSpeedSet,
     raga,
     tala,
     tradition,
@@ -248,6 +264,15 @@ class $SongNotesTable extends SongNotes
         ),
       );
     }
+    if (data.containsKey('scroll_speed_set')) {
+      context.handle(
+        _scrollSpeedSetMeta,
+        scrollSpeedSet.isAcceptableOrUnknown(
+          data['scroll_speed_set']!,
+          _scrollSpeedSetMeta,
+        ),
+      );
+    }
     if (data.containsKey('raga')) {
       context.handle(
         _ragaMeta,
@@ -315,6 +340,10 @@ class $SongNotesTable extends SongNotes
         DriftSqlType.int,
         data['${effectivePrefix}scroll_measures'],
       )!,
+      scrollSpeedSet: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}scroll_speed_set'],
+      )!,
       raga: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}raga'],
@@ -355,6 +384,15 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
   /// version 3).
   final int scrollMeasures;
 
+  /// True once the user has set a manual scroll speed for this song (schema
+  /// version 11).
+  ///
+  /// [scrollSpeed] alone cannot answer "did anyone pick this?", because its
+  /// column default (1.0) looks exactly like a speed set by hand to 1.00x. A
+  /// song with this still false opens at the starting speed from Settings
+  /// instead.
+  final bool scrollSpeedSet;
+
   /// Raga name for an Indian song, `''` for a Western one (schema version 9).
   final String raga;
 
@@ -381,6 +419,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     required this.timestamp,
     required this.scrollSpeed,
     required this.scrollMeasures,
+    required this.scrollSpeedSet,
     required this.raga,
     required this.tala,
     required this.tradition,
@@ -398,6 +437,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     map['timestamp'] = Variable<int>(timestamp);
     map['scroll_speed'] = Variable<double>(scrollSpeed);
     map['scroll_measures'] = Variable<int>(scrollMeasures);
+    map['scroll_speed_set'] = Variable<bool>(scrollSpeedSet);
     map['raga'] = Variable<String>(raga);
     map['tala'] = Variable<String>(tala);
     map['tradition'] = Variable<String>(tradition);
@@ -416,6 +456,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       timestamp: Value(timestamp),
       scrollSpeed: Value(scrollSpeed),
       scrollMeasures: Value(scrollMeasures),
+      scrollSpeedSet: Value(scrollSpeedSet),
       raga: Value(raga),
       tala: Value(tala),
       tradition: Value(tradition),
@@ -438,6 +479,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       timestamp: serializer.fromJson<int>(json['timestamp']),
       scrollSpeed: serializer.fromJson<double>(json['scrollSpeed']),
       scrollMeasures: serializer.fromJson<int>(json['scrollMeasures']),
+      scrollSpeedSet: serializer.fromJson<bool>(json['scrollSpeedSet']),
       raga: serializer.fromJson<String>(json['raga']),
       tala: serializer.fromJson<String>(json['tala']),
       tradition: serializer.fromJson<String>(json['tradition']),
@@ -457,6 +499,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       'timestamp': serializer.toJson<int>(timestamp),
       'scrollSpeed': serializer.toJson<double>(scrollSpeed),
       'scrollMeasures': serializer.toJson<int>(scrollMeasures),
+      'scrollSpeedSet': serializer.toJson<bool>(scrollSpeedSet),
       'raga': serializer.toJson<String>(raga),
       'tala': serializer.toJson<String>(tala),
       'tradition': serializer.toJson<String>(tradition),
@@ -474,6 +517,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     int? timestamp,
     double? scrollSpeed,
     int? scrollMeasures,
+    bool? scrollSpeedSet,
     String? raga,
     String? tala,
     String? tradition,
@@ -488,6 +532,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     timestamp: timestamp ?? this.timestamp,
     scrollSpeed: scrollSpeed ?? this.scrollSpeed,
     scrollMeasures: scrollMeasures ?? this.scrollMeasures,
+    scrollSpeedSet: scrollSpeedSet ?? this.scrollSpeedSet,
     raga: raga ?? this.raga,
     tala: tala ?? this.tala,
     tradition: tradition ?? this.tradition,
@@ -508,6 +553,9 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
       scrollMeasures: data.scrollMeasures.present
           ? data.scrollMeasures.value
           : this.scrollMeasures,
+      scrollSpeedSet: data.scrollSpeedSet.present
+          ? data.scrollSpeedSet.value
+          : this.scrollSpeedSet,
       raga: data.raga.present ? data.raga.value : this.raga,
       tala: data.tala.present ? data.tala.value : this.tala,
       tradition: data.tradition.present ? data.tradition.value : this.tradition,
@@ -527,6 +575,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
           ..write('timestamp: $timestamp, ')
           ..write('scrollSpeed: $scrollSpeed, ')
           ..write('scrollMeasures: $scrollMeasures, ')
+          ..write('scrollSpeedSet: $scrollSpeedSet, ')
           ..write('raga: $raga, ')
           ..write('tala: $tala, ')
           ..write('tradition: $tradition')
@@ -546,6 +595,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
     timestamp,
     scrollSpeed,
     scrollMeasures,
+    scrollSpeedSet,
     raga,
     tala,
     tradition,
@@ -564,6 +614,7 @@ class SongNoteRow extends DataClass implements Insertable<SongNoteRow> {
           other.timestamp == this.timestamp &&
           other.scrollSpeed == this.scrollSpeed &&
           other.scrollMeasures == this.scrollMeasures &&
+          other.scrollSpeedSet == this.scrollSpeedSet &&
           other.raga == this.raga &&
           other.tala == this.tala &&
           other.tradition == this.tradition);
@@ -580,6 +631,7 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
   final Value<int> timestamp;
   final Value<double> scrollSpeed;
   final Value<int> scrollMeasures;
+  final Value<bool> scrollSpeedSet;
   final Value<String> raga;
   final Value<String> tala;
   final Value<String> tradition;
@@ -594,6 +646,7 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     this.timestamp = const Value.absent(),
     this.scrollSpeed = const Value.absent(),
     this.scrollMeasures = const Value.absent(),
+    this.scrollSpeedSet = const Value.absent(),
     this.raga = const Value.absent(),
     this.tala = const Value.absent(),
     this.tradition = const Value.absent(),
@@ -609,6 +662,7 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     required int timestamp,
     this.scrollSpeed = const Value.absent(),
     this.scrollMeasures = const Value.absent(),
+    this.scrollSpeedSet = const Value.absent(),
     this.raga = const Value.absent(),
     this.tala = const Value.absent(),
     this.tradition = const Value.absent(),
@@ -625,6 +679,7 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     Expression<int>? timestamp,
     Expression<double>? scrollSpeed,
     Expression<int>? scrollMeasures,
+    Expression<bool>? scrollSpeedSet,
     Expression<String>? raga,
     Expression<String>? tala,
     Expression<String>? tradition,
@@ -640,6 +695,7 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
       if (timestamp != null) 'timestamp': timestamp,
       if (scrollSpeed != null) 'scroll_speed': scrollSpeed,
       if (scrollMeasures != null) 'scroll_measures': scrollMeasures,
+      if (scrollSpeedSet != null) 'scroll_speed_set': scrollSpeedSet,
       if (raga != null) 'raga': raga,
       if (tala != null) 'tala': tala,
       if (tradition != null) 'tradition': tradition,
@@ -657,6 +713,7 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     Value<int>? timestamp,
     Value<double>? scrollSpeed,
     Value<int>? scrollMeasures,
+    Value<bool>? scrollSpeedSet,
     Value<String>? raga,
     Value<String>? tala,
     Value<String>? tradition,
@@ -672,6 +729,7 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
       timestamp: timestamp ?? this.timestamp,
       scrollSpeed: scrollSpeed ?? this.scrollSpeed,
       scrollMeasures: scrollMeasures ?? this.scrollMeasures,
+      scrollSpeedSet: scrollSpeedSet ?? this.scrollSpeedSet,
       raga: raga ?? this.raga,
       tala: tala ?? this.tala,
       tradition: tradition ?? this.tradition,
@@ -711,6 +769,9 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
     if (scrollMeasures.present) {
       map['scroll_measures'] = Variable<int>(scrollMeasures.value);
     }
+    if (scrollSpeedSet.present) {
+      map['scroll_speed_set'] = Variable<bool>(scrollSpeedSet.value);
+    }
     if (raga.present) {
       map['raga'] = Variable<String>(raga.value);
     }
@@ -736,6 +797,7 @@ class SongNotesCompanion extends UpdateCompanion<SongNoteRow> {
           ..write('timestamp: $timestamp, ')
           ..write('scrollSpeed: $scrollSpeed, ')
           ..write('scrollMeasures: $scrollMeasures, ')
+          ..write('scrollSpeedSet: $scrollSpeedSet, ')
           ..write('raga: $raga, ')
           ..write('tala: $tala, ')
           ..write('tradition: $tradition')
@@ -1443,6 +1505,7 @@ typedef $$SongNotesTableCreateCompanionBuilder =
       required int timestamp,
       Value<double> scrollSpeed,
       Value<int> scrollMeasures,
+      Value<bool> scrollSpeedSet,
       Value<String> raga,
       Value<String> tala,
       Value<String> tradition,
@@ -1459,6 +1522,7 @@ typedef $$SongNotesTableUpdateCompanionBuilder =
       Value<int> timestamp,
       Value<double> scrollSpeed,
       Value<int> scrollMeasures,
+      Value<bool> scrollSpeedSet,
       Value<String> raga,
       Value<String> tala,
       Value<String> tradition,
@@ -1543,6 +1607,11 @@ class $$SongNotesTableFilterComposer
 
   ColumnFilters<int> get scrollMeasures => $composableBuilder(
     column: $table.scrollMeasures,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get scrollSpeedSet => $composableBuilder(
+    column: $table.scrollSpeedSet,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1646,6 +1715,11 @@ class $$SongNotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get scrollSpeedSet => $composableBuilder(
+    column: $table.scrollSpeedSet,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get raga => $composableBuilder(
     column: $table.raga,
     builder: (column) => ColumnOrderings(column),
@@ -1702,6 +1776,11 @@ class $$SongNotesTableAnnotationComposer
 
   GeneratedColumn<int> get scrollMeasures => $composableBuilder(
     column: $table.scrollMeasures,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get scrollSpeedSet => $composableBuilder(
+    column: $table.scrollSpeedSet,
     builder: (column) => column,
   );
 
@@ -1778,6 +1857,7 @@ class $$SongNotesTableTableManager
                 Value<int> timestamp = const Value.absent(),
                 Value<double> scrollSpeed = const Value.absent(),
                 Value<int> scrollMeasures = const Value.absent(),
+                Value<bool> scrollSpeedSet = const Value.absent(),
                 Value<String> raga = const Value.absent(),
                 Value<String> tala = const Value.absent(),
                 Value<String> tradition = const Value.absent(),
@@ -1792,6 +1872,7 @@ class $$SongNotesTableTableManager
                 timestamp: timestamp,
                 scrollSpeed: scrollSpeed,
                 scrollMeasures: scrollMeasures,
+                scrollSpeedSet: scrollSpeedSet,
                 raga: raga,
                 tala: tala,
                 tradition: tradition,
@@ -1808,6 +1889,7 @@ class $$SongNotesTableTableManager
                 required int timestamp,
                 Value<double> scrollSpeed = const Value.absent(),
                 Value<int> scrollMeasures = const Value.absent(),
+                Value<bool> scrollSpeedSet = const Value.absent(),
                 Value<String> raga = const Value.absent(),
                 Value<String> tala = const Value.absent(),
                 Value<String> tradition = const Value.absent(),
@@ -1822,6 +1904,7 @@ class $$SongNotesTableTableManager
                 timestamp: timestamp,
                 scrollSpeed: scrollSpeed,
                 scrollMeasures: scrollMeasures,
+                scrollSpeedSet: scrollSpeedSet,
                 raga: raga,
                 tala: tala,
                 tradition: tradition,

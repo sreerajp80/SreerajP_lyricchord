@@ -34,6 +34,11 @@ class SongDraft {
   /// The song's saved Tempo-Auto measures, carried through like [scrollSpeed].
   final int scrollMeasures;
 
+  /// True when the song already has a scroll speed of its own. Carried through
+  /// so an edit does not make the song fall back to the starting speed in
+  /// Settings.
+  final bool scrollSpeedSet;
+
   /// Which notation this song is written in. Decides whether the editor shows
   /// a Key field (Western) or Raga and Tala fields (Indian).
   final PitchTradition tradition;
@@ -59,6 +64,7 @@ class SongDraft {
     this.lyrics = '',
     this.favorite = false,
     this.scrollSpeed = 1.0,
+    this.scrollSpeedSet = false,
     this.scrollMeasures = 32,
     this.tradition = PitchTradition.western,
     this.raga = '',
@@ -88,6 +94,7 @@ class SongDraft {
       favorite: song.favorite,
       scrollSpeed: song.scrollSpeed,
       scrollMeasures: song.scrollMeasures,
+      scrollSpeedSet: song.scrollSpeedSet,
       raga: song.raga,
       tala: song.tala,
       // A song saved before the column existed has no stored tradition. Fall
@@ -110,6 +117,7 @@ class SongDraft {
     bool? favorite,
     double? scrollSpeed,
     int? scrollMeasures,
+    bool? scrollSpeedSet,
     PitchTradition? tradition,
     String? raga,
     String? tala,
@@ -126,6 +134,7 @@ class SongDraft {
       favorite: favorite ?? this.favorite,
       scrollSpeed: scrollSpeed ?? this.scrollSpeed,
       scrollMeasures: scrollMeasures ?? this.scrollMeasures,
+      scrollSpeedSet: scrollSpeedSet ?? this.scrollSpeedSet,
       tradition: tradition ?? this.tradition,
       raga: raga ?? this.raga,
       tala: tala ?? this.tala,
@@ -195,6 +204,7 @@ class SongDraft {
       timestamp: timestamp,
       scrollSpeed: scrollSpeed,
       scrollMeasures: scrollMeasures,
+      scrollSpeedSet: scrollSpeedSet,
       // Raga and tala are cleared on a Western song, so switching a song back
       // to Western never leaves a stale raga behind to make it look Indian.
       raga: isIndian ? raga.trim() : '',

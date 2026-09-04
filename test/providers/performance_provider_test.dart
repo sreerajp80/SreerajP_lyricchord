@@ -37,9 +37,27 @@ void main() {
     });
   });
 
+  group('show melody', () {
+    test('starts on', () {
+      expect(container.read(performanceSettingsProvider).showMelody, isTrue);
+    });
+
+    test('toggleMelody flips it and leaves the chords alone', () {
+      notifier.toggleMelody();
+
+      final settings = container.read(performanceSettingsProvider);
+      expect(settings.showMelody, isFalse);
+      expect(settings.showChords, isTrue);
+
+      notifier.toggleMelody();
+      expect(container.read(performanceSettingsProvider).showMelody, isTrue);
+    });
+  });
+
   test('resetAll returns to the defaults', () {
     notifier.transposeUp();
     notifier.toggleChords();
+    notifier.toggleMelody();
     notifier.applyFontScale(18, 1.5);
 
     notifier.resetAll();

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:lyricchord/core/router/app_router.dart';
 import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/theme/app_theme.dart';
@@ -66,6 +67,8 @@ class LyricChordApp extends ConsumerWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(goRouterProvider),
       builder: (context, child) =>
           FileIntentListener(child: child ?? const SizedBox.shrink()),

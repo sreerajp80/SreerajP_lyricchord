@@ -54,99 +54,105 @@ class _CarnaticNotationSheetState extends State<CarnaticNotationSheet> {
     final theme = Theme.of(context);
     final result = _result;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Paste Carnatic notation', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(
-              'Tala: ${widget.tala}. Paste one avarta per line, or separate '
-              'them with ||. Underlined runs: write them _like_this_.',
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _input,
-              maxLines: 6,
-              minLines: 3,
-              style: const TextStyle(fontFamily: 'monospace'),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: '; ; S | G , m | R ; ||',
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Paste Carnatic notation',
+                style: theme.textTheme.titleLarge,
               ),
-              onChanged: (_) => _convert(),
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              value: _applyAnyaSvara,
-              onChanged: (on) {
-                setState(() => _applyAnyaSvara = on);
-                _convert();
-              },
-              title: const Text('Shuddha madhyamam in Ga-Ma-Ri'),
-              subtitle: const Text(
-                'For a bhashanga raga such as Yamunakalyani. Off by default — '
-                'the notation does not say which madhyamam is meant.',
+              const SizedBox(height: 4),
+              Text(
+                'Tala: ${widget.tala}. Paste one avarta per line, or separate '
+                'them with ||. Underlined runs: write them _like_this_.',
+                style: theme.textTheme.bodySmall,
               ),
-            ),
-            if (result != null) ...[
-              const Divider(height: 24),
-              _Summary(result: result),
               const SizedBox(height: 12),
-              if (result.hasLines)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Text(
-                      result.melodyLines.join('\n'),
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
+              TextField(
+                controller: _input,
+                maxLines: 6,
+                minLines: 3,
+                style: const TextStyle(fontFamily: 'monospace'),
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: '; ; S | G , m | R ; ||',
+                ),
+                onChanged: (_) => _convert(),
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                value: _applyAnyaSvara,
+                onChanged: (on) {
+                  setState(() => _applyAnyaSvara = on);
+                  _convert();
+                },
+                title: const Text('Shuddha madhyamam in Ga-Ma-Ri'),
+                subtitle: const Text(
+                  'For a bhashanga raga such as Yamunakalyani. Off by default — '
+                  'the notation does not say which madhyamam is meant.',
+                ),
+              ),
+              if (result != null) ...[
+                const Divider(height: 24),
+                _Summary(result: result),
+                const SizedBox(height: 12),
+                if (result.hasLines)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Text(
+                        result.melodyLines.join('\n'),
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: result != null && result.hasLines
-                      ? () => Navigator.of(context).pop(result.melodyLines)
-                      : null,
-                  icon: const Icon(Icons.add),
-                  label: Text(
-                    result == null || !result.hasLines
-                        ? 'Insert'
-                        : 'Insert ${result.melodyLines.length} line'
-                              '${result.melodyLines.length == 1 ? '' : 's'}',
-                  ),
-                ),
               ],
-            ),
-          ],
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: result != null && result.hasLines
+                        ? () => Navigator.of(context).pop(result.melodyLines)
+                        : null,
+                    icon: const Icon(Icons.add),
+                    label: Text(
+                      result == null || !result.hasLines
+                          ? 'Insert'
+                          : 'Insert ${result.melodyLines.length} line'
+                                '${result.melodyLines.length == 1 ? '' : 's'}',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

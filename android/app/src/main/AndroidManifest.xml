@@ -2,12 +2,22 @@
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
+        <!-- singleTask + documentLaunchMode="never" keep the app to ONE activity
+             instance. Each FlutterActivity builds its own FlutterEngine, and each
+             engine runs its own Dart isolate, which runs main() and opens its own
+             SQLite connection. A second instance therefore means two connections on
+             one database file, and the file-open import then failed with
+             "Could not search for song by title". File managers hand a document over
+             with FLAG_ACTIVITY_NEW_DOCUMENT, so documentLaunchMode="never" is needed
+             as well as singleTask. Do not add taskAffinity="" back — that was what
+             let the second instance start. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTop"
-            android:taskAffinity=""
+            android:launchMode="singleTask"
+            android:documentLaunchMode="never"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"

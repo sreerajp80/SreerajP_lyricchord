@@ -182,5 +182,18 @@ void main() {
     test('is empty for lyrics with no chords', () {
       expect(parser.chordsUsed('no chords here'), isEmpty);
     });
+
+    test('splits lines with diverse line endings', () {
+      const lyrics = 'Line 1\u2028Line 2\r\nLine 3\rLine 4\u0085Line 5';
+      final sheet = parser.parseSheet(lyrics);
+      expect(sheet.lines.length, 5);
+      expect(sheet.lines.map((l) => l.text).toList(), [
+        'Line 1',
+        'Line 2',
+        'Line 3',
+        'Line 4',
+        'Line 5',
+      ]);
+    });
   });
 }

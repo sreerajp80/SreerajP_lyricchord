@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.6.3+27
+version: 2.6.13+37
 
 environment:
   sdk: ^3.12.2
@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -37,6 +40,10 @@ dependencies:
   flutter_riverpod: ^3.3.2
   drift: ^2.34.2
   sqlite3_flutter_libs: ^0.6.0+eol
+  # Local SQLite bindings only — no network. Already pulled in by drift; named
+  # here because `lib/data/app_database.dart` types the connection `setup`
+  # callback with it, and the migration test builds an old-schema file with it.
+  sqlite3: ^3.4.0
   path_provider: ^2.1.5
   path: ^1.9.1
   shared_preferences: ^2.5.5
@@ -65,11 +72,6 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.34.0
   build_runner: ^2.15.1
-  # Test-only: lets the migration test build an old-schema database file
-  # directly, without drift running its own migration over it first. Already
-  # pulled in by drift; named here so the import is a declared dependency.
-  # Local SQLite bindings only — no network.
-  sqlite3: ^3.4.0
   # Build-time only: generates the platform launcher icons from the master
   # PNGs in assets/icon/. Not shipped in the app; no runtime/network impact.
   flutter_launcher_icons: ^0.14.4
@@ -95,6 +97,7 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  generate: true
 
   assets:
     - assets/config/

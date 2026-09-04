@@ -361,6 +361,16 @@ Hindustani on another.
   later, follow [guidelines/flutter_build_flavors_guide.md](guidelines/flutter_build_flavors_guide.md).
 - **Runtime config mechanism:** `assets/config/app_config.json` for About-screen
   values; technical constants in `lib/core/constants/app_constants.dart`.
+- **Generated build metadata:** `tool/generate_app_version.dart` writes
+  `lib/core/constants/app_version.g.dart` (`kAppVersion`, read from the
+  `version:` line in `pubspec.yaml`) and `tool/generate_build_date.dart` writes
+  `lib/core/constants/build_date.g.dart` (`kBuildDate`, today's date). The
+  Gradle task `generateBuildMetadata` in `android/app/build.gradle.kts` runs
+  both before the Dart code is compiled, so every Android build refreshes them
+  and prints the new values. Both generated files are committed so tests and
+  iOS builds work without Gradle. The About screen shows `kAppVersion` (falling
+  back to the `app_config.json` values only if it is empty) and `kBuildDate`.
+  Never hand-edit the two `.g.dart` files; run the scripts instead.
 - **Build outputs supported:**
   - debug APK
   - release APK (split-per-ABI)

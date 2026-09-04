@@ -11,6 +11,7 @@ import 'package:lyricchord/screens/home_shell.dart';
 import 'package:lyricchord/screens/import_export_screen.dart';
 import 'package:lyricchord/screens/metronome_settings_screen.dart';
 import 'package:lyricchord/screens/pitch_drone_settings_screen.dart';
+import 'package:lyricchord/screens/scroll_settings_screen.dart';
 import 'package:lyricchord/screens/setlist_detail_screen.dart';
 import 'package:lyricchord/screens/setlist_list_screen.dart';
 import 'package:lyricchord/screens/settings_screen.dart';
@@ -103,6 +104,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'metronome',
                 builder: (context, state) => const MetronomeSettingsScreen(),
+              ),
+              GoRoute(
+                path: 'auto-scroll',
+                builder: (context, state) => const ScrollSettingsScreen(),
               ),
               GoRoute(
                 path: 'pitch-drone',

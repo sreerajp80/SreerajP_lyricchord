@@ -140,6 +140,7 @@ class SongRepository {
     timestamp: row.timestamp,
     scrollSpeed: row.scrollSpeed,
     scrollMeasures: row.scrollMeasures,
+    scrollSpeedSet: row.scrollSpeedSet,
     raga: row.raga,
     tala: row.tala,
     // An empty column means "not classified yet" — a song written before
@@ -162,6 +163,7 @@ class SongRepository {
         timestamp: song.timestamp,
         scrollSpeed: Value(song.scrollSpeed),
         scrollMeasures: Value(song.scrollMeasures),
+        scrollSpeedSet: Value(song.scrollSpeedSet),
         raga: Value(song.raga),
         tala: Value(song.tala),
         tradition: Value(song.tradition?.storageKey ?? ''),
@@ -179,6 +181,7 @@ class SongRepository {
     timestamp: Value(song.timestamp),
     scrollSpeed: Value(song.scrollSpeed),
     scrollMeasures: Value(song.scrollMeasures),
+    scrollSpeedSet: Value(song.scrollSpeedSet),
     raga: Value(song.raga),
     tala: Value(song.tala),
     tradition: Value(song.tradition?.storageKey ?? ''),

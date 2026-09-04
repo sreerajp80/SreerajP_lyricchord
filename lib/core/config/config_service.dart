@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'app_config.dart';
+import 'package:lyricchord/core/config/app_config.dart';
 
 /// Loads the About-screen [AppConfig] from the bundled JSON asset.
 /// Always degrades to [AppConfig.fallback] on any error.

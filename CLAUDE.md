@@ -1,4 +1,4 @@
-# CLAUDE.md — LyricCord
+# CLAUDE.md — LyricChord
 
 This file is read by Claude Code at the start of every session in this repository.
 Read it before making any change. This is a **Thin** file — see the docs table
@@ -34,13 +34,20 @@ below for the full detail; do not duplicate that detail here.
 | [docs/lyriccord_idea.md](docs/lyriccord_idea.md) | Understanding what the app is and which features must exist |
 | [docs/architecture.md](docs/architecture.md) | Changing structure, screens, state, services, models, repositories, storage, navigation |
 | [docs/security.md](docs/security.md) | Touching permissions, networking, imported files, logging, or the keystore |
+| [docs/release_process.md](docs/release_process.md) | Building, signing, hardening, and releasing production artifacts |
+| [docs/workflow_rules.md](docs/workflow_rules.md) | Understanding plan/approve/log, privacy, and communication rules |
+| [docs/dependencies.md](docs/dependencies.md) | Checking approved libraries and offline prohibited dependencies |
+| [docs/project_structure.md](docs/project_structure.md) | Understanding directory layout and layer boundaries |
 | [docs/implementation_plan.md](docs/implementation_plan.md) | Deciding what to build next and when a phase is "done" |
 | [docs/carnatic_notation.md](docs/carnatic_notation.md) | Touching swaras, `{melody}` lines, talas, ragas, or transcribing published Carnatic notation |
 | [docs/GUIDELINES_MANIFEST.md](docs/GUIDELINES_MANIFEST.md) | The shared Flutter guidelines index |
 | [docs/guidelines/guideline.md](docs/guidelines/guideline.md) | About-screen config, keystore rules, baseline `lib/` layout |
 | [docs/guidelines/flutter_project_engineering_standard.md](docs/guidelines/flutter_project_engineering_standard.md) | Any code change — layers, naming, testing |
 | [docs/guidelines/flutter_build_flavors_guide.md](docs/guidelines/flutter_build_flavors_guide.md) | Build config, signing, flavors, Gradle, ProGuard |
-| [docs/guidelines/release_process.md](docs/guidelines/release_process.md) | Building a release (create a local `docs/release_process.md` when set up) |
+| [docs/guidelines/release_process.md](docs/guidelines/release_process.md) | Shared release process reference runbook |
+| [docs/guidelines/CLAUDE_MD_GUIDELINE.md](docs/guidelines/CLAUDE_MD_GUIDELINE.md) | Writing and maintaining root CLAUDE.md |
+| [docs/guidelines/AGENTS_MD_GUIDELINE.md](docs/guidelines/AGENTS_MD_GUIDELINE.md) | Writing and maintaining root AGENTS.md |
+| [docs/guidelines/DOCS_FOLDER_GUIDELINE.md](docs/guidelines/DOCS_FOLDER_GUIDELINE.md) | Creating and structuring docs/ folder files |
 
 > If a doc is copied into this project's own `docs/`, the local copy wins over
 > the submodule template.
@@ -70,14 +77,14 @@ below for the full detail; do not duplicate that detail here.
 
 - **Layout:** Tier 1 layer-first under `lib/` — `core/` (`config/`, `constants/`,
   `errors/`, `utils/`), `models/`, `services/`, `repositories/`, `data/`,
-  `providers/`, `screens/`, `widgets/`, `theme/`, `main.dart`. Do not restructure
+  `providers/`, `screens/`, `widgets/`, `theme/`, `l10n/`, `main.dart`. Do not restructure
   or promote to feature-first without instruction.
 - **Dependency direction:**
   `Widget → Provider (state) → Service / Repository → drift DAO → SQLite`.
 - **Layer boundaries:** widgets must not know SQL, ChordPro syntax, or PDF
   drawing. Services must not know navigation or UI strings.
 - **Models are immutable** (`copyWith`, never mutate in place).
-- Full detail is in [docs/architecture.md](docs/architecture.md).
+- Full detail is in [docs/architecture.md](docs/architecture.md) and [docs/project_structure.md](docs/project_structure.md).
 
 ---
 
@@ -109,6 +116,18 @@ flutter build appbundle --flavor prod --release \
 
 ---
 
+## Localization rules
+
+- All user-visible text comes from `lib/l10n/*.arb` via `AppLocalizations` — never a raw string
+  literal in a widget. This applies even though the app ships only `en`.
+- `l10n.yaml` (project root) and `lib/l10n/app_en.arb` must exist. Run `flutter gen-l10n`
+  after editing any `.arb` file.
+- Every ARB key needs an `@key` description entry.
+- Literals are allowed only for logs, non-UI exception messages, asset paths, route names, and
+  map/JSON keys.
+
+---
+
 ## Signing / keystore
 
 - Create `android/key.properties` (gitignored — **never** commit it).
@@ -128,6 +147,7 @@ flutter build appbundle --flavor prod --release \
   microphone, or storage.
 - Never log song content in release builds; gate verbose logs on `kDebugMode`.
 - Validate imported ChordPro defensively (see Hard rule 4).
+- Ensure `android:allowBackup="false"` in `android/app/src/main/AndroidManifest.xml`.
 - Full posture: [docs/security.md](docs/security.md).
 
 ---
@@ -167,6 +187,7 @@ flutter build appbundle --flavor prod --release \
   — this is a fully offline app.
 - Before adding any package: check its `pubspec.yaml` for networking deps, state
   why it is needed, and confirm it fits the hard rules.
+- See [docs/dependencies.md](docs/dependencies.md) for approved and prohibited libraries.
 
 ---
 
@@ -174,6 +195,8 @@ flutter build appbundle --flavor prod --release \
 
 ```
 CLAUDE.md            # this file — project rules
+AGENTS.md            # AI agent instructions (mirrors CLAUDE.md)
+l10n.yaml            # localization configuration
 docs/                # design docs (architecture, security, idea, plan)
 docs/guidelines/     # shared Flutter guidelines submodule (read-only)
 plans/               # one plan per change (see workflow rules)
@@ -196,6 +219,13 @@ Every change follows plan-before-changing and log-after-changing:
 2. **Log after changing.** After implementing, write a change log to
    `change_log/` named `yyyymmdd_hhMMss_<short-slug>.md` describing what changed
    and referencing its plan.
+3. **Relative paths & privacy only.** `plans/` and `change_log/` files are committed and may become
+   public on the internet. They MUST use relative repository paths only (never absolute system
+   paths like `C:\...`, `l:\...`, or `file:///...`). They MUST NOT contain any **local system
+   details** — OS user name, computer/host name, home or drive-letter paths, network share names,
+   LAN/internal IP addresses, local server URLs with ports, device serial numbers, personal email
+   addresses — or any secret (API keys, tokens, passwords, keystore passphrases, credentials, PII).
+   Write them as if a stranger will read them; nothing should reveal the machine they came from.
 
 Create `plans/` and `change_log/` if they do not exist.
 
@@ -213,7 +243,7 @@ Create `plans/` and `change_log/` if they do not exist.
 
 **Always:** read this file first; state the target layer before adding a class;
 keep `main.dart` thin; run `flutter analyze` and `flutter test` after changes;
-match the Android app's behaviour and palette.
+put user-visible strings in `lib/l10n/*.arb` via `AppLocalizations`; match the Android app's behaviour and palette.
 
 **Never:** put business logic in a widget; call a DAO or touch SQL from a widget;
 edit generated `*.g.dart` / drift files; add a networking, cloud, analytics, or

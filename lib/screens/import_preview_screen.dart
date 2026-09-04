@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/core/router/app_router.dart';
 import 'package:lyricchord/models/import_preview_args.dart';
 import 'package:lyricchord/models/song_note.dart';
@@ -51,12 +53,30 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
           _isCheckingDuplicates = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      // The badge is only a hint, so the screen stays usable without it — but
+      // do not swallow the error in silence. This read failing is the first
+      // sign that the database itself is unreachable.
+      _logError('duplicate check failed', e);
       if (mounted) {
         setState(() => _isCheckingDuplicates = false);
       }
     }
   }
+
+  /// Prints why something failed, in debug builds only.
+  ///
+  /// Only the error text is printed — never song content — so this keeps to the
+  /// logging rule in `docs/security.md`.
+  void _logError(String what, Object error) {
+    if (kDebugMode) {
+      debugPrint('ImportPreview: $what: ${_reasonFor(error)}');
+    }
+  }
+
+  /// The friendly message with the real reason underneath, when there is one.
+  static String _reasonFor(Object error) =>
+      error is AppException ? error.debugDetails : error.toString();
 
   bool _isDuplicate(String title) {
     return _existingTitles.contains(title.trim().toLowerCase());
@@ -130,11 +150,12 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
         context.pop();
       }
     } catch (e) {
+      _logError('import failed', e);
       if (mounted) {
         setState(() => _isImporting = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Import failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Import failed: ${_reasonFor(e)}')),
+        );
       }
     }
   }

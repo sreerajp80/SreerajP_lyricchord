@@ -163,6 +163,9 @@ class FakeSongRepository implements SongRepository {
     _songs[index] = _songs[index].copyWith(
       scrollSpeed: speed,
       scrollMeasures: measures,
+      // Like the real repository: the song now has a speed of its own, so it
+      // stops following the starting speed in Settings.
+      scrollSpeedSet: true,
     );
     savedScrollCalls++;
     _emit();

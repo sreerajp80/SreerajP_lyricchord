@@ -48,15 +48,15 @@ void buildVersion8Database(File file, {required bool nullableSongTextColumns}) {
       sort_order INTEGER NOT NULL
     )''');
   db.execute(
-    "INSERT INTO song_notes (title, lyrics, timestamp) "
+    'INSERT INTO song_notes (title, lyrics, timestamp) '
     "VALUES ('Old Western Song', '[C]hello there', 1000)",
   );
   db.execute(
-    "INSERT INTO song_notes (title, lyrics, timestamp) "
+    'INSERT INTO song_notes (title, lyrics, timestamp) '
     "VALUES ('Old Indian Song', '{raga: Mohanam}\n{tala: Adi}\n[Sa]ri ga', 2000)",
   );
   db.execute(
-    "INSERT INTO setlists (name, created_at, updated_at) "
+    'INSERT INTO setlists (name, created_at, updated_at) '
     "VALUES ('Old Gig', 1000, 1000)",
   );
   db.execute(
@@ -114,6 +114,53 @@ void buildVersion8DatabaseWithNullCoreColumns(File file, {String? lyrics}) {
   stmt.execute(['Second Song', lyrics ?? '{raga: Mohanam}\n[Sa]ri ga', 2000]);
   stmt.close();
   db.execute('PRAGMA user_version = 8');
+  db.close();
+}
+
+/// Builds a schema version 10 database — everything the app had before the
+/// `scroll_speed_set` column was added.
+void buildVersion10Database(File file) {
+  final db = sqlite3.open(file.path);
+  db.execute('''
+    CREATE TABLE song_notes (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      artist TEXT NOT NULL DEFAULT '',
+      lyrics TEXT NOT NULL DEFAULT '',
+      key TEXT NOT NULL DEFAULT 'C',
+      bpm INTEGER NOT NULL DEFAULT 120,
+      favorite INTEGER NOT NULL DEFAULT 0 CHECK (favorite IN (0, 1)),
+      timestamp INTEGER NOT NULL,
+      scroll_speed REAL NOT NULL DEFAULT 1.0,
+      scroll_measures INTEGER NOT NULL DEFAULT 32,
+      raga TEXT NOT NULL DEFAULT '',
+      tala TEXT NOT NULL DEFAULT '',
+      tradition TEXT NOT NULL DEFAULT ''
+    )''');
+  db.execute('''
+    CREATE TABLE setlists (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )''');
+  db.execute('''
+    CREATE TABLE setlist_items (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      setlist_id INTEGER NOT NULL REFERENCES setlists(id) ON DELETE CASCADE,
+      song_id INTEGER NOT NULL REFERENCES song_notes(id) ON DELETE CASCADE,
+      sort_order INTEGER NOT NULL
+    )''');
+  db.execute(
+    'INSERT INTO song_notes (title, lyrics, timestamp, scroll_speed) '
+    "VALUES ('Speed Chosen By Hand', '[C]hello', 1000, 0.4)",
+  );
+  db.execute(
+    'INSERT INTO song_notes (title, lyrics, timestamp) '
+    "VALUES ('Speed Never Touched', '[C]hello', 2000)",
+  );
+  db.execute('PRAGMA user_version = 10');
   db.close();
 }
 
@@ -253,5 +300,33 @@ void main() {
 
       expect(songs, hasLength(2));
     });
+  });
+
+  group('schema version 11 upgrade', () {
+    test(
+      'marks a song whose speed was set by hand, and leaves the rest',
+      () async {
+        buildVersion10Database(file);
+
+        final db = AppDatabase.forTesting(NativeDatabase(file));
+        addTearDown(db.close);
+
+        final songs = await SongRepository(db).watchAllSongs().first;
+        final chosen = songs.firstWhere(
+          (s) => s.title == 'Speed Chosen By Hand',
+        );
+        final untouched = songs.firstWhere(
+          (s) => s.title == 'Speed Never Touched',
+        );
+
+        // 0.4x could only have been picked by the user, so the song keeps it.
+        expect(chosen.scrollSpeedSet, isTrue);
+        expect(chosen.scrollSpeed, closeTo(0.4, 1e-9));
+
+        // Still at the old column default, so it counts as never set and will
+        // follow the starting speed from Settings.
+        expect(untouched.scrollSpeedSet, isFalse);
+      },
+    );
   });
 }

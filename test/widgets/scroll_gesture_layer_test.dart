@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
-import 'package:lyricchord/widgets/stage_gesture_layer.dart';
+import 'package:lyricchord/widgets/scroll_gesture_layer.dart';
 
 void main() {
   // The layer fills the whole 800x600 test window, so these are the two halves.
@@ -13,18 +13,24 @@ void main() {
 
   late ProviderContainer container;
 
-  Future<void> pumpLayer(WidgetTester tester) async {
+  Future<void> pumpLayer(
+    WidgetTester tester, {
+    bool singleTapTogglesHud = true,
+  }) async {
     container = ProviderContainer();
     addTearDown(container.dispose);
-    // Stage Mode is on for all of these — the gestures only exist there.
+    // Stage Mode is on for most of these, so the HUD has something to toggle.
     container.read(stageModeProvider.notifier).enter();
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
+        child: MaterialApp(
           home: Scaffold(
-            body: StageGestureLayer(child: ColoredBox(color: Colors.black)),
+            body: ScrollGestureLayer(
+              singleTapTogglesHud: singleTapTogglesHud,
+              child: const ColoredBox(color: Colors.black),
+            ),
           ),
         ),
       ),
@@ -84,6 +90,27 @@ void main() {
 
     expect(container.read(stageModeProvider).hudVisible, isFalse);
   });
+
+  testWidgets(
+    'with the HUD flag off a single tap does nothing but double-taps still work',
+    (tester) async {
+      // The normal song view has no control bar to show, so a lone tap must be
+      // left alone. The speed taps have to keep working there all the same.
+      await pumpLayer(tester, singleTapTogglesHud: false);
+      container.read(stageModeProvider.notifier).hideHud();
+      final start = scroll().speed;
+
+      await tester.tapAt(upper);
+      await settleTap(tester);
+      expect(container.read(stageModeProvider).hudVisible, isFalse);
+
+      await doubleTapAt(tester, upper);
+      expect(
+        scroll().speed,
+        closeTo(start + AutoScrollSettings.speedStep, 1e-9),
+      );
+    },
+  );
 
   testWidgets('the speed stops at the ends of the range', (tester) async {
     await pumpLayer(tester);

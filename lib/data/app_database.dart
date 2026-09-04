@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart' show Database;
 
 import 'package:lyricchord/core/constants/app_constants.dart';
 // Both are pure logic — no storage, no UI, no navigation. Imported here only so
@@ -39,6 +40,16 @@ class SongNotes extends Table {
   /// Tempo-Auto length in measures the user last set for this song (schema
   /// version 3).
   IntColumn get scrollMeasures => integer().withDefault(const Constant(32))();
+
+  /// True once the user has set a manual scroll speed for this song (schema
+  /// version 11).
+  ///
+  /// [scrollSpeed] alone cannot answer "did anyone pick this?", because its
+  /// column default (1.0) looks exactly like a speed set by hand to 1.00x. A
+  /// song with this still false opens at the starting speed from Settings
+  /// instead.
+  BoolColumn get scrollSpeedSet =>
+      boolean().withDefault(const Constant(false))();
 
   /// Raga name for an Indian song, `''` for a Western one (schema version 9).
   TextColumn get raga => text().withDefault(const Constant(''))();
@@ -95,7 +106,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -109,6 +120,18 @@ class AppDatabase extends _$AppDatabase {
       await _backfillSongTraditions();
     },
     onUpgrade: (m, from, to) async {
+      // Column first, before any step that reads a song row. Drift maps every
+      // column of `song_notes` on a read, so a step such as the version 10
+      // sample rewrite would throw "Null check operator used on a null value"
+      // while this column was still missing.
+      if (from < 11) {
+        // Adding a column twice is a hard SQLite error, so ask the table what
+        // it already has — the same guard the version 9 step uses.
+        final existing = await _songColumnNames();
+        if (!existing.contains(songNotes.scrollSpeedSet.name)) {
+          await m.addColumn(songNotes, songNotes.scrollSpeedSet);
+        }
+      }
       if (from < 2) {
         await m.createTable(setlists);
         await m.createTable(setlistItems);
@@ -156,6 +179,13 @@ class AppDatabase extends _$AppDatabase {
         // second line, and no melody. Replace it with the real words plus a
         // `{melody}` line for each, so the melody player has something to show.
         await _rewriteKrishnaSample();
+      }
+      if (from < 11) {
+        // Done here, after the version 3 step has made sure `scroll_speed`
+        // exists. A song sitting at any speed other than 1.0 was clearly set by
+        // hand, so it keeps its speed. One still at the old column default
+        // counts as "never set" and will follow the starting speed in Settings.
+        await _markSongsWithAChosenSpeed();
       }
     },
     beforeOpen: (details) async {
@@ -222,7 +252,18 @@ class AppDatabase extends _$AppDatabase {
       SongNotesCompanion(
         scrollSpeed: Value(speed),
         scrollMeasures: Value(measures),
+        // From now on this song opens at its own speed, not the one in
+        // Settings.
+        scrollSpeedSet: const Value(true),
       ),
+    );
+  }
+
+  /// Marks every song whose speed is not the old column default as having a
+  /// speed of its own (schema version 11).
+  Future<void> _markSongsWithAChosenSpeed() async {
+    await customStatement(
+      'UPDATE song_notes SET scroll_speed_set = 1 WHERE scroll_speed != 1.0',
     );
   }
 
@@ -410,6 +451,7 @@ class AppDatabase extends _$AppDatabase {
           timestamp: Value(song.timestamp),
           scrollSpeed: Value(song.scrollSpeed),
           scrollMeasures: Value(song.scrollMeasures),
+          scrollSpeedSet: Value(song.scrollSpeedSet),
           lyrics: Value(lyrics),
         ),
       );
@@ -760,6 +802,24 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
     final file = File(p.join(dir.path, AppConstants.databaseName));
-    return NativeDatabase.createInBackground(file);
+    return NativeDatabase.createInBackground(file, setup: applyPragmas);
   });
+}
+
+/// Settings applied to every connection, on the device and in tests.
+///
+/// The app should only ever hold one connection (see the `singleTask` note in
+/// `AndroidManifest.xml`), but a second one must not break the app if it ever
+/// happens again — a file-open import once failed outright because of that.
+/// With the default journal mode a reader and a writer lock each other out, and
+/// with the default `busy_timeout` of 0 the loser fails on the spot instead of
+/// waiting.
+void applyPragmas(Database db) {
+  // Readers no longer block the writer, and the writer no longer blocks readers.
+  db.execute('PRAGMA journal_mode = WAL;');
+  // If a lock really is held, wait up to 5 seconds instead of failing at once.
+  db.execute('PRAGMA busy_timeout = 5000;');
+  // `setlist_items` declares ON DELETE CASCADE, which SQLite only honours when
+  // foreign keys are switched on. Stated here rather than left to the default.
+  db.execute('PRAGMA foreign_keys = ON;');
 }

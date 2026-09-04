@@ -333,30 +333,28 @@ class PcmSynthService {
     return bytes.buffer.asUint8List();
   }
 
-  /// Envelope for a looping drone: flat, with only a hair of fade at each end.
+  /// Nudges [freq] onto the nearest pitch that completes a whole number of
+  /// cycles inside a [durationSeconds] buffer.
   ///
-  /// [adsrEnvelope] is shaped for a note that begins and ends — it sinks to
-  /// silence over the last 5% of its length. On a buffer that loops, that turns
-  /// into a swell and dip on every pass, which a drone must not have: a drone is
-  /// meant to sit still so the ear can lean on it.
+  /// A looped buffer restarts its wave at phase 0 every pass. That only joins up
+  /// silently if the tone fits whole cycles in the buffer — otherwise the last
+  /// sample and the first sit at different points of the wave, and the step
+  /// between them is heard as a click on every loop. C over 2 s is 523.26
+  /// cycles; it is that leftover 0.26 that clicks.
   ///
-  /// So this holds 1.0 the whole way and fades only over about 5 ms at each
-  /// edge — long enough to stop the loop seam clicking, short enough that no
-  /// one hears it. Returns 0.0–1.0.
-  static double droneEnvelope(
-    int sampleIndex,
-    int totalSamples,
-    int sampleRate,
-  ) {
-    if (totalSamples <= 0) return 0.0;
-
-    final fade = math.min((sampleRate * 0.005).round(), totalSamples ~/ 2);
-    if (fade <= 0) return 1.0;
-
-    if (sampleIndex < fade) return sampleIndex / fade;
-    final fromEnd = totalSamples - 1 - sampleIndex;
-    if (fromEnd < fade) return (fromEnd / fade).clamp(0.0, 1.0);
-    return 1.0;
+  /// A buffer `D` seconds long repeats `1 / D` times a second, so every whole
+  /// multiple of `1 / D` Hz is safe. Rounding to that grid moves the pitch by at
+  /// most `1 / (2 * D)` Hz — under 2 cents at 4 seconds, which no ear hears and
+  /// which is far less than the 0.4% stereo detune the drone already uses on
+  /// purpose.
+  ///
+  /// The 2nd, 3rd and 4th harmonics in [harmonicSample] are whole multiples of
+  /// the fundamental, so snapping the fundamental lands them on the grid too.
+  static double snapToLoopGrid(double freq, double durationSeconds) {
+    if (freq <= 0 || durationSeconds <= 0) return freq;
+    final cycles = (freq * durationSeconds).round();
+    if (cycles <= 0) return freq;
+    return cycles / durationSeconds;
   }
 
   /// Synthesizes a continuous Shruti Box drone WAV buffer (Sa + Pa/Ma).
@@ -367,23 +365,43 @@ class PcmSynthService {
   /// its shimmer from *jawari*, the string grazing a curved bridge. This is a
   /// steady reed-style drone — a shruti box.
   ///
-  /// The default length is two seconds, which matters for two reasons. It is
-  /// exactly three cycles of the 1.5 Hz tremolo, so the wobble lines up across
-  /// the loop seam. And at 2 s the buffer is ~350 KB, which fits inside the
-  /// roughly 1 MB a `SoundPool` sample is allowed — the drone has to play
-  /// through SoundPool because the plain media player never starts on some
-  /// devices (see `PitchDroneAudioService`).
+  /// **This buffer is made to loop.** Everything it plays is snapped onto the
+  /// loop grid by [snapToLoopGrid], so the end of the buffer joins its own start
+  /// with no step in the wave, and there is deliberately **no fade** at either
+  /// edge. A fade would be right for a sound that plays once; on a loop it digs
+  /// a hole of silence into the hum on every pass, which is exactly what a drone
+  /// must not do. Nothing pops at the start either: every partial is a `sin()`
+  /// beginning at phase 0, so the buffer already opens at zero.
+  ///
+  /// The default length is four seconds. It is a whole six cycles of the 1.5 Hz
+  /// tremolo, so the wobble also lines up across the seam, and the longer the
+  /// buffer the finer the loop grid (0.25 Hz here) and the fewer the seams. Size
+  /// is not a worry: the drone plays through `PlayerMode.mediaPlayer`, which
+  /// streams from the file (see `PitchDroneAudioService`).
   Uint8List generateShrutiDroneWav({
     required String noteKey,
     String interval = 'Pa',
-    double durationSeconds = 2.0,
+    double durationSeconds = 4.0,
     int sampleRate = 44100,
   }) {
-    final rootFreq = getFrequency(noteKey);
-    final secondFreq = (interval.toLowerCase() == 'ma')
-        ? rootFreq *
+    final rawRoot = getFrequency(noteKey);
+    final rawSecond = (interval.toLowerCase() == 'ma')
+        ? rawRoot *
               (4.0 / 3.0) // Fourth (Ma)
-        : rootFreq * (1.5); // Fifth (Pa)
+        : rawRoot * (1.5); // Fifth (Pa)
+
+    // Each voice is snapped on its own — the detuned right channel included, or
+    // that channel alone would click at the seam.
+    final rootFreq = snapToLoopGrid(rawRoot, durationSeconds);
+    final rootFreqRight = snapToLoopGrid(
+      rawRoot * stereoDetune,
+      durationSeconds,
+    );
+    final secondFreq = snapToLoopGrid(rawSecond, durationSeconds);
+    final secondFreqRight = snapToLoopGrid(
+      rawSecond * stereoDetune,
+      durationSeconds,
+    );
 
     final totalSamples = (sampleRate * durationSeconds).toInt();
     const channels = 2;
@@ -404,27 +422,203 @@ class PcmSynthService {
 
     var offset = header.length;
     for (var i = 0; i < totalSamples; i++) {
-      final env = droneEnvelope(i, totalSamples, sampleRate);
-      // Gentle subtle 1.5Hz amplitude modulation simulating string vibration
+      // No envelope: see the note on looping above. Gentle 1.5 Hz amplitude
+      // modulation simulating string vibration, whole cycles in the buffer.
       final tremolo =
           0.85 + 0.15 * math.sin(2 * math.pi * 1.5 * (i / sampleRate));
-      final amp = 32767 * 0.45 * env * tremolo;
+      final amp = 32767 * 0.45 * tremolo;
 
       final rootHarmonicLeft = harmonicSample(i, rootFreq, sampleRate);
-      final rootHarmonicRight = harmonicSample(
-        i,
-        rootFreq * stereoDetune,
-        sampleRate,
-      );
+      final rootHarmonicRight = harmonicSample(i, rootFreqRight, sampleRate);
       final secHarmonicLeft = harmonicSample(i, secondFreq, sampleRate);
-      final secHarmonicRight = harmonicSample(
-        i,
-        secondFreq * stereoDetune,
-        sampleRate,
-      );
+      final secHarmonicRight = harmonicSample(i, secondFreqRight, sampleRate);
 
       final mixedLeft = (rootHarmonicLeft + secHarmonicLeft) * 0.5;
       final mixedRight = (rootHarmonicRight + secHarmonicRight) * 0.5;
+
+      final leftSample = (mixedLeft * amp).clamp(-32768, 32767).toInt();
+      final rightSample = (mixedRight * amp).clamp(-32768, 32767).toInt();
+
+      bytes.setInt16(offset, leftSample, Endian.little);
+      offset += 2;
+      bytes.setInt16(offset, rightSample, Endian.little);
+      offset += 2;
+    }
+
+    return bytes.buffer.asUint8List();
+  }
+
+  /// Synthesizes a continuous Western backing chord drone WAV buffer (Root + 3rd + 5th + Bass).
+  ///
+  /// [noteKey]: Root note pitch (e.g. 'C', 'F#', 'Bb').
+  /// [isMinor]: `false` for Major triad, `true` for Minor triad.
+  ///
+  /// Combines a gentle bass root (octave below), root, major or minor third,
+  /// and fifth with stereo detuning.
+  ///
+  /// Like [generateShrutiDroneWav] this buffer is made to loop: every voice is
+  /// snapped onto the loop grid and there is no fade at either edge. See that
+  /// method for why.
+  Uint8List generateWesternChordDroneWav({
+    required String noteKey,
+    bool isMinor = false,
+    double durationSeconds = 4.0,
+    int sampleRate = 44100,
+  }) {
+    final rawRoot = getFrequency(noteKey);
+    final rawBass = rawRoot * 0.5;
+    final rawThird = rawRoot * math.pow(2.0, (isMinor ? 3.0 : 4.0) / 12.0);
+    final rawFifth = rawRoot * math.pow(2.0, 7.0 / 12.0);
+
+    // Every voice, and every detuned right-channel copy, on the loop grid.
+    final rootFreq = snapToLoopGrid(rawRoot, durationSeconds);
+    final rootFreqRight = snapToLoopGrid(
+      rawRoot * stereoDetune,
+      durationSeconds,
+    );
+    final bassFreq = snapToLoopGrid(rawBass, durationSeconds);
+    final bassFreqRight = snapToLoopGrid(
+      rawBass * stereoDetune,
+      durationSeconds,
+    );
+    final thirdFreq = snapToLoopGrid(rawThird, durationSeconds);
+    final thirdFreqRight = snapToLoopGrid(
+      rawThird * stereoDetune,
+      durationSeconds,
+    );
+    final fifthFreq = snapToLoopGrid(rawFifth, durationSeconds);
+    final fifthFreqRight = snapToLoopGrid(
+      rawFifth * stereoDetune,
+      durationSeconds,
+    );
+
+    final totalSamples = (sampleRate * durationSeconds).toInt();
+    const channels = 2;
+    const bitsPerSample = 16;
+    final dataSize = totalSamples * channels * (bitsPerSample ~/ 8);
+
+    final header = _buildWavHeader(
+      dataLength: dataSize,
+      sampleRate: sampleRate,
+      channels: channels,
+      bitsPerSample: bitsPerSample,
+    );
+
+    final bytes = ByteData(header.length + dataSize);
+    for (var i = 0; i < header.length; i++) {
+      bytes.setUint8(i, header[i]);
+    }
+
+    var offset = header.length;
+    for (var i = 0; i < totalSamples; i++) {
+      // No envelope: this buffer loops. See generateShrutiDroneWav.
+      final tremolo =
+          0.88 + 0.12 * math.sin(2 * math.pi * 1.5 * (i / sampleRate));
+      final amp = 32767 * 0.45 * tremolo;
+
+      final bassLeft = harmonicSample(i, bassFreq, sampleRate);
+      final bassRight = harmonicSample(i, bassFreqRight, sampleRate);
+
+      final rootLeft = harmonicSample(i, rootFreq, sampleRate);
+      final rootRight = harmonicSample(i, rootFreqRight, sampleRate);
+
+      final thirdLeft = harmonicSample(i, thirdFreq, sampleRate);
+      final thirdRight = harmonicSample(i, thirdFreqRight, sampleRate);
+
+      final fifthLeft = harmonicSample(i, fifthFreq, sampleRate);
+      final fifthRight = harmonicSample(i, fifthFreqRight, sampleRate);
+
+      final mixedLeft =
+          (bassLeft * 0.28 +
+              rootLeft * 0.32 +
+              thirdLeft * 0.22 +
+              fifthLeft * 0.22) /
+          1.04;
+      final mixedRight =
+          (bassRight * 0.28 +
+              rootRight * 0.32 +
+              thirdRight * 0.22 +
+              fifthRight * 0.22) /
+          1.04;
+
+      final leftSample = (mixedLeft * amp).clamp(-32768, 32767).toInt();
+      final rightSample = (mixedRight * amp).clamp(-32768, 32767).toInt();
+
+      bytes.setInt16(offset, leftSample, Endian.little);
+      offset += 2;
+      bytes.setInt16(offset, rightSample, Endian.little);
+      offset += 2;
+    }
+
+    return bytes.buffer.asUint8List();
+  }
+
+  /// Synthesizes a 2-second reference Western chord cue with ADSR envelope.
+  Uint8List generateWesternChordCueWav({
+    required String noteKey,
+    bool isMinor = false,
+    double durationSeconds = 2.0,
+    int sampleRate = 44100,
+  }) {
+    final rootFreq = getFrequency(noteKey);
+    final bassFreq = rootFreq * 0.5;
+    final thirdFreq = rootFreq * math.pow(2.0, (isMinor ? 3.0 : 4.0) / 12.0);
+    final fifthFreq = rootFreq * math.pow(2.0, 7.0 / 12.0);
+
+    final totalSamples = (sampleRate * durationSeconds).toInt();
+    const channels = 2;
+    const bitsPerSample = 16;
+    final dataSize = totalSamples * channels * (bitsPerSample ~/ 8);
+
+    final header = _buildWavHeader(
+      dataLength: dataSize,
+      sampleRate: sampleRate,
+      channels: channels,
+      bitsPerSample: bitsPerSample,
+    );
+
+    final bytes = ByteData(header.length + dataSize);
+    for (var i = 0; i < header.length; i++) {
+      bytes.setUint8(i, header[i]);
+    }
+
+    var offset = header.length;
+    for (var i = 0; i < totalSamples; i++) {
+      final env = adsrEnvelope(i, totalSamples);
+      final amp = 32767 * 0.65 * env;
+
+      final bassLeft = harmonicSample(i, bassFreq, sampleRate);
+      final bassRight = harmonicSample(i, bassFreq * stereoDetune, sampleRate);
+
+      final rootLeft = harmonicSample(i, rootFreq, sampleRate);
+      final rootRight = harmonicSample(i, rootFreq * stereoDetune, sampleRate);
+
+      final thirdLeft = harmonicSample(i, thirdFreq, sampleRate);
+      final thirdRight = harmonicSample(
+        i,
+        thirdFreq * stereoDetune,
+        sampleRate,
+      );
+
+      final fifthLeft = harmonicSample(i, fifthFreq, sampleRate);
+      final fifthRight = harmonicSample(
+        i,
+        fifthFreq * stereoDetune,
+        sampleRate,
+      );
+
+      final mixedLeft =
+          (bassLeft * 0.28 +
+              rootLeft * 0.32 +
+              thirdLeft * 0.22 +
+              fifthLeft * 0.22) /
+          1.04;
+      final mixedRight =
+          (bassRight * 0.28 +
+              rootRight * 0.32 +
+              thirdRight * 0.22 +
+              fifthRight * 0.22) /
+          1.04;
 
       final leftSample = (mixedLeft * amp).clamp(-32768, 32767).toInt();
       final rightSample = (mixedRight * amp).clamp(-32768, 32767).toInt();
