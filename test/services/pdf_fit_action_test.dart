@@ -90,7 +90,7 @@ void main() {
   test('returns the input unchanged for a cross-reference stream file', () {
     // startxref points at an object, not at the word "xref", so the file uses
     // a cross-reference stream that this patcher must not try to edit.
-    final text =
+    const text =
         '%PDF-1.5\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'
         'startxref\n9\n%%EOF\n';
     final pdf = Uint8List.fromList(latin1.encode(text));

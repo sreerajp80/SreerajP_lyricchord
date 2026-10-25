@@ -1,0 +1,25 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- LyricChord is fully offline (CLAUDE.md hard rule 1). ML Kit, which
+         mobile_scanner uses for AirQR, brings in Google's usage logger
+         (com.google.android.datatransport), and that library adds these two
+         permissions. Remove them from release builds so the logger can never
+         send anything. Debug and profile builds keep INTERNET for hot reload.
+         The barcode model is the bundled one, so scanning works offline. -->
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
+
+    <application>
+        <!-- Without this service the logger finds no upload backend and drops
+             every event instead of queueing it. Only this one is removed: the
+             logger's scheduler service and receiver stay, because removing them
+             could crash an install that already has a queued upload job. -->
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            tools:node="remove" />
+    </application>
+</manifest>

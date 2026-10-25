@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/services/swara_notation_service.dart';
 
@@ -40,7 +41,7 @@ class SwaraKeyboardDiagram extends StatelessWidget {
         // The painted keyboard is invisible to a screen reader, so name it.
         Semantics(
           image: true,
-          label: 'Swara diagram for $swara',
+          label: AppLocalizations.of(context).descDiagramSwara(swara),
           child: SizedBox(
             width: width,
             height: width * 0.55,

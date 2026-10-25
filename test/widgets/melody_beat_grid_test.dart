@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/services/melody_parser_service.dart';
 import 'package:lyricchord/widgets/melody_beat_grid.dart';
 
@@ -13,6 +15,8 @@ void main() {
   }) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MelodyBeatGrid(
             line: parser.parse(melody),

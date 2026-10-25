@@ -3,7 +3,8 @@
 /// These are thrown by the data and service layers and are meant to be caught
 /// at the UI edge and shown as a `SnackBar` — they must never crash the app.
 sealed class AppException implements Exception {
-  /// Human-readable message safe to show or log.
+  /// English description for logs. Screens show their own translated text
+  /// (`AppException.text` in `lib/l10n/l10n_labels.dart`).
   final String message;
 
   /// The underlying error, if any.
@@ -26,9 +27,31 @@ sealed class AppException implements Exception {
   String toString() => '$runtimeType: $message';
 }
 
+/// Which storage step failed. The screen turns this into words
+/// (`lib/l10n/l10n_labels.dart`); [AppException.message] stays English for
+/// logs only.
+enum StorageFailure {
+  loadSongs,
+  openSong,
+  findSongByTitle,
+  saveSong,
+  updateSong,
+  saveScrollSpeed,
+  deleteSong,
+  createSetlist,
+  updateSetlist,
+  updateSetlistSongs,
+  addSongToSetlist,
+  deleteSetlist,
+  deleteAllData,
+}
+
 /// A database read or write failed.
 class StorageException extends AppException {
-  const StorageException(super.message, {super.cause});
+  const StorageException(super.message, {required this.kind, super.cause});
+
+  /// What was being done when it failed.
+  final StorageFailure kind;
 }
 
 /// A file could not be parsed as ChordPro (used from Phase 7).

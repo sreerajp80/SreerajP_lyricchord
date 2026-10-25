@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/models/lyric_font.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
@@ -21,7 +23,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-        child: const MaterialApp(home: FontSettingsScreen()),
+        child: const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: FontSettingsScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

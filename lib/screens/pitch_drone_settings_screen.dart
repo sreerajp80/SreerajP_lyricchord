@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 
 import 'package:lyricchord/models/pitch_drone_settings.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
@@ -32,6 +34,7 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
     final settings = ref.watch(pitchDroneProvider);
     final notifier = ref.read(pitchDroneProvider.notifier);
     final naming = settings.pitchNaming;
+    final l10n = AppLocalizations.of(context);
 
     // What a song with no raga or tala falls back to. This is the whole reason
     // the naming choice is not merely cosmetic, so the screen says it out loud.
@@ -48,11 +51,13 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
         ? _naming.shortLabel(settings.saKey, _saNaming(naming))
         : settings.selectedKey;
     final testDescription = testMode == DroneMode.western
-        ? 'Test plays: Western '
-              '${settings.chordQuality.displayName.toLowerCase()} chord '
-              'on $testKeyLabel'
-        : 'Test plays: Classical drone on $testKeyLabel '
-              '+ ${settings.droneInterval}';
+        ? (settings.chordQuality == ChordQuality.major
+              ? l10n.descDroneSettingsTestWesternMajor(testKeyLabel)
+              : l10n.descDroneSettingsTestWesternMinor(testKeyLabel))
+        : l10n.descDroneSettingsTestClassical(
+            testKeyLabel,
+            settings.droneInterval,
+          );
 
     Future<void> run(Future<bool> Function() action) async {
       final ok = await action();
@@ -60,21 +65,21 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
       final message = ref.read(pitchDroneProvider).lastError;
       notifier.clearError();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message ?? 'Could not play the sound.')),
+        SnackBar(
+          content: Text(message?.text(l10n) ?? l10n.errorDroneCouldNotPlay),
+        ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pitch Pipe & Shruti Box')),
+      appBar: AppBar(title: Text(l10n.titleDrone)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
             _SettingsSection(
-              title: 'Pitch naming',
-              caption:
-                  'Sets how pitches are named, and how a song is treated when it '
-                  'names no raga or tala.',
+              title: l10n.titleDroneSettingsNaming,
+              caption: l10n.descDroneSettingsNamingCaption,
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -83,7 +88,7 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                         .map(
                           (t) => ButtonSegment(
                             value: t,
-                            label: Text(t.displayName),
+                            label: Text(t.label(l10n)),
                           ),
                         )
                         .toList(),
@@ -95,29 +100,26 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                 ),
                 _SectionNote(
                   treatsSongsAsIndian
-                      ? 'Songs with no raga or tala use the Indian songs '
-                            'settings below.'
-                      : 'Songs with no raga or tala use the Western songs '
-                            'settings below.',
+                      ? l10n.descDroneSettingsUsesIndian
+                      : l10n.descDroneSettingsUsesWestern,
                 ),
               ],
             ),
 
             _SettingsSection(
-              title: 'Indian songs (Carnatic / Hindustani)',
-              caption:
-                  'Used for songs with a raga or tala. These always play the '
-                  'Classical shruti drone, on your Sa.',
+              title: l10n.titleDroneSettingsIndianSongs,
+              caption: l10n.descDroneSettingsIndianCaption,
               highlighted: treatsSongsAsIndian,
               children: [
                 // Sa comes first: for an Indian song this is the one that
                 // matters, and it is the setting people will look for.
                 ListTile(
                   leading: const Icon(Icons.self_improvement),
-                  title: const Text('Your Sa (Shruti)'),
+                  title: Text(l10n.labelDroneSettingsYourSa),
                   subtitle: Text(
-                    'Where your Sa sits: '
-                    '${_naming.shortLabel(settings.saKey, _saNaming(naming))}',
+                    l10n.descDroneSettingsSaSits(
+                      _naming.shortLabel(settings.saKey, _saNaming(naming)),
+                    ),
                   ),
                   trailing: DropdownButton<String>(
                     value: settings.saKey,
@@ -138,11 +140,11 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                 // uses this interval, so hiding it was misleading.
                 ListTile(
                   leading: const Icon(Icons.graphic_eq),
-                  title: const Text('Drone Interval'),
+                  title: Text(l10n.labelDroneSettingsInterval),
                   subtitle: Text(
                     settings.droneInterval == 'Pa'
-                        ? 'Sa + Pa (fifth) — the usual shruti box drone'
-                        : 'Sa + Ma (fourth) — for ragas that leave out Pa',
+                        ? l10n.descDroneSettingsIntervalPa
+                        : l10n.descDroneSettingsIntervalMa,
                   ),
                   trailing: SegmentedButton<String>(
                     segments: const [
@@ -159,17 +161,17 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
             ),
 
             _SettingsSection(
-              title: 'Western songs',
-              caption:
-                  'Used for songs with no raga or tala, when pitch naming is '
-                  'Western.',
+              title: l10n.titleDroneSettingsWesternSongs,
+              caption: l10n.descDroneSettingsWesternCaption,
               highlighted: !treatsSongsAsIndian,
               children: [
                 ListTile(
                   leading: const Icon(Icons.music_note),
-                  title: const Text('Default key'),
+                  title: Text(l10n.labelDroneSettingsDefaultKey),
                   subtitle: Text(
-                    'Used when a song names no key: ${settings.selectedKey}',
+                    l10n.descDroneSettingsDefaultKeySubtitle(
+                      settings.selectedKey,
+                    ),
                   ),
                   trailing: DropdownButton<String>(
                     value: settings.selectedKey,
@@ -184,21 +186,21 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.tune),
-                  title: const Text('Default drone mode'),
+                  title: Text(l10n.labelDroneSettingsDefaultMode),
                   subtitle: Text(
                     settings.droneMode == DroneMode.classical
-                        ? 'Classical Shruti drone (Sa + Pa/Ma)'
-                        : 'Western backing chords (Major / Minor)',
+                        ? l10n.descDroneSettingsModeClassicalNote
+                        : l10n.descDroneSettingsModeWesternNote,
                   ),
                   trailing: SegmentedButton<DroneMode>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: DroneMode.classical,
-                        label: Text('Classical'),
+                        label: Text(l10n.labelDroneSettingsClassical),
                       ),
                       ButtonSegment(
                         value: DroneMode.western,
-                        label: Text('Western'),
+                        label: Text(l10n.labelTraditionWestern),
                       ),
                     ],
                     selected: {settings.droneMode},
@@ -213,24 +215,21 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                 ListTile(
                   enabled: settings.droneMode == DroneMode.western,
                   leading: const Icon(Icons.piano),
-                  title: const Text('Default chord quality'),
+                  title: Text(l10n.labelDroneSettingsDefaultQuality),
                   subtitle: Text(
                     settings.droneMode == DroneMode.western
                         ? (settings.chordQuality == ChordQuality.major
-                              ? 'Major triad (Root + Major 3rd + 5th)'
-                              : 'Minor triad (Root + Minor 3rd + 5th)')
-                        : 'Used only when the drone mode above is Western',
+                              ? l10n.descDroneSettingsMajorNote
+                              : l10n.descDroneSettingsMinorNote)
+                        : l10n.descDroneSettingsQualityOnlyWestern,
                   ),
                   trailing: SegmentedButton<ChordQuality>(
-                    segments: const [
-                      ButtonSegment(
-                        value: ChordQuality.major,
-                        label: Text('Major'),
-                      ),
-                      ButtonSegment(
-                        value: ChordQuality.minor,
-                        label: Text('Minor'),
-                      ),
+                    segments: [
+                      for (final quality in ChordQuality.values)
+                        ButtonSegment(
+                          value: quality,
+                          label: Text(quality.label(l10n)),
+                        ),
                     ],
                     selected: {settings.chordQuality},
                     onSelectionChanged: settings.droneMode == DroneMode.western
@@ -246,12 +245,12 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
             ),
 
             _SettingsSection(
-              title: 'Applies to everything',
-              caption: 'These affect both traditions.',
+              title: l10n.titleDroneSettingsEverything,
+              caption: l10n.descDroneSettingsEverythingCaption,
               children: [
                 ListTile(
                   leading: const Icon(Icons.volume_up),
-                  title: const Text('Volume'),
+                  title: Text(l10n.labelDroneSettingsVolume),
                   subtitle: Slider(
                     value: settings.volume,
                     onChanged: notifier.setVolume,
@@ -260,10 +259,11 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.format_size),
-                  title: const Text('Stage Font Scale'),
+                  title: Text(l10n.labelDroneSettingsFontScale),
                   subtitle: Text(
-                    'Stage mode text zoom: '
-                    '${(settings.fontScaleFactor * 100).round()}%',
+                    l10n.descDroneSettingsFontScaleSubtitle(
+                      (settings.fontScaleFactor * 100).round(),
+                    ),
                   ),
                 ),
                 Padding(
@@ -285,8 +285,8 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
             ),
 
             _SettingsSection(
-              title: 'Try it out',
-              caption: 'The test uses the settings above.',
+              title: l10n.titleDroneSettingsTryIt,
+              caption: l10n.descDroneSettingsTryItCaption,
               children: [
                 _SectionNote(testDescription),
                 Padding(
@@ -298,8 +298,8 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                           icon: const Icon(Icons.music_note),
                           label: Text(
                             testMode == DroneMode.western
-                                ? 'Test Chord Cue'
-                                : 'Test Pitch Cue',
+                                ? l10n.actionDroneSettingsTestChordCue
+                                : l10n.actionDroneSettingsTestPitchCue,
                           ),
                           onPressed: () => run(
                             () => notifier.playPitchCue(
@@ -320,10 +320,10 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                           ),
                           label: Text(
                             settings.dronePlaying
-                                ? 'Stop Drone'
+                                ? l10n.actionDroneStop
                                 : (testMode == DroneMode.western
-                                      ? 'Test Chord Drone'
-                                      : 'Test Drone'),
+                                      ? l10n.actionDroneSettingsTestChordDrone
+                                      : l10n.actionDroneSettingsTestDrone),
                           ),
                           onPressed: () => run(
                             () => notifier.toggleDrone(
@@ -339,10 +339,8 @@ class PitchDroneSettingsScreen extends ConsumerWidget {
                 ),
                 _SectionNote(
                   testMode == DroneMode.western
-                      ? 'The chord drone holds one steady Western backing chord '
-                            'for as long as it is on.'
-                      : 'The drone holds one steady pair of notes for as long as '
-                            'it is on. It does not follow the tune.',
+                      ? l10n.descDroneSettingsChordDroneNote
+                      : l10n.descDroneSettingsDroneNote,
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/data/app_database.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
@@ -20,6 +21,24 @@ void main() {
 
   tearDown(() async {
     await db.close();
+  });
+
+  test('a broken table reports which setlist step failed', () async {
+    await setlistRepo.watchAllSetlists().first; // open and seed first
+    await db.customStatement('PRAGMA foreign_keys = OFF');
+    await db.customStatement('DROP TABLE setlists');
+    final broken = setlistRepo;
+
+    await expectLater(
+      broken.deleteSetlist(1),
+      throwsA(
+        isA<StorageException>().having(
+          (e) => e.kind,
+          'kind',
+          StorageFailure.deleteSetlist,
+        ),
+      ),
+    );
   });
 
   group('SetlistRepository', () {
@@ -86,7 +105,6 @@ void main() {
           artist: 'Test Artist',
           lyrics: 'Line 1',
           key: 'G',
-          bpm: 120,
           timestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );

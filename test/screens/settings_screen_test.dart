@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
+import 'package:lyricchord/providers/data_purge_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/screens/chord_settings_screen.dart';
 import 'package:lyricchord/screens/font_settings_screen.dart';
@@ -16,7 +19,14 @@ import 'package:lyricchord/screens/settings_screen.dart';
 import 'package:lyricchord/screens/theme_settings_screen.dart';
 
 void main() {
-  Future<void> pumpSettings(WidgetTester tester) async {
+  Future<void> pumpSettings(
+    WidgetTester tester, {
+    Future<void> Function()? deleteAllData,
+  }) async {
+    // Tall enough to show every settings card at once.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
 
@@ -78,14 +88,22 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-        child: MaterialApp.router(routerConfig: router),
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          if (deleteAllData != null)
+            deleteAllDataProvider.overrideWithValue(deleteAllData),
+        ],
+        child: MaterialApp.router(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
       ),
     );
     await tester.pumpAndSettle();
   }
 
-  testWidgets('shows the six settings cards', (tester) async {
+  testWidgets('shows the eight settings cards', (tester) async {
     await pumpSettings(tester);
 
     expect(find.text('Settings'), findsOneWidget);
@@ -95,7 +113,10 @@ void main() {
     expect(find.text('Fonts'), findsOneWidget);
     expect(find.text('Help'), findsOneWidget);
     expect(find.text('About'), findsOneWidget);
-    expect(find.byType(Card), findsNWidgets(6));
+    expect(find.text('Delete all data'), findsOneWidget);
+    expect(find.text('Language'), findsOneWidget);
+    expect(find.text('System default'), findsOneWidget);
+    expect(find.byType(Card), findsNWidgets(8));
   });
 
   testWidgets('the Help card opens the Help hub with its topic cards', (
@@ -114,18 +135,18 @@ void main() {
       'Your songbook',
       'Write a song',
       'Setlists',
-      'Transpose & chord shapes',
+      'Transpose & chords',
       'Auto-scroll',
       'Full screen',
       'Metronome',
-      'Pitch Pipe & Shruti Box',
+      'Pitch Pipe & Drone',
       'Melody Lines',
-      'Carnatic & Hindustani songs',
+      'Indian songs',
       'Select Songs',
       'Import',
       'Export',
-      'AirQR — songs screen to screen',
-      'Themes, fonts & text size',
+      'AirQR sharing',
+      'Themes & fonts',
     ];
     for (var step = 0; step < 30 && missing.isNotEmpty; step++) {
       missing.removeWhere((title) => find.text(title).evaluate().isNotEmpty);
@@ -168,7 +189,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ImportExportScreen), findsOneWidget);
-    expect(find.text('Import ChordPro file(s)'), findsOneWidget);
+    expect(find.text('Import ChordPro'), findsOneWidget);
   });
 
   testWidgets('General → Metronome opens the metronome screen', (tester) async {
@@ -243,5 +264,47 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('theme_mode'), 'dark');
+  });
+
+  group('Delete all data', () {
+    Future<void> openDialog(WidgetTester tester) async {
+      await tester.ensureVisible(find.text('Delete all data'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete all data'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('asks first, with a clear Delete button', (tester) async {
+      await pumpSettings(tester, deleteAllData: () async {});
+      await openDialog(tester);
+
+      expect(find.text('Delete all data?'), findsOneWidget);
+      expect(find.textContaining('cannot be undone'), findsOneWidget);
+      expect(find.text('Delete everything'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+    });
+
+    testWidgets('Cancel deletes nothing', (tester) async {
+      var calls = 0;
+      await pumpSettings(tester, deleteAllData: () async => calls++);
+      await openDialog(tester);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(calls, 0);
+      expect(find.text('Delete all data?'), findsNothing);
+    });
+
+    testWidgets('Delete everything runs the delete', (tester) async {
+      var calls = 0;
+      await pumpSettings(tester, deleteAllData: () async => calls++);
+      await openDialog(tester);
+
+      await tester.tap(find.text('Delete everything'));
+      await tester.pumpAndSettle();
+
+      expect(calls, 1);
+    });
   });
 }

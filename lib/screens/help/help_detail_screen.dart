@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/screens/help/help_content.dart';
 
 /// Settings → Help → one topic. Renders a [HelpTopic] as an intro paragraph
@@ -14,13 +15,14 @@ class HelpDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topic = helpTopicById(topicId);
+    final l10n = AppLocalizations.of(context);
+    final topic = helpTopicById(l10n, topicId);
     final theme = Theme.of(context);
 
     if (topic == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Help')),
-        body: const Center(child: Text('Help topic not found.')),
+        appBar: AppBar(title: Text(l10n.titleSettingsHelp)),
+        body: Center(child: Text(l10n.helpTopicNotFound)),
       );
     }
 

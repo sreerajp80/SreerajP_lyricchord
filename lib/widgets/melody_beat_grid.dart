@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/models/melody_beat.dart';
 import 'package:lyricchord/models/melody_line.dart';
@@ -45,10 +46,7 @@ class MelodyBeatGrid extends StatelessWidget {
     // nothing — a fourteen-beat ata tala line will not fit a phone.
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: _groups(context, style),
-      ),
+      child: Row(children: _groups(context, style)),
     );
   }
 
@@ -111,7 +109,7 @@ class MelodyBeatGrid extends StatelessWidget {
         border: Border.all(color: scheme.outlineVariant, width: 0.5),
       ),
       child: Semantics(
-        label: _spokenLabel(beat),
+        label: _spokenLabel(beat, AppLocalizations.of(context)),
         child: Text(
           _label(beat),
           textAlign: TextAlign.center,
@@ -132,10 +130,11 @@ class MelodyBeatGrid extends StatelessWidget {
   };
 
   /// What a screen reader says for this box.
-  String _spokenLabel(MelodyBeat beat) => switch (beat.kind) {
-    MelodyBeatKind.hold => 'hold',
-    MelodyBeatKind.barLine => 'bar line',
-    MelodyBeatKind.unknown => 'could not read ${beat.text}',
-    MelodyBeatKind.notes => beat.text,
-  };
+  String _spokenLabel(MelodyBeat beat, AppLocalizations l10n) =>
+      switch (beat.kind) {
+        MelodyBeatKind.hold => l10n.labelMelodyGridHold,
+        MelodyBeatKind.barLine => l10n.labelMelodyGridBarLine,
+        MelodyBeatKind.unknown => l10n.descMelodyGridUnreadable(beat.text),
+        MelodyBeatKind.notes => beat.text,
+      };
 }

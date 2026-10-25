@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/services/chord_shape_service.dart';
 
@@ -34,7 +35,7 @@ class HarmoniumChordDiagram extends StatelessWidget {
         // The painted keyboard is invisible to a screen reader, so name it.
         Semantics(
           image: true,
-          label: 'Harmonium chord diagram for $name',
+          label: AppLocalizations.of(context).descDiagramHarmonium(name),
           child: SizedBox(
             width: width,
             height: width * 0.55,
@@ -92,7 +93,7 @@ class _HarmoniumPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const whitePerOctave = 7;
-    final whiteCount = whitePerOctave * _octaves;
+    const whiteCount = whitePerOctave * _octaves;
     final whiteWidth = size.width / whiteCount;
     final blackWidth = whiteWidth * 0.6;
     final blackHeight = size.height * 0.62;

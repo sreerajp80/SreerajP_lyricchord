@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The violet "High Density" palette, ported 1:1 from the Android app's
 /// `Color.kt`. These are raw colour values only; the [ThemeData] mapping lives

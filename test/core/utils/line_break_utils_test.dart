@@ -1,9 +1,5 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lyricchord/core/utils/line_break_utils.dart';
-import 'package:lyricchord/screens/import_export_screen.dart';
 
 void main() {
   group('normalizeLineBreaks', () {
@@ -34,45 +30,6 @@ void main() {
 
     test('leaves already clean newlines untouched', () {
       expect(normalizeLineBreaks('a\nb\nc'), 'a\nb\nc');
-    });
-  });
-
-  group('decodeImportedBytes', () {
-    test('decodes standard UTF-8', () {
-      final bytes = Uint8List.fromList(utf8.encode('Hello World\nLine 2'));
-      expect(decodeImportedBytes(bytes), 'Hello World\nLine 2');
-    });
-
-    test('strips UTF-8 BOM', () {
-      final bomAndText = [0xEF, 0xBB, 0xBF, ...utf8.encode('Song Title\nLine')];
-      final bytes = Uint8List.fromList(bomAndText);
-      expect(decodeImportedBytes(bytes), 'Song Title\nLine');
-    });
-
-    test('decodes UTF-16 LE with BOM', () {
-      const text = 'Song Title\r\nLine 2';
-      final units = text.codeUnits;
-      final bytes = Uint8List(2 + units.length * 2);
-      bytes[0] = 0xFF;
-      bytes[1] = 0xFE;
-      for (var i = 0; i < units.length; i++) {
-        bytes[2 + i * 2] = units[i] & 0xFF;
-        bytes[2 + i * 2 + 1] = (units[i] >> 8) & 0xFF;
-      }
-      expect(decodeImportedBytes(bytes), 'Song Title\r\nLine 2');
-    });
-
-    test('decodes UTF-16 BE with BOM', () {
-      const text = 'Song Title\r\nLine 2';
-      final units = text.codeUnits;
-      final bytes = Uint8List(2 + units.length * 2);
-      bytes[0] = 0xFE;
-      bytes[1] = 0xFF;
-      for (var i = 0; i < units.length; i++) {
-        bytes[2 + i * 2] = (units[i] >> 8) & 0xFF;
-        bytes[2 + i * 2 + 1] = units[i] & 0xFF;
-      }
-      expect(decodeImportedBytes(bytes), 'Song Title\r\nLine 2');
     });
   });
 }

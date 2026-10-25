@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/custom_chords_provider.dart';
 
@@ -37,11 +38,11 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
       _controller.clear();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Could not add that chord. Use at most '
-            '${CustomChordsNotifier.maxChordLength} characters and no '
-            'repeats.',
+            AppLocalizations.of(
+              context,
+            ).errorChordSettingsAddFailed(CustomChordsNotifier.maxChordLength),
           ),
         ),
       );
@@ -51,18 +52,23 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
   Future<void> _remove(String chord) async {
     await ref.read(customChordsProvider.notifier).remove(chord);
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Removed "$chord".')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context).bodyChordSettingsRemoved(chord),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final chords = ref.watch(customChordsProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chords')),
+      appBar: AppBar(title: Text(l10n.titleSettingsChords)),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,8 +76,7 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Add your own chord notations. They always appear in the '
-                "editor's chord bar, after the key's own chords.",
+                l10n.descChordSettingsIntro,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -85,10 +90,10 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
                     child: TextField(
                       controller: _controller,
                       maxLength: CustomChordsNotifier.maxChordLength,
-                      decoration: const InputDecoration(
-                        labelText: 'Chord notation',
-                        hintText: 'F#m7, Cmaj7, D/F#',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.labelChordSettings,
+                        hintText: l10n.labelChordInserterChordHint,
+                        border: const OutlineInputBorder(),
                         counterText: '',
                       ),
                       onSubmitted: (_) => _add(),
@@ -98,7 +103,7 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
                   FilledButton.icon(
                     onPressed: _add,
                     icon: const Icon(Icons.add),
-                    label: const Text('Add'),
+                    label: Text(l10n.actionAdd),
                   ),
                 ],
               ),
@@ -107,7 +112,7 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
               child: chords.isEmpty
                   ? Center(
                       child: Text(
-                        'No custom chords yet.',
+                        l10n.emptyChordSettings,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -123,7 +128,7 @@ class _ChordSettingsScreenState extends ConsumerState<ChordSettingsScreen> {
                           title: Text(chord),
                           trailing: IconButton(
                             icon: const Icon(Icons.close),
-                            tooltip: 'Remove $chord',
+                            tooltip: l10n.tooltipChordSettingsRemove(chord),
                             onPressed: () => _remove(chord),
                           ),
                         );

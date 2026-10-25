@@ -18,7 +18,7 @@ The parent plan's phase 3 is "make it sound like music", and named two jobs:
 
 1. **The gamaka marks in the synth.** Half of this is already done — the slide
    `!` was sounded in
-   [20260822_sound_the_slide.md](20260822_sound_the_slide.md). What remains is
+   [20260822_000000_sound_the_slide.md](20260822_000000_sound_the_slide.md). What remains is
    the **shake `~`** (kampita), which is parsed, stored, drawn on the grid, and
    silent.
 2. **True ratios instead of equal steps.** `MelodyPlayerService.frequencyOf` is

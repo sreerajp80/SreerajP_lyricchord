@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/core/utils/chord_insert.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/providers/custom_chords_provider.dart';
 import 'package:lyricchord/providers/database_provider.dart';
@@ -111,16 +113,15 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
   ///
   /// A warning only. Saving is never blocked — the app knows a fixed list of
   /// tala names and the user may well be writing one it has not heard of.
-  String? _talaWarning(SongDraft draft) {
+  String? _talaWarning(SongDraft draft, AppLocalizations l10n) {
     const naming = PitchNamingService();
     final matches = naming.talaMatchesTradition(draft.tala, draft.tradition);
     if (matches != false) return null;
 
     final other = draft.tradition == PitchTradition.carnatic
-        ? 'Hindustani'
-        : 'Carnatic';
-    return '"${draft.tala.trim()}" is usually a $other tala. '
-        'You can still save it.';
+        ? PitchTradition.hindustani
+        : PitchTradition.carnatic;
+    return l10n.descEditorTalaWarning(draft.tala.trim(), other.label(l10n));
   }
 
   /// Folds the meta fields away while the lyrics field is focused, and brings
@@ -141,6 +142,7 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
     final isNew = _songId == 0;
 
     final isDirty = draftAsync.value?.isDirty ?? false;
+    final l10n = AppLocalizations.of(context);
 
     return PopScope(
       // A clean draft can just leave; a changed one asks first.
@@ -152,10 +154,10 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.close),
-            tooltip: 'Cancel',
+            tooltip: l10n.actionCancel,
             onPressed: _close,
           ),
-          title: Text(isNew ? 'New Song Note' : 'Edit Song Note'),
+          title: Text(isNew ? l10n.titleEditorNew : l10n.titleEditorEdit),
           actions: [
             ValueListenableBuilder<UndoHistoryValue>(
               valueListenable: _undoController,
@@ -164,12 +166,12 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.undo),
-                    tooltip: 'Undo',
+                    tooltip: l10n.tooltipEditorUndo,
                     onPressed: value.canUndo ? _undo : null,
                   ),
                   IconButton(
                     icon: const Icon(Icons.redo),
-                    tooltip: 'Redo',
+                    tooltip: l10n.tooltipEditorRedo,
                     onPressed: value.canRedo ? _redo : null,
                   ),
                 ],
@@ -178,28 +180,28 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
             TextButton.icon(
               onPressed: _saving ? null : _save,
               icon: const Icon(Icons.check),
-              label: const Text('Save'),
+              label: Text(l10n.actionSave),
             ),
             PopupMenuButton<VoidCallback>(
-              tooltip: 'More options',
+              tooltip: l10n.tooltipEditorMoreOptions,
               onSelected: (action) => action(),
               itemBuilder: (menuContext) => [
                 PopupMenuItem<VoidCallback>(
                   value: _openMelodyKeypad,
-                  child: const ListTile(
+                  child: ListTile(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.piano_outlined),
-                    title: Text('Melody keypad'),
+                    leading: const Icon(Icons.piano_outlined),
+                    title: Text(l10n.actionEditorMelodyKeypad),
                   ),
                 ),
                 PopupMenuItem<VoidCallback>(
                   value: _pasteCarnaticNotation,
-                  child: const ListTile(
+                  child: ListTile(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.music_note_outlined),
-                    title: Text('Paste Carnatic notation'),
+                    leading: const Icon(Icons.music_note_outlined),
+                    title: Text(l10n.actionEditorPasteCarnatic),
                   ),
                 ),
                 // "Save as copy" only makes sense for an existing song — for a
@@ -208,11 +210,11 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
                   PopupMenuItem<VoidCallback>(
                     value: _saving ? null : _saveAsCopy,
                     enabled: !_saving,
-                    child: const ListTile(
+                    child: ListTile(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.content_copy_outlined),
-                      title: Text('Save as copy'),
+                      leading: const Icon(Icons.content_copy_outlined),
+                      title: Text(l10n.actionEditorSaveAsCopy),
                     ),
                   ),
               ],
@@ -224,10 +226,10 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
           top: false,
           child: draftAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => const Center(
+            error: (_, _) => Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text('This song could not be opened.'),
+                padding: const EdgeInsets.all(32),
+                child: Text(l10n.errorEditorLoad),
               ),
             ),
             data: (draft) => Column(
@@ -262,7 +264,7 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
                           onTraditionChanged: _editor.setTradition,
                           onRagaChanged: _editor.setRaga,
                           onTalaChanged: _editor.setTala,
-                          talaWarning: _talaWarning(draft),
+                          talaWarning: _talaWarning(draft, l10n),
                           selectedSetlistId: _selectedSetlistId,
                           availableSetlists: setlists,
                           onSetlistChanged: (id) =>
@@ -296,11 +298,9 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
                       style: TextStyle(
                         fontFamily: ref.watch(lyricFontProvider).family,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
-                        hintText:
-                            'Write your lyrics here.\n'
-                            'Tap a chord above to drop it in at the cursor.',
+                        hintText: l10n.descEditorLyricsHint,
                       ),
                     ),
                   ),
@@ -333,10 +333,9 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
     if (tala.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Add a {tala: ...} line first — the notation is checked against '
-            'the tala\'s beats.',
+            AppLocalizations.of(context).errorEditorNeedsTala('{tala: ...}'),
           ),
         ),
       );
@@ -456,7 +455,9 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
   Future<void> _saveAsCopy() async {
     setState(() => _saving = true);
     try {
-      final id = await _editor.saveAsCopy();
+      final id = await _editor.saveAsCopy(
+        words: songTitleWords(AppLocalizations.of(context)),
+      );
       if (!mounted) return;
       if (_selectedSetlistId != null) {
         await ref
@@ -469,16 +470,18 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.text(AppLocalizations.of(context)))),
+      );
     }
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      final id = await _editor.save();
+      final id = await _editor.save(
+        words: songTitleWords(AppLocalizations.of(context)),
+      );
       if (!mounted) return;
       if (_selectedSetlistId != null) {
         await ref
@@ -491,9 +494,9 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.text(AppLocalizations.of(context)))),
+      );
     }
   }
 
@@ -505,19 +508,20 @@ class _SongEditorScreenState extends ConsumerState<SongEditorScreen> {
       return;
     }
 
+    final l10n = AppLocalizations.of(context);
     final discard = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('Your edits to this song will not be saved.'),
+        title: Text(l10n.titleEditorDiscard),
+        content: Text(l10n.descEditorDiscardMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Keep editing'),
+            child: Text(l10n.actionKeepEditing),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Discard'),
+            child: Text(l10n.actionDiscard),
           ),
         ],
       ),
@@ -564,11 +568,12 @@ class _MetaSummary extends StatelessWidget {
     final title = titleController.text.trim();
     final key = keyController.text.trim();
     final bpm = bpmController.text.trim();
+    final l10n = AppLocalizations.of(context);
 
     final parts = <String>[
-      title.isEmpty ? 'Untitled' : title,
-      if (key.isNotEmpty) 'Key $key',
-      if (bpm.isNotEmpty) '$bpm BPM',
+      title.isEmpty ? l10n.labelEditorUntitled : title,
+      if (key.isNotEmpty) l10n.labelEditorSummaryKey(key),
+      if (bpm.isNotEmpty) l10n.labelEditorSummaryBpm(bpm),
     ];
 
     return InkWell(

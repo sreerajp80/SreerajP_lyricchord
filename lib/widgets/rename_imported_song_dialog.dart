@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/models/song_note.dart';
 
@@ -49,10 +51,18 @@ class _RenameImportedSongDialogState extends State<RenameImportedSongDialog> {
     super.dispose();
   }
 
+  /// Returns the new title, but only once the form says it is not empty.
+  void _submit() {
+    if (_formKey.currentState?.validate() ?? false) {
+      Navigator.of(context).pop(_controller.text);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Duplicate Song Title'),
+      title: Text(l10n.titleRenameImport),
       content: Form(
         key: _formKey,
         child: Column(
@@ -60,25 +70,25 @@ class _RenameImportedSongDialogState extends State<RenameImportedSongDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'A song titled "${widget.existingSong.title}" already exists in your songbook.',
+              l10n.descRenameImportExists(widget.existingSong.title),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Enter a new title for the imported song:',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            Text(
+              l10n.descRenameImportPrompt,
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _controller,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Song Title',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.labelRenameImport,
+                border: const OutlineInputBorder(),
               ),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) {
-                  return 'Please enter a title';
+                  return l10n.errorRenameImportRequired;
                 }
                 return null;
               },
@@ -88,8 +98,8 @@ class _RenameImportedSongDialogState extends State<RenameImportedSongDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text('Save with New Title'),
+          onPressed: _submit,
+          child: Text(l10n.actionRenameImportSave),
         ),
       ],
     );

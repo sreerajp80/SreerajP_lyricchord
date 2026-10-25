@@ -10,8 +10,8 @@
 library;
 
 import 'package:lyricchord/core/utils/line_break_utils.dart';
-import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/models/song_title_words.dart';
 import 'package:lyricchord/services/chord_transposer.dart';
 import 'package:lyricchord/services/pitch_naming_service.dart';
 
@@ -27,6 +27,12 @@ class _Directive {
 class ChordProService {
   const ChordProService();
 
+  /// The title a song without a `{title}` gets when the caller passes none.
+  ///
+  /// Screens pass the localized word (`labelUntitledSong`) instead, because
+  /// the title is saved and a Malayalam or Sanskrit user must not get English.
+  static const String defaultUntitledTitle = SongTitleWords.englishUntitled;
+
   static const ChordTransposer _transposer = ChordTransposer();
   static const PitchNamingService _naming = PitchNamingService();
 
@@ -34,7 +40,7 @@ class ChordProService {
   ///
   /// The returned song has id `0` and `timestamp` `0`; the caller stamps the
   /// real time when it saves. Understood directives:
-  /// - `{title|t: ...}` → title (defaults to "Untitled Song").
+  /// - `{title|t: ...}` → title (defaults to [untitledTitle]).
   /// - `{artist|a: ...}` → artist.
   /// - `{key|k: ...}` → key (defaults to `C`).
   /// - `{bpm|tempo: ...}` → bpm (keeps `120` if not a whole number).
@@ -46,7 +52,10 @@ class ChordProService {
   /// skipped. Every other line is a lyric line, kept exactly. Leading and
   /// trailing blank lyric lines are trimmed so an export/import round-trip is
   /// exact.
-  SongNote parse(String content) {
+  SongNote parse(
+    String content, {
+    String untitledTitle = defaultUntitledTitle,
+  }) {
     String? title;
     String? artist;
     String? key;
@@ -116,7 +125,7 @@ class ChordProService {
     final cleanTitle = title?.trim() ?? '';
     final cleanKey = key?.trim() ?? '';
     return SongNote(
-      title: cleanTitle.isEmpty ? 'Untitled Song' : cleanTitle,
+      title: cleanTitle.isEmpty ? untitledTitle : cleanTitle,
       artist: artist?.trim() ?? '',
       lyrics: lyricLines.join('\n'),
       key: cleanKey.isEmpty ? 'C' : cleanKey,
@@ -124,11 +133,7 @@ class ChordProService {
       timestamp: 0,
       raga: raga?.trim() ?? '',
       tala: tala?.trim() ?? '',
-      tradition: _naming.detect(
-        raga: raga,
-        tala: tala,
-        fallback: PitchTradition.carnatic,
-      ),
+      tradition: _naming.detect(raga: raga, tala: tala),
     );
   }
 
@@ -192,7 +197,10 @@ class ChordProService {
 
   /// Reads ChordPro [content] that may contain multiple songs separated by
   /// `{new_song}` / `{ns}` directives or separate `{title}` headers.
-  List<SongNote> parseMultiple(String content) {
+  List<SongNote> parseMultiple(
+    String content, {
+    String untitledTitle = defaultUntitledTitle,
+  }) {
     final normalized = normalizeLineEndings(content);
     final lines = normalized.split('\n');
     final songs = <SongNote>[];
@@ -228,7 +236,7 @@ class ChordProService {
 
       songs.add(
         SongNote(
-          title: titleStr.isEmpty ? 'Untitled Song' : titleStr,
+          title: titleStr.isEmpty ? untitledTitle : titleStr,
           artist: artistStr,
           lyrics: currentLyricLines.join('\n'),
           key: keyStr.isEmpty ? 'C' : keyStr,
@@ -236,11 +244,7 @@ class ChordProService {
           timestamp: 0,
           raga: ragaStr,
           tala: talaStr,
-          tradition: _naming.detect(
-            raga: ragaStr,
-            tala: talaStr,
-            fallback: PitchTradition.carnatic,
-          ),
+          tradition: _naming.detect(raga: ragaStr, tala: talaStr),
         ),
       );
 
@@ -312,7 +316,9 @@ class ChordProService {
 
     flushCurrentSong();
 
-    return songs.isEmpty ? [parse(content)] : songs;
+    return songs.isEmpty
+        ? [parse(content, untitledTitle: untitledTitle)]
+        : songs;
   }
 
   /// Formats multiple [songs] into a single ChordPro text bundle.

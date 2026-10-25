@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// The friendly state shown when the list has nothing in it.
 ///
@@ -20,6 +22,7 @@ class EmptySongbook extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     final IconData icon;
     final String title;
@@ -27,16 +30,16 @@ class EmptySongbook extends StatelessWidget {
 
     if (searching) {
       icon = Icons.search_off;
-      title = 'No matches';
-      message = 'No song matched your search. Try different words.';
+      title = l10n.emptySongbookNoMatchesTitle;
+      message = l10n.emptySongbookNoMatchesMessage;
     } else if (starredOnly) {
       icon = Icons.star_border;
-      title = 'No starred songs';
-      message = 'Tap the star on a song to keep it here.';
+      title = l10n.emptySongbookNoStarredTitle;
+      message = l10n.emptySongbookNoStarredMessage;
     } else {
       icon = Icons.library_music_outlined;
-      title = 'Your songbook is empty';
-      message = 'Tap + to write your first lyric chord sheet.';
+      title = l10n.emptySongbookEmptyTitle;
+      message = l10n.emptySongbookEmptyMessage;
     }
 
     return Center(

@@ -1,11 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/core/utils/formatting_locale.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
 import 'package:lyricchord/services/auto_scroll_calculator.dart';
 import 'package:lyricchord/widgets/auto_scroll_controls.dart';
+import 'package:lyricchord/services/stage_quiet_mode_service.dart';
 import 'package:lyricchord/widgets/pitch_drone_controls.dart';
+import 'package:lyricchord/widgets/stage_feedback.dart';
 
 /// The translucent control bar of Stage Mode.
 ///
@@ -63,6 +67,7 @@ class StageHud extends ConsumerWidget {
     final settings = ref.watch(autoScrollProvider);
     final controls = ref.read(autoScrollProvider.notifier);
     final stage = ref.read(stageModeProvider.notifier);
+    final l10n = AppLocalizations.of(context);
 
     final isTempo = settings.mode == AutoScrollMode.tempo;
     final tempoReady =
@@ -107,49 +112,61 @@ class StageHud extends ConsumerWidget {
                         child: Row(
                           children: [
                             IconButton(
-                              tooltip: 'Exit full screen',
+                              tooltip: l10n.tooltipStageExitFullScreen,
                               onPressed: stage.exit,
                               icon: const Icon(Icons.fullscreen_exit),
                             ),
                             IconButton(
-                              tooltip: 'Lock Stage View',
+                              tooltip: l10n.tooltipStageLock,
                               onPressed: stage.lockStage,
                               icon: const Icon(Icons.lock_outline),
                             ),
-                            IconButton(
-                              tooltip: ref.watch(stageModeProvider).isQuietMode
-                                  ? 'Stage Quiet Mode (Active)'
-                                  : 'Stage Quiet Mode (Mute ringer/alerts)',
-                              onPressed: stage.toggleQuietMode,
-                              icon: Icon(
-                                ref.watch(stageModeProvider).isQuietMode
-                                    ? Icons.notifications_off
-                                    : Icons.notifications_active_outlined,
-                                color: ref.watch(stageModeProvider).isQuietMode
-                                    ? theme.colorScheme.error
-                                    : null,
+                            // iOS does not let an app change the ringer, so
+                            // the button is only offered where it can work.
+                            if (ref
+                                .watch(stageQuietModeServiceProvider)
+                                .isSupported)
+                              IconButton(
+                                tooltip:
+                                    ref.watch(stageModeProvider).isQuietMode
+                                    ? l10n.tooltipStageQuietActive
+                                    : l10n.tooltipStageQuietInactive,
+                                onPressed: () =>
+                                    toggleQuietModeWithFeedback(context, ref),
+                                icon: Icon(
+                                  ref.watch(stageModeProvider).isQuietMode
+                                      ? Icons.notifications_off
+                                      : Icons.notifications_active_outlined,
+                                  color:
+                                      ref.watch(stageModeProvider).isQuietMode
+                                      ? theme.colorScheme.error
+                                      : null,
+                                ),
                               ),
-                            ),
                             if (onHelpPressed != null)
                               IconButton(
-                                tooltip: 'Gestures help',
+                                tooltip: l10n.tooltipPerfGesturesHelp,
                                 onPressed: onHelpPressed,
                                 icon: const Icon(Icons.help_outline),
                               ),
                             _ModeButton(
-                              label: 'M',
+                              label: l10n.actionAutoScrollManualShort,
+                              tooltip: l10n.labelAutoScrollManual,
                               selected: !isTempo,
                               onPressed: () =>
                                   controls.setMode(AutoScrollMode.manual),
                             ),
                             _ModeButton(
-                              label: 'T',
+                              label: l10n.actionAutoScrollTempoShort,
+                              tooltip: l10n.labelAutoScrollTempo,
                               selected: isTempo,
                               onPressed: () =>
                                   controls.setMode(AutoScrollMode.tempo),
                             ),
                             IconButton.filled(
-                              tooltip: settings.isPlaying ? 'Pause' : 'Play',
+                              tooltip: settings.isPlaying
+                                  ? l10n.tooltipPause
+                                  : l10n.tooltipPlay,
                               onPressed: canPlay ? controls.togglePlay : null,
                               icon: Icon(
                                 settings.isPlaying
@@ -158,6 +175,7 @@ class StageHud extends ConsumerWidget {
                               ),
                             ),
                             IconButton(
+                              tooltip: l10n.tooltipPerfDrone,
                               visualDensity: VisualDensity.compact,
                               onPressed: () {
                                 showModalBottomSheet<void>(
@@ -175,16 +193,27 @@ class StageHud extends ConsumerWidget {
                             const SizedBox(width: 8),
                             _StepperRow(
                               label: isTempo
-                                  ? '${settings.measures}'
-                                  : formatSpeedLabel(settings.speed),
+                                  ? formatFixed(
+                                      settings.measures,
+                                      0,
+                                      l10n.localeName,
+                                    )
+                                  : formatSpeedLabel(
+                                      settings.speed,
+                                      l10n.localeName,
+                                    ),
                               onLess: isTempo
                                   ? controls.decreaseMeasures
                                   : controls.decreaseSpeed,
                               onMore: isTempo
                                   ? controls.increaseMeasures
                                   : controls.increaseSpeed,
-                              lessTooltip: isTempo ? 'Fewer bars' : 'Slower',
-                              moreTooltip: isTempo ? 'More bars' : 'Faster',
+                              lessTooltip: isTempo
+                                  ? l10n.tooltipStageFewerBars
+                                  : l10n.tooltipStageSlower,
+                              moreTooltip: isTempo
+                                  ? l10n.tooltipStageMoreBars
+                                  : l10n.tooltipStageFaster,
                             ),
                           ],
                         ),
@@ -192,7 +221,7 @@ class StageHud extends ConsumerWidget {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
                         child: Text(
-                          _readOut,
+                          _readOut(l10n),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -216,17 +245,19 @@ class StageHud extends ConsumerWidget {
   /// `Jingle Bells · Key G · 120 BPM` for a Western song. A song that names a
   /// raga shows its raga and tala instead of a key — a Western note letter has
   /// no place on an Indian sheet, and a swara is already named relative to Sa.
-  String get _readOut {
+  String _readOut(AppLocalizations l10n) {
     final parts = <String>[title];
 
     if (raga != null && raga!.isNotEmpty) {
-      parts.add('Raga ${raga!}');
-      if (tala != null && tala!.isNotEmpty) parts.add('Tala ${tala!}');
+      parts.add(l10n.labelInfoRaga(raga!));
+      if (tala != null && tala!.isNotEmpty) {
+        parts.add(l10n.labelInfoTala(tala!));
+      }
     } else {
-      parts.add('Key $currentKey');
+      parts.add(l10n.labelInfoKey(currentKey));
     }
 
-    parts.add('$bpm BPM');
+    parts.add(l10n.labelInfoBpm(bpm));
     return parts.join('  ·  ');
   }
 }
@@ -235,11 +266,13 @@ class StageHud extends ConsumerWidget {
 class _ModeButton extends StatelessWidget {
   const _ModeButton({
     required this.label,
+    required this.tooltip,
     required this.selected,
     required this.onPressed,
   });
 
   final String label;
+  final String tooltip;
   final bool selected;
   final VoidCallback onPressed;
 
@@ -255,7 +288,7 @@ class _ModeButton extends StatelessWidget {
     );
 
     return IconButton(
-      tooltip: label == 'M' ? 'Manual' : 'Tempo',
+      tooltip: tooltip,
       onPressed: onPressed,
       visualDensity: VisualDensity.compact,
       style: selected

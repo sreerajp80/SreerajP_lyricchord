@@ -56,7 +56,6 @@ void main() {
     test('generateShrutiDroneWav creates stereo PCM drone WAV', () {
       final wavPa = synth.generateShrutiDroneWav(
         noteKey: 'C',
-        interval: 'Pa',
         durationSeconds: 0.1,
       );
       final wavMa = synth.generateShrutiDroneWav(
@@ -107,7 +106,6 @@ void main() {
         tones: const [
           PcmTone(frequency: 440, fromFrequency: 220, durationSeconds: 1),
         ],
-        sampleRate: rate,
       );
 
       // The glide is short, so sample right at the start for the low pitch and
@@ -124,7 +122,6 @@ void main() {
         tones: const [
           PcmTone(frequency: 440, fromFrequency: 220, durationSeconds: 2),
         ],
-        sampleRate: rate,
       );
 
       // Capped at slideMaxSeconds, so a two-second note is on pitch long before
@@ -138,7 +135,6 @@ void main() {
         tones: const [
           PcmTone(frequency: 220, fromFrequency: 440, durationSeconds: 1),
         ],
-        sampleRate: rate,
       );
 
       expect(freqOf(wav, 200, 1200), greaterThan(240));
@@ -150,7 +146,6 @@ void main() {
         tones: const [
           PcmTone(frequency: 880, fromFrequency: 220, durationSeconds: 1),
         ],
-        sampleRate: rate,
       );
       final data = ByteData.sublistView(wav);
 
@@ -177,7 +172,6 @@ void main() {
           PcmTone(frequency: 0, durationSeconds: 0.1),
           PcmTone(frequency: 330, durationSeconds: 0.25),
         ],
-        sampleRate: rate,
       );
 
       // Rebuilt the same way, so any accidental dependence on order or state
@@ -188,7 +182,6 @@ void main() {
           PcmTone(frequency: 0, durationSeconds: 0.1),
           PcmTone(frequency: 330, durationSeconds: 0.25),
         ],
-        sampleRate: rate,
       );
 
       expect(plain, equals(again));
@@ -336,7 +329,6 @@ void main() {
             shakeDepthSemitones: 1,
           ),
         ],
-        sampleRate: rate,
       );
 
       // Sampled a quarter of a swing apart, the pitch should differ audibly
@@ -363,7 +355,6 @@ void main() {
             shakeDepthSemitones: 1,
           ),
         ],
-        sampleRate: rate,
       );
       final data = ByteData.sublistView(wav);
 
@@ -390,7 +381,6 @@ void main() {
             shakeDepthSemitones: 1,
           ),
         ],
-        sampleRate: rate,
       );
 
       // Still gliding at the very start, and shaking around the note later.
@@ -403,7 +393,6 @@ void main() {
       // does not shake must come out exactly as it always has.
       final wav = synth.generateSequenceWav(
         tones: const [PcmTone(frequency: 440, durationSeconds: 0.25)],
-        sampleRate: rate,
       );
       final data = ByteData.sublistView(wav);
 

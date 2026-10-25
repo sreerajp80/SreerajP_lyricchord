@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lyricchord/models/song_title_words.dart';
+import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/data/app_database.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
@@ -18,6 +20,36 @@ void main() {
 
   tearDown(() async {
     await db.close();
+  });
+
+  group('storage failures say what failed', () {
+    test('a broken table reports the step that failed', () async {
+      await repo.getAllSongs(); // open and seed first
+      await db.customStatement('PRAGMA foreign_keys = OFF');
+      await db.customStatement('DROP TABLE song_notes');
+      final broken = repo;
+
+      await expectLater(
+        broken.getAllSongs(),
+        throwsA(
+          isA<StorageException>().having(
+            (e) => e.kind,
+            'kind',
+            StorageFailure.loadSongs,
+          ),
+        ),
+      );
+      await expectLater(
+        broken.delete(1),
+        throwsA(
+          isA<StorageException>().having(
+            (e) => e.kind,
+            'kind',
+            StorageFailure.deleteSong,
+          ),
+        ),
+      );
+    });
   });
 
   group('first-run seeding', () {
@@ -364,6 +396,22 @@ void main() {
       expect(stillThere!.title, 'Original');
       expect(stillThere.favorite, isTrue);
     });
+
+    test('duplicate names the copy in the words it is given', () async {
+      final id = await repo.insert(_newSong(title: 'പാട്ട്'));
+      final original = await repo.watchSongById(id).first;
+
+      final copyId = await repo.duplicate(
+        original!,
+        words: SongTitleWords(
+          untitled: 'അനാമം',
+          copyOf: (title) => '$title (പകർപ്പ്)',
+        ),
+      );
+
+      final copy = await repo.watchSongById(copyId).first;
+      expect(copy!.title, 'പാട്ട് (പകർപ്പ്)');
+    });
   });
 
   group('scroll settings', () {
@@ -606,7 +654,6 @@ SongNote _newSong({required String title, String lyrics = '[C]La la la'}) =>
       title: title,
       artist: 'Tester',
       lyrics: lyrics,
-      key: 'C',
       bpm: 100,
       timestamp: DateTime.now().millisecondsSinceEpoch,
     );

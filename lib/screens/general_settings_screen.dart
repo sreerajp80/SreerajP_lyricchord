@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// Settings → General: groups the Import and Metronome items.
 ///
@@ -10,41 +11,41 @@ class GeneralSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('General')),
+      appBar: AppBar(title: Text(l10n.titleSettingsGeneral)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
             _GeneralCard(
               icon: Icons.import_export,
-              title: 'Import',
-              subtitle: 'Bring in ChordPro files as songs',
+              title: l10n.titleGeneralImport,
+              subtitle: l10n.descGeneralImportSubtitle,
               onTap: () => context.push('/settings/general/import'),
             ),
             _GeneralCard(
               icon: Icons.tune,
-              title: 'Import Settings',
-              subtitle: 'Configure duplicate song handling for ChordPro files',
+              title: l10n.titleGeneralImportSettings,
+              subtitle: l10n.descGeneralImportSettingsSubtitle,
               onTap: () => context.push('/settings/general/import-settings'),
             ),
             _GeneralCard(
               icon: Icons.swap_vert,
-              title: 'Auto-scroll',
-              subtitle: 'Starting speed for manual scrolling',
+              title: l10n.labelInfoAutoScroll,
+              subtitle: l10n.descGeneralAutoScrollSubtitle,
               onTap: () => context.push('/settings/general/auto-scroll'),
             ),
             _GeneralCard(
               icon: Icons.av_timer,
-              title: 'Metronome',
-              subtitle: 'Turn the beat on or off',
+              title: l10n.titleGeneralMetronome,
+              subtitle: l10n.descGeneralMetronomeSubtitle,
               onTap: () => context.push('/settings/general/metronome'),
             ),
             _GeneralCard(
               icon: Icons.graphic_eq,
-              title: 'Pitch Pipe & Shruti Box',
-              subtitle:
-                  'Reference pitch tones, a steady drone, and your Sa (kattai)',
+              title: l10n.titleDrone,
+              subtitle: l10n.descGeneralDroneSubtitle,
               onTap: () => context.push('/settings/general/pitch-drone'),
             ),
           ],

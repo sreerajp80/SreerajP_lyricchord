@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/services/metronome_audio_service.dart';
 import 'package:lyricchord/widgets/metronome_beat.dart';
@@ -39,6 +41,8 @@ void main() {
           metronomeAudioProvider.overrideWithValue(audio),
         ],
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: MetronomeBeat(
               bpm: bpm,
@@ -236,6 +240,8 @@ void main() {
         metronomeAudioProvider.overrideWithValue(audio),
       ],
       child: MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MetronomeBeat(bpm: 120, active: active, nowOverride: clock),
         ),

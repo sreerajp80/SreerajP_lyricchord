@@ -92,7 +92,28 @@ be published to public hosting platforms. They MUST protect user and system priv
 
 ---
 
-## 5. Communication Standard
+## 5. The Guidelines Submodule Is Read-Only
+
+`docs/guidelines/` is a shared submodule. Never edit, pull, check out or commit it or its
+version from this project. If a guideline needs a change, write a note for the user (in chat or
+in `plans/`); the user makes the change in the guidelines repository and updates the submodule
+version themselves ([guidelines/DOCS_FOLDER_GUIDELINE.md](guidelines/DOCS_FOLDER_GUIDELINE.md)
+§1.1). If the folder is empty or missing, stop and ask the user.
+
+---
+
+## 6. CI Is Checks And Dependabot Only
+
+GitHub CI (`.github/workflows/ci.yml`) runs only `flutter pub get`, code generation, the
+generated-file check, the format check, `flutter analyze` and `flutter test`.
+`.github/dependabot.yml` opens update pull requests for `pub` and `github-actions`; each one
+still goes through plan → approve → log before it is merged. CI never builds release artifacts,
+signs, holds secrets, uploads or publishes. Releases are built locally
+([release_process.md](release_process.md)).
+
+---
+
+## 7. Communication Standard
 
 All responses, plans, change logs, and explanations must be written in simple English:
 

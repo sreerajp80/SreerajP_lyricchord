@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/models/air_qr_frame.dart';
 import 'package:lyricchord/services/air_qr_service.dart';
 
@@ -107,10 +108,11 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
         : null;
 
     final qrString = currentFrame?.toQrString() ?? '';
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('AirQR Share: ${widget.args.title}'),
+        title: Text(l10n.titleAirQrTransmitter(widget.args.title)),
         elevation: 2,
       ),
       body: SafeArea(
@@ -147,7 +149,10 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
                               ),
                             ),
                             Text(
-                              '${widget.args.chordProPayload.length} bytes • ${_encodedFrames.length} Optical Frames',
+                              l10n.descAirQrTransmitterSize(
+                                widget.args.chordProPayload.length,
+                                _encodedFrames.length,
+                              ),
                               style: TextStyle(
                                 color: Theme.of(
                                   context,
@@ -165,9 +170,9 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Text(
-                    'Stream Speed:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Text(
+                    l10n.labelAirQrTransmitterSpeed,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Expanded(
                     child: Slider(
@@ -175,7 +180,7 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
                       min: 5,
                       max: 25,
                       divisions: 20,
-                      label: '$_fps FPS',
+                      label: l10n.labelAirQrFps('$_fps'),
                       onChanged: (val) {
                         setState(() {
                           _fps = val.toInt();
@@ -188,7 +193,7 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
                     ),
                   ),
                   Text(
-                    '$_fps FPS',
+                    l10n.labelAirQrFps('$_fps'),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -206,8 +211,8 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
                 icon: Icon(_isBroadcasting ? Icons.pause : Icons.play_arrow),
                 label: Text(
                   _isBroadcasting
-                      ? 'Pause Optical Stream'
-                      : 'Resume Optical Stream',
+                      ? l10n.actionAirQrTransmitterPause
+                      : l10n.actionAirQrTransmitterResume,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -239,15 +244,14 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
                         child: qrString.isNotEmpty
                             ? QrImageView(
                                 data: qrString,
-                                version: QrVersions.auto,
                                 errorCorrectionLevel: QrErrorCorrectLevel.M,
                                 size: 240,
                                 gapless: false,
                               )
-                            : const Center(
+                            : Center(
                                 child: Text(
-                                  'No frames generated',
-                                  style: TextStyle(color: Colors.black54),
+                                  l10n.emptyAirQrTransmitterNoFrames,
+                                  style: const TextStyle(color: Colors.black54),
                                 ),
                               ),
                       ),
@@ -266,8 +270,15 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
                           ),
                           child: Text(
                             currentFrame.isParity
-                                ? 'Frame ${_currentFrameIndex + 1}/${_encodedFrames.length} • Fountain FEC'
-                                : 'Frame ${_currentFrameIndex + 1}/${_encodedFrames.length} • Block ${currentFrame.sequenceIndex + 1}',
+                                ? l10n.descAirQrTransmitterParityFrame(
+                                    _currentFrameIndex + 1,
+                                    _encodedFrames.length,
+                                  )
+                                : l10n.descAirQrTransmitterBlockFrame(
+                                    _currentFrameIndex + 1,
+                                    _encodedFrames.length,
+                                    currentFrame.sequenceIndex + 1,
+                                  ),
                             style: TextStyle(
                               color: currentFrame.isParity
                                   ? Colors.purple.shade900
@@ -284,7 +295,7 @@ class _AirQrTransmitterScreenState extends State<AirQrTransmitterScreen> {
               const SizedBox(height: 20),
               if (_encodedFrames.isNotEmpty)
                 Text(
-                  'Point receiving phone camera at this screen.\nNo internet, Bluetooth, or Wi-Fi required.',
+                  l10n.descAirQrTransmitterHint,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,

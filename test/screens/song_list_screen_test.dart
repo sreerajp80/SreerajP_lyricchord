@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +13,8 @@ import 'package:lyricchord/widgets/song_card.dart';
 import 'package:lyricchord/widgets/songbook_error.dart';
 
 import '../helpers/fake_song_repository.dart';
+import '../helpers/localized_app.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   late FakeSongRepository repo;
@@ -42,7 +44,7 @@ void main() {
           songRepositoryProvider.overrideWithValue(repo),
           sharedPreferencesProvider.overrideWithValue(prefs),
         ],
-        child: const MaterialApp(home: HomeShell()),
+        child: localizedApp(const HomeShell()),
       ),
     );
     await tester.pumpAndSettle();
@@ -86,6 +88,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'jingle');
     await tester.pumpAndSettle();
+    expectAllIconButtonsHaveTooltips(tester);
     expect(find.byType(SongCard), findsOneWidget);
     expect(find.text('Jingle Bells'), findsOneWidget);
 
@@ -210,7 +213,7 @@ void main() {
   });
 
   testWidgets('phone width (< 600 dp) shows a single pane', (tester) async {
-    await pumpSongbook(tester, width: 400);
+    await pumpSongbook(tester);
 
     expect(find.text('Pick a song'), findsNothing);
   });
@@ -303,7 +306,7 @@ void main() {
               ),
             ),
           ],
-          child: const MaterialApp(home: HomeShell()),
+          child: localizedApp(const HomeShell()),
         ),
       );
       await tester.pumpAndSettle();

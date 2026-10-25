@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/models/setlist.dart';
 
 /// Dialog to create or edit a setlist's name and description.
@@ -54,9 +55,10 @@ class _SetlistEditorDialogState extends State<SetlistEditorDialog> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.setlist != null;
+    final l10n = AppLocalizations.of(context);
 
     return AlertDialog(
-      title: Text(isEditing ? 'Edit Setlist' : 'New Setlist'),
+      title: Text(isEditing ? l10n.titleSetlistEdit : l10n.actionSetlistNew),
       content: Form(
         key: _formKey,
         child: Column(
@@ -66,13 +68,13 @@ class _SetlistEditorDialogState extends State<SetlistEditorDialog> {
               controller: _nameController,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Setlist Name',
-                hintText: 'e.g. Sunday Gig, Acoustic Practice',
+              decoration: InputDecoration(
+                labelText: l10n.labelSetlistName,
+                hintText: l10n.descSetlistNameHint,
               ),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) {
-                  return 'Please enter a setlist name';
+                  return l10n.errorSetlistNameRequired;
                 }
                 return null;
               },
@@ -81,9 +83,9 @@ class _SetlistEditorDialogState extends State<SetlistEditorDialog> {
             TextFormField(
               controller: _descController,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                hintText: 'e.g. Venue, lineup, or notes',
+              decoration: InputDecoration(
+                labelText: l10n.labelSetlistDescription,
+                hintText: l10n.descSetlistDescriptionHint,
               ),
             ),
           ],
@@ -92,11 +94,11 @@ class _SetlistEditorDialogState extends State<SetlistEditorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n.actionCancel),
         ),
         FilledButton(
           onPressed: _submit,
-          child: Text(isEditing ? 'Save' : 'Create'),
+          child: Text(isEditing ? l10n.actionSave : l10n.actionCreate),
         ),
       ],
     );

@@ -1,15 +1,15 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:lyricchord/core/errors/app_exception.dart';
+import 'package:lyricchord/core/logging/app_logger.dart';
 import 'package:lyricchord/core/router/app_router.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/models/import_preview_args.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/import_settings_provider.dart';
-import 'package:lyricchord/services/chord_pro_service.dart';
 import 'package:lyricchord/services/chord_sheet_parser.dart';
 import 'package:lyricchord/services/import_service.dart';
 import 'package:lyricchord/widgets/chord_sheet_view.dart';
@@ -64,14 +64,12 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
     }
   }
 
-  /// Prints why something failed, in debug builds only.
-  ///
-  /// Only the error text is printed — never song content — so this keeps to the
-  /// logging rule in `docs/security.md`.
+  /// Logs why something failed. The real cause of an [AppException] is logged
+  /// when there is one. Never song content: release builds log only the error
+  /// type (`AppLogger`, `docs/security.md`).
   void _logError(String what, Object error) {
-    if (kDebugMode) {
-      debugPrint('ImportPreview: $what: ${_reasonFor(error)}');
-    }
+    final cause = error is AppException ? error.cause : null;
+    AppLogger.error('ImportPreview: $what', error: cause ?? error);
   }
 
   /// The friendly message with the real reason underneath, when there is one.
@@ -104,16 +102,14 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
         .map((idx) => widget.args.parsedSongs[idx])
         .toList();
 
-    const chordProService = ChordProService();
-    final formattedContent = chordProService.formatMultiple(selectedSongs);
-
     final repo = ref.read(songRepositoryProvider);
     final strategy = ref.read(importSettingsProvider);
     final importService = ImportService(repository: repo);
 
     try {
-      final res = await importService.importContent(
-        content: formattedContent,
+      // Save the songs exactly as previewed, not a re-parse of their text.
+      final res = await importService.importSongs(
+        songs: selectedSongs,
         strategy: strategy,
         onAskUserTitle: ({required importedSong, required existingSong}) async {
           if (!mounted) return null;
@@ -129,19 +125,26 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
 
       final messenger = ScaffoldMessenger.of(context);
       final router = ref.read(goRouterProvider);
+      final l10n = AppLocalizations.of(context);
 
       if (res.importedSongs.isNotEmpty) {
         if (res.importedSongs.length == 1) {
           messenger.showSnackBar(
             SnackBar(
-              content: Text('Imported "${res.importedSongs.first.title}".'),
+              content: Text(
+                l10n.bodyImportPreviewImportedOne(
+                  res.importedSongs.first.title,
+                ),
+              ),
             ),
           );
           router.go('/song/${res.importedIds.first}');
         } else {
           messenger.showSnackBar(
             SnackBar(
-              content: Text('Imported ${res.importedSongs.length} songs.'),
+              content: Text(
+                l10n.bodyImportPreviewImportedMany(res.importedSongs.length),
+              ),
             ),
           );
           router.go('/');
@@ -154,7 +157,13 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
       if (mounted) {
         setState(() => _isImporting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Import failed: ${_reasonFor(e)}')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                context,
+              ).errorImportPreviewFailed(_reasonFor(e)),
+            ),
+          ),
         );
       }
     }
@@ -170,6 +179,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
       useSafeArea: true,
       builder: (context) {
         final theme = Theme.of(context);
+        final l10n = AppLocalizations.of(context);
         return DraggableScrollableSheet(
           initialChildSize: 0.85,
           minChildSize: 0.5,
@@ -194,6 +204,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.close),
+                    tooltip: l10n.actionClose,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -207,17 +218,17 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                     runSpacing: 4,
                     children: [
                       Chip(
-                        label: Text('Key: ${song.key}'),
+                        label: Text(l10n.labelImportPreviewKey(song.key)),
                         visualDensity: VisualDensity.compact,
                       ),
                       Chip(
-                        label: Text('${song.bpm} BPM'),
+                        label: Text(l10n.labelInfoBpm(song.bpm)),
                         visualDensity: VisualDensity.compact,
                       ),
                       if (_isDuplicate(song.title))
                         Chip(
                           avatar: const Icon(Icons.info_outline, size: 16),
-                          label: const Text('Already in Songbook'),
+                          label: Text(l10n.labelImportPreviewAlreadyInSongbook),
                           backgroundColor: theme.colorScheme.errorContainer
                               .withValues(alpha: 0.7),
                           visualDensity: VisualDensity.compact,
@@ -240,13 +251,14 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
     final theme = Theme.of(context);
     final allSelected =
         _selectedIndices.length == widget.args.parsedSongs.length;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Import Preview'),
+            Text(l10n.titleImportPreview),
             Text(
               widget.args.fileName,
               style: theme.textTheme.labelMedium?.copyWith(
@@ -260,7 +272,11 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
             onPressed: widget.args.parsedSongs.isEmpty
                 ? null
                 : _toggleSelectAll,
-            child: Text(allSelected ? 'Deselect All' : 'Select All'),
+            child: Text(
+              allSelected
+                  ? l10n.actionImportPreviewDeselectAll
+                  : l10n.actionImportPreviewSelectAll,
+            ),
           ),
         ],
       ),
@@ -278,7 +294,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Found ${widget.args.parsedSongs.length} song${widget.args.parsedSongs.length == 1 ? '' : 's'} in file. Select which songs to import to your songbook.',
+                    l10n.descImportPreviewFound(widget.args.parsedSongs.length),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
@@ -293,7 +309,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
             child: widget.args.parsedSongs.isEmpty
                 ? Center(
                     child: Text(
-                      'No valid songs found in this file.',
+                      l10n.emptyImportPreviewNoSongs,
                       style: theme.textTheme.bodyLarge,
                     ),
                   )
@@ -350,7 +366,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
-                                    'In Songbook',
+                                    l10n.labelImportPreviewInSongbook,
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
@@ -394,7 +410,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    '${song.bpm} BPM',
+                                    l10n.labelInfoBpm(song.bpm),
                                     style: theme.textTheme.labelSmall?.copyWith(
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -407,7 +423,9 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                                       Icons.remove_red_eye_outlined,
                                       size: 16,
                                     ),
-                                    label: const Text('Preview'),
+                                    label: Text(
+                                      l10n.actionImportPreviewPreview,
+                                    ),
                                     style: TextButton.styleFrom(
                                       visualDensity: VisualDensity.compact,
                                       padding: const EdgeInsets.symmetric(
@@ -452,7 +470,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                             context.go('/');
                           }
                         },
-                  child: const Text('Cancel'),
+                  child: Text(l10n.actionCancel),
                 ),
               ),
               const SizedBox(width: 12),
@@ -474,8 +492,10 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
                       : const Icon(Icons.download),
                   label: Text(
                     _isImporting
-                        ? 'Importing...'
-                        : 'Import Selected (${_selectedIndices.length})',
+                        ? l10n.actionImportPreviewImporting
+                        : l10n.actionImportPreviewImportSelected(
+                            _selectedIndices.length,
+                          ),
                   ),
                 ),
               ),

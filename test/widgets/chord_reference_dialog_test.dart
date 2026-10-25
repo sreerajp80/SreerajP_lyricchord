@@ -1,15 +1,20 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/widgets/chord_reference_dialog.dart';
 import 'package:lyricchord/widgets/guitar_chord_diagram.dart';
 import 'package:lyricchord/widgets/harmonium_chord_diagram.dart';
 import 'package:lyricchord/widgets/swara_keyboard_diagram.dart';
+import '../helpers/tooltip_expectations.dart';
 
 /// Pumps [dialog] on its own so the tabs and diagrams can be inspected.
 Future<void> _pump(WidgetTester tester, Widget dialog) {
   return tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: appLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(body: Center(child: dialog)),
     ),
   );
@@ -35,6 +40,7 @@ void main() {
 
     await tester.tap(find.text('Harmonium'));
     await tester.pumpAndSettle();
+    expectAllIconButtonsHaveTooltips(tester);
 
     expect(find.byType(HarmoniumChordDiagram), findsNWidgets(2));
   });

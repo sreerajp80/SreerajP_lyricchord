@@ -32,7 +32,17 @@ The runtime dependencies in `pubspec.yaml` are organized by functional concern:
 
 ### 2.1 State Management & Routing
 - `flutter_riverpod` (^3.3.2): Unidirectional data flow and declarative state management across widgets, repositories, and audio services.
-- `go_router` (^17.3.0): Declarative URL/path-based navigation for screens and deep links.
+- `go_router` (^18.1.1): Declarative URL/path-based navigation for screens and deep links. Version 18 is the first built on `material_ui`; older versions cannot find the `material_ui` `MaterialApp` and drop page transitions.
+
+### 2.1a Logging
+- `logger` (^2.8.0): Levelled logging behind `AppLogger`. Depends only on `meta` and
+  `clock`; MIT licence; no network code and no build hooks. Only its console output is used.
+
+### 2.1b Material widgets
+- `cupertino_ui` (^1.1.4): Only for `GlobalCupertinoLocalizations`, used by the Sanskrit
+  fallback delegate (`lib/l10n/fallback_localizations.dart`). The app shows no Cupertino
+  widgets. Comes with `material_ui` anyway; no network code.
+- `material_ui` (^1.8.0): Material widgets and `GlobalMaterialLocalizations`, moved out of the Flutter SDK (engineering standard §6.1). Brings `cupertino_ui` in as a transitive package. Local UI code only — no network I/O.
 
 ### 2.2 Local Persistence
 - `drift` (^2.34.2): Type-safe SQLite database abstraction for song sheets, setlists, and search indexes.
@@ -43,16 +53,16 @@ The runtime dependencies in `pubspec.yaml` are organized by functional concern:
 
 ### 2.3 Audio Synthesis & Playback
 - `audioplayers` (^6.1.0): Local low-latency playback of in-memory PCM drone audio buffers and melody audio.
-- `wakelock_plus` (^1.3.3): Keeps the device screen awake during live musical performance and auto-scrolling.
+- `wakelock_plus` (^1.3.3, resolves to 1.8.x): Keeps the device screen awake during live musical performance and auto-scrolling.
 
 ### 2.4 Document Export & System Integration
 - `pdf` (^3.12.0): Programmatic generation of vector PDF song sheets with custom Malayalam and Latin font support.
 - `printing` (^5.14.3): System print dialog and share sheet dispatch for exported PDF documents.
-- `file_picker` (10.0.0): Scoped system document picker for importing ChordPro, text, and backup files.
-- `image_picker` (^1.1.2): Image picker for song sheet attachment and optical chord recognition.
-- `mobile_scanner` (^6.0.4) & `qr_flutter` (^4.1.0): Local offline QR code generation and camera scanning for peer-to-peer sheet sharing.
-- `local_auth` (^3.0.0): Device biometric and screen lock authentication for Stage Lock mode.
-- `package_info_plus` (8.3.0): Reads version and build numbers from the app bundle for About screen verification.
+- `file_picker` (^13.1.0): Scoped system document picker for importing ChordPro, text, and backup files, and the system Save dialog for exports. Version 12+ uses static methods (`FilePicker.pickFiles()`, `FilePicker.saveFile()`) and needs iOS 14.0 or later.
+- `image_picker` (^1.1.2): Lets the user pick one photo so the AirQR receiver can find a QR code in it. No upload; see [security.md](security.md) §3.
+- `mobile_scanner` (^6.0.4) & `qr_flutter` (^4.1.0): Local offline QR code generation and camera scanning for AirQR song sharing. The camera is asked for only when the scanner opens; see [security.md](security.md) §3. Uses the bundled ML Kit model (works offline). ML Kit pulls in Google's usage logger (`com.google.android.datatransport`), which adds `INTERNET` and `ACCESS_NETWORK_STATE`; `android/app/src/release/AndroidManifest.xml` removes both from release builds — see [security.md](security.md) §2.
+- `local_auth` (^3.0.0): Device biometric and screen lock authentication for Stage Lock mode. Needs `MainActivity` to extend `FlutterFragmentActivity` and AppCompat launch themes (`androidx.appcompat` in `android/app/build.gradle.kts`).
+- `package_info_plus` (^10.2.2): Reads version and build numbers from the app bundle for About screen verification.
 - `url_launcher` (^6.3.2): Dispatches email composition to the system mail handler from the About screen.
 - `cupertino_icons` (^1.0.8): Standard vector iconography.
 

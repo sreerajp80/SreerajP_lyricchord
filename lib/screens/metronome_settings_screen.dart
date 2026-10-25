@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/models/metronome_settings.dart';
 import 'package:lyricchord/providers/metronome_provider.dart';
@@ -84,42 +85,41 @@ class _MetronomeSettingsScreenState
     final settings = ref.watch(metronomeSettingsProvider);
     final notifier = ref.read(metronomeSettingsProvider.notifier);
     final on = settings.enabled;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Metronome')),
+      appBar: AppBar(title: Text(l10n.titleGeneralMetronome)),
       body: SafeArea(
         child: ListView(
           children: [
             SwitchListTile(
               secondary: const Icon(Icons.av_timer),
-              title: const Text('Enable metronome'),
-              subtitle: const Text('Keep the beat at the song tempo'),
+              title: Text(l10n.labelMetronomeEnable),
+              subtitle: Text(l10n.descMetronomeEnableSubtitle),
               value: settings.enabled,
               onChanged: notifier.setEnabled,
             ),
             const Divider(),
             SwitchListTile(
               secondary: const Icon(Icons.flash_on),
-              title: const Text('Flash'),
-              subtitle: const Text('Blink on every beat (good when muted)'),
+              title: Text(l10n.labelMetronomeFlash),
+              subtitle: Text(l10n.descMetronomeFlashSubtitle),
               value: settings.flash,
               onChanged: on ? notifier.setFlash : null,
             ),
             SwitchListTile(
               secondary: const Icon(Icons.volume_up_outlined),
-              title: const Text('Click'),
-              subtitle: const Text('Play a tick on every beat'),
+              title: Text(l10n.labelMetronomeClick),
+              subtitle: Text(l10n.descMetronomeClickSubtitle),
               value: settings.click,
               onChanged: on ? notifier.setClick : null,
             ),
             ListTile(
               enabled: on && settings.click,
               leading: const Icon(Icons.graphic_eq),
-              title: const Text('Click volume'),
+              title: Text(l10n.labelMetronomeClickVolume),
               subtitle: Slider(
                 value: settings.volume,
-                min: MetronomeSettings.minVolume,
-                max: MetronomeSettings.maxVolume,
                 divisions: 10,
                 label: '${(settings.volume * 100).round()}%',
                 onChanged: on && settings.click ? notifier.setVolume : null,
@@ -129,7 +129,7 @@ class _MetronomeSettingsScreenState
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Text(
-                'Bar',
+                l10n.titleMetronomeBarHeading,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: on
                       ? theme.colorScheme.primary
@@ -140,8 +140,8 @@ class _MetronomeSettingsScreenState
             ListTile(
               enabled: on,
               leading: const Icon(Icons.straighten),
-              title: const Text('Beats in a bar'),
-              subtitle: const Text('Beat 1 is the one you count on'),
+              title: Text(l10n.labelMetronomeBeatsInBar),
+              subtitle: Text(l10n.descMetronomeBeatsInBarSubtitle),
               trailing: SegmentedButton<int>(
                 segments: [
                   for (final choice in MetronomeSettings.beatsPerBarChoices)
@@ -156,8 +156,8 @@ class _MetronomeSettingsScreenState
             ),
             SwitchListTile(
               secondary: const Icon(Icons.music_note_outlined),
-              title: const Text('Accent beat 1'),
-              subtitle: const Text('Louder, higher click on the first beat'),
+              title: Text(l10n.labelMetronomeAccent),
+              subtitle: Text(l10n.descMetronomeAccentSubtitle),
               value: settings.accent,
               onChanged: on ? notifier.setAccent : null,
             ),
@@ -165,11 +165,8 @@ class _MetronomeSettingsScreenState
             ListTile(
               enabled: on,
               leading: Icon(_testing ? Icons.hourglass_top : Icons.play_arrow),
-              title: const Text('Test the sound'),
-              subtitle: const Text(
-                'Plays one bar at $_testBpm BPM. If you hear nothing, raise the '
-                'media volume.',
-              ),
+              title: Text(l10n.labelMetronomeTest),
+              subtitle: Text(l10n.descMetronomeTestSubtitle(_testBpm)),
               onTap: on && !_testing ? _playTestBar : null,
             ),
           ],

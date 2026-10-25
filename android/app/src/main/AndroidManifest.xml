@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Stage Quiet Mode: lets the user grant "Do Not Disturb access" in system
+         settings, which Android 7+ needs before an app may silence the ringer.
+         A normal install-time permission, not a runtime prompt. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
@@ -38,30 +42,51 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Intent filter for opening .chordpro, .cho, .pro, .chopro, .txt files directly from Android file managers -->
+            <!-- Opening a ChordPro or text file by its name, from a file manager.
+                 Android ignores every path rule in a filter that names no host,
+                 so host="*" is required, or this filter would match EVERY file.
+                 pathPattern, not pathSuffix: pathSuffix needs Android 12, and the
+                 app supports Android 7. A pattern's ".*" stops at the first dot,
+                 so the extra forms cover names that hold more dots
+                 ("my.song.chordpro"). VIEW only: the app never edits a file in
+                 place, and a share (SEND) carries no path to match. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-                <action android:name="android.intent.action.EDIT" />
-                <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="file" />
                 <data android:scheme="content" />
+                <data android:host="*" />
                 <data android:mimeType="*/*" />
-                <data android:pathSuffix=".chordpro" />
-                <data android:pathSuffix=".cho" />
-                <data android:pathSuffix=".pro" />
-                <data android:pathSuffix=".chopro" />
-                <data android:pathSuffix=".txt" />
+                <data android:pathPattern=".*\\.chordpro" />
+                <data android:pathPattern=".*\\..*\\.chordpro" />
+                <data android:pathPattern=".*\\..*\\..*\\.chordpro" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.chordpro" />
+                <data android:pathPattern=".*\\.cho" />
+                <data android:pathPattern=".*\\..*\\.cho" />
+                <data android:pathPattern=".*\\..*\\..*\\.cho" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.cho" />
+                <data android:pathPattern=".*\\.pro" />
+                <data android:pathPattern=".*\\..*\\.pro" />
+                <data android:pathPattern=".*\\..*\\..*\\.pro" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.pro" />
+                <data android:pathPattern=".*\\.chopro" />
+                <data android:pathPattern=".*\\..*\\.chopro" />
+                <data android:pathPattern=".*\\..*\\..*\\.chopro" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.chopro" />
+                <data android:pathPattern=".*\\.txt" />
+                <data android:pathPattern=".*\\..*\\.txt" />
+                <data android:pathPattern=".*\\..*\\..*\\.txt" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.txt" />
             </intent-filter>
+            <!-- Opening or sharing by type: ChordPro and plain-text files, shared
+                 text, and several files shared at once (SEND_MULTIPLE). -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-                <action android:name="android.intent.action.EDIT" />
                 <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="file" />
-                <data android:scheme="content" />
                 <data android:mimeType="application/x-chordpro" />
                 <data android:mimeType="text/x-chordpro" />
                 <data android:mimeType="text/plain" />

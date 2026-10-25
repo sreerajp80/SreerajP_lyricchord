@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/services/chord_sheet_parser.dart';
 import 'package:lyricchord/widgets/melody_line_row.dart';
@@ -79,7 +80,7 @@ class ChordSheetView extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'This song has no lyrics yet.',
+            AppLocalizations.of(context).emptySheetNoLyrics,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

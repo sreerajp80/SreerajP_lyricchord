@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
+import 'package:lyricchord/core/logging/app_logger.dart';
+
 /// Represents a single frame captured in an optical AirQR stream.
 @immutable
 class AirQrFrame {
@@ -25,6 +27,27 @@ class AirQrFrame {
   });
 
   /// Parses a raw scanned string into an AirQrFrame, or returns null if invalid.
+  /// The most blocks one stream may claim. A whole songbook at 180 bytes a
+  /// block is far below this; anything above is a bad or foreign code.
+  static const int maxTotalBlocks = 4096;
+
+  /// Whether the numbers in this frame can belong to a real stream.
+  ///
+  /// QR codes are untrusted input: an index outside the stream, a huge block
+  /// count or an empty payload would otherwise be counted as progress and
+  /// leave the receiver stuck.
+  bool get isValid {
+    if (streamId.isEmpty) return false;
+    if (totalBlocks < 1 || totalBlocks > maxTotalBlocks) return false;
+    if (payloadBytes.isEmpty) return false;
+    if (!isParity) {
+      return sequenceIndex >= 0 && sequenceIndex < totalBlocks;
+    }
+    if (indices.isEmpty || degree != indices.length) return false;
+    if (indices.toSet().length != indices.length) return false;
+    return indices.every((i) => i >= 0 && i < totalBlocks);
+  }
+
   static AirQrFrame? parse(String raw) {
     if (!raw.startsWith('AIRQR|')) return null;
 
@@ -38,9 +61,10 @@ class AirQrFrame {
       final checksum = int.parse(parts[5]);
       final payloadBytes = base64.decode(parts[6]);
 
+      AirQrFrame? frame;
       if (version == 'v1') {
         final seqIndex = int.parse(parts[4]);
-        return AirQrFrame(
+        frame = AirQrFrame(
           streamId: streamId,
           totalBlocks: totalBlocks,
           sequenceIndex: seqIndex,
@@ -59,7 +83,7 @@ class AirQrFrame {
             .map(int.parse)
             .toList();
 
-        return AirQrFrame(
+        frame = AirQrFrame(
           streamId: streamId,
           totalBlocks: totalBlocks,
           sequenceIndex: -1,
@@ -70,8 +94,11 @@ class AirQrFrame {
           payloadBytes: payloadBytes,
         );
       }
+      if (frame != null && frame.isValid) return frame;
     } catch (e) {
-      if (kDebugMode) debugPrint('AirQrFrame parse error: $e');
+      // A bad frame is normal while the camera reads a QR code; log its kind
+      // only, never its content.
+      AppLogger.debug('AirQrFrame parse error: ${e.runtimeType}');
     }
     return null;
   }

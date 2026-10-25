@@ -1,12 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/providers/metronome_runtime_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/services/metronome_calculator.dart';
 import 'package:lyricchord/widgets/metronome_tempo_sheet.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   late ProviderContainer container;
@@ -31,6 +34,8 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: MetronomeTempoSheet(
               songBpm: songBpm,
@@ -66,6 +71,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
+    expectAllIconButtonsHaveTooltips(tester);
 
     expect(currentBpm(120), 121);
     expect(find.text('121'), findsOneWidget);
@@ -173,7 +179,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(container.read(metronomeRuntimeProvider).isOverridden, isTrue);
 
-    await tester.tap(find.text('Use song tempo (120 BPM)'));
+    await tester.tap(find.text('Use song tempo'));
     await tester.pumpAndSettle();
 
     expect(container.read(metronomeRuntimeProvider).isOverridden, isFalse);
@@ -187,7 +193,7 @@ void main() {
 
     final button = tester.widget<TextButton>(
       find.ancestor(
-        of: find.text('No song tempo to go back to'),
+        of: find.text('No song tempo'),
         matching: find.byType(TextButton),
       ),
     );

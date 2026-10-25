@@ -5,7 +5,7 @@ that the point-in-time [implementation_plan.md](implementation_plan.md) asks you
 to keep separately. The plan file stays the source of **scope**; this file tracks
 **status**. Update this checklist as each phase finishes — do not rewrite the plan.
 
-**Date:** 2026-07-18
+**Date:** 2026-07-18 (last updated 2026-10-25)
 
 **Read first**
 
@@ -152,8 +152,12 @@ a device has not been done yet.
 
 ## 10. Phase 8 — Polish & release readiness 🟨 Code done; signed build pending
 
-- [x] App passes analyze (clean) and tests (174 pass). Manual device run still pending.
-- [ ] Signed release build produced; offline (no-INTERNET) verified on the artifact.
+- [x] App passes analyze (clean) and tests (174 pass at the end of Phase 8; 1266 on 2026-10-25). Manual device run still pending.
+- [ ] Signed release build produced (needs the user's real keystore).
+- [x] Offline (no-INTERNET) verified on the artifact: on 2026-10-22,
+      `aapt2 dump permissions` on a `prod` release APK listed no `INTERNET` and
+      no `ACCESS_NETWORK_STATE` (see
+      [change log](../change_log/20261022_135718_remove-mlkit-internet-permission.md)).
       **Manual user task** — needs the keystore + `android/key.properties`.
 
 Built on 2026-07-21 — see
@@ -184,13 +188,39 @@ has not been done yet.
 
 ---
 
+## 10a. Work after the planned phases ✅ Done
+
+The app grew well beyond the eight planned phases. Each item has its own plan in
+`plans/` and change log in `change_log/`; the full list of what ships is in
+[features.md](features.md). In short:
+
+- **Setlists** — create, reorder, perform in order (database version 2).
+- **Stage Mode** — full screen, gesture HUD, Stage Lock, Quiet Mode.
+- **Metronome**, **pitch pipe and shruti drone**.
+- **Melody lines** (`{melody}` swara lines with playback) and **Paste Carnatic**
+  notation import, with Carnatic and Hindustani songs (database version 9).
+- **AirQR** — send songs between phones with QR codes, no network.
+- **Languages** — Malayalam and Sanskrit beside English, switchable in Settings.
+- **Guideline compliance** — logging, error handling, start-up, layer rules.
+
+The project review on 2026-10-25 then fixed: database upgrades from versions 1–7
+(they failed to open), the file-open filter that matched every file, binary files
+being imported as songs, ignored shared text and multi-file shares, English
+"Untitled Song" / "(Copy)" titles in other languages, and missing tests (19 new
+test files). See
+[change_log/20261025_110157_gap-review-fixes.md](../change_log/20261025_110157_gap-review-fixes.md).
+Tests: 1266, all passing.
+
+---
+
 ## 11. Whole-project Definition of Done 🟨 Almost — signed build pending
 
 - [x] Every feature from [lyriccord_idea.md](lyriccord_idea.md) §2 works (built
       across Phases 2–7; not yet run on a physical device).
 - [x] Unit tests cover transpose, ChordPro round-trip, and scroll math.
-- [x] No INTERNET permission in the manifest (verify on the release artifact at
-      build time — see [release_process.md](release_process.md) §6).
+- [x] No INTERNET permission in the manifest, checked on a `prod` release APK
+      on 2026-10-22 (re-check at each release — see
+      [release_process.md](release_process.md) §6).
 - [x] About screen driven by `app_config.json`; keystore rules followed (signing
       config + ignore rules in place; keystore itself created by the user).
 - [ ] Runs on Android and iOS (not yet run on a device).

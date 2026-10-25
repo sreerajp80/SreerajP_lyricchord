@@ -103,10 +103,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "in.sreerajp.lyricchord"
@@ -127,6 +123,21 @@ android {
                 storePassword = keystoreProperties["storePassword"] as String
             }
         }
+    }
+
+    // The app has its own language picker (English, Malayalam, Sanskrit). Keep
+    // every language's resources in the App Bundle, so Google Play does not
+    // install only the phone's language (engineering standard §8.1).
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
+    // AGP 9 turns custom resource values off by default. The flavors below use
+    // resValue to give each install its own app name, so turn them back on.
+    buildFeatures {
+        resValues = true
     }
 
     flavorDimensions += "environment"
@@ -156,6 +167,19 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17 // match compileOptions above
+    }
+}
+
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // AppCompat themes for LaunchTheme / NormalTheme. local_auth (Stage Lock)
+    // needs an AppCompat theme, or its prompt can crash on Android 8 and below.
+    // A local UI library only — no network code.
+    implementation("androidx.appcompat:appcompat:1.7.0")
 }

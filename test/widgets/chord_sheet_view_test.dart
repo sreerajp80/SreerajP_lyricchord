@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/services/chord_sheet_parser.dart';
 import 'package:lyricchord/services/melody_audio_service.dart';
 import 'package:lyricchord/services/melody_parser_service.dart';
@@ -22,6 +24,8 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.light(),
         home: const Scaffold(body: ChordSheetView(lines: [line], fontSize: 16)),
       ),
@@ -36,6 +40,8 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.dark(),
         home: const Scaffold(body: ChordSheetView(lines: [line], fontSize: 16)),
       ),
@@ -55,6 +61,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: AppTheme.light(),
           home: const Scaffold(
             body: ChordSheetView(lines: [swaram], fontSize: 16),
@@ -77,6 +85,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: AppTheme.light(),
           home: const Scaffold(
             body: ChordSheetView(lines: [swaram], fontSize: 16),
@@ -96,6 +106,8 @@ void main() {
     testWidgets('scrolls sideways instead of wrapping', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: AppTheme.light(),
           home: const Scaffold(
             body: ChordSheetView(lines: [swaram], fontSize: 16),
@@ -117,6 +129,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: AppTheme.light(),
           home: const Scaffold(
             body: ChordSheetView(lines: [line], fontSize: 16),
@@ -145,6 +159,8 @@ void main() {
         ProviderScope(
           overrides: [melodyAudioProvider.overrideWithValue(_SilentAudio())],
           child: MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             theme: AppTheme.light(),
             home: Scaffold(
               body: ChordSheetView(

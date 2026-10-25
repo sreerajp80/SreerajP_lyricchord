@@ -12,12 +12,8 @@ enum PitchTradition {
   carnatic,
   hindustani;
 
-  /// The name shown in Settings.
-  String get displayName => switch (this) {
-    PitchTradition.western => 'Western',
-    PitchTradition.carnatic => 'Carnatic',
-    PitchTradition.hindustani => 'Hindustani',
-  };
+  // The screen name lives in `lib/l10n/l10n_labels.dart` (no UI text in
+  // models).
 
   /// Stored in `shared_preferences`. Kept separate from [name] so renaming an
   /// enum value can never silently change what a saved setting means.

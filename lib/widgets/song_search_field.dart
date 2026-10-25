@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lyricchord/providers/song_list_provider.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// The songbook search box. Typing updates [searchQueryProvider], which the
 /// list watches; the filtering itself happens in the provider layer.
@@ -37,7 +38,7 @@ class _SongSearchFieldState extends ConsumerState<SongSearchField> {
         controller: _controller,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          hintText: 'Search songs, artists, lyrics',
+          hintText: AppLocalizations.of(context).descSongSearchHint,
           prefixIcon: const Icon(Icons.search),
           isDense: true,
           border: const OutlineInputBorder(),
@@ -45,7 +46,7 @@ class _SongSearchFieldState extends ConsumerState<SongSearchField> {
               ? null
               : IconButton(
                   icon: const Icon(Icons.clear),
-                  tooltip: 'Clear search',
+                  tooltip: AppLocalizations.of(context).tooltipSongSearchClear,
                   onPressed: () {
                     _controller.clear();
                     ref.read(searchQueryProvider.notifier).clear();

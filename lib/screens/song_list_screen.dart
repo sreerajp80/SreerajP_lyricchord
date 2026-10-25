@@ -2,13 +2,15 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printing/printing.dart';
 
 import 'package:lyricchord/core/errors/app_exception.dart';
 import 'package:lyricchord/core/utils/safe_file_name.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/lyric_font_provider.dart';
@@ -44,6 +46,7 @@ class SongListScreen extends ConsumerWidget {
     final selectedId = ref.watch(selectedSongIdProvider);
     final selectedIds = ref.watch(multiSongSelectionProvider);
     final isSelectionMode = selectedIds.isNotEmpty;
+    final l10n = AppLocalizations.of(context);
 
     return DefaultTabController(
       length: 2,
@@ -52,20 +55,20 @@ class SongListScreen extends ConsumerWidget {
           leading: isSelectionMode
               ? IconButton(
                   icon: const Icon(Icons.close),
-                  tooltip: 'Cancel selection',
+                  tooltip: l10n.tooltipSongListCancelSelection,
                   onPressed: () =>
                       ref.read(multiSongSelectionProvider.notifier).clear(),
                 )
               : null,
           title: isSelectionMode
-              ? Text('${selectedIds.length} selected')
+              ? Text(l10n.titleSongListSelectedCount(selectedIds.length))
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('LyricChord'),
+                    Text(l10n.titleApp),
                     Text(
-                      'Lyrics & Chords Notebook',
+                      l10n.descAppSubtitle,
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                   ],
@@ -74,18 +77,18 @@ class SongListScreen extends ConsumerWidget {
               ? [
                   IconButton(
                     icon: const Icon(Icons.output_rounded),
-                    tooltip: 'Export selected (ChordPro)',
+                    tooltip: l10n.tooltipSongListExportSelected,
                     onPressed: () =>
                         _exportSelectedChordPro(context, ref, songs),
                   ),
                   IconButton(
                     icon: const Icon(Icons.qr_code_2_rounded),
-                    tooltip: 'Share selected via AirQR',
+                    tooltip: l10n.tooltipSongListShareSelectedAirQr,
                     onPressed: () => _shareSelectedAirQr(context, ref, songs),
                   ),
                   IconButton(
                     icon: const Icon(Icons.share_outlined),
-                    tooltip: 'Share selected',
+                    tooltip: l10n.tooltipSongListShareSelected,
                     onPressed: () => _shareSelected(context, ref, songs),
                   ),
                   IconButton(
@@ -95,32 +98,35 @@ class SongListScreen extends ConsumerWidget {
                           : Icons.select_all,
                     ),
                     tooltip: selectedIds.length == songs.length
-                        ? 'Deselect all'
-                        : 'Select all',
+                        ? l10n.tooltipSongListDeselectAll
+                        : l10n.tooltipSongListSelectAll,
                     onPressed: () => _toggleSelectAll(ref, songs),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Delete selected',
+                    tooltip: l10n.tooltipSongListDeleteSelected,
                     onPressed: () => _confirmDeleteSelected(context, ref),
                   ),
                 ]
               : [
                   IconButton(
                     icon: const Icon(Icons.qr_code_scanner_rounded),
-                    tooltip: 'Scan AirQR Song',
+                    tooltip: l10n.tooltipSongListScanAirQr,
                     onPressed: () => context.push('/air-qr-receive'),
                   ),
                   IconButton(
                     icon: const Icon(Icons.settings_outlined),
-                    tooltip: 'Settings',
+                    tooltip: l10n.titleSettings,
                     onPressed: () => context.push('/settings'),
                   ),
                 ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.music_note), text: 'Songs'),
-              Tab(icon: Icon(Icons.playlist_play), text: 'Setlists'),
+              Tab(icon: const Icon(Icons.music_note), text: l10n.titleSongs),
+              Tab(
+                icon: const Icon(Icons.playlist_play),
+                text: l10n.titleSetlists,
+              ),
             ],
           ),
         ),
@@ -192,7 +198,7 @@ class SongListScreen extends ConsumerWidget {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          tooltip: 'New song',
+          tooltip: l10n.tooltipSongListNewSong,
           onPressed: () => context.push('/new'),
           child: const Icon(Icons.add),
         ),
@@ -229,26 +235,25 @@ class SongListScreen extends ConsumerWidget {
         .toList();
 
     if (selectedSongs.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
 
     try {
       const service = ChordProService();
       final text = service.formatMultiple(selectedSongs);
-      final path = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export selected songs as ChordPro',
+      final savedUri = await FilePicker.saveFile(
+        dialogTitle: l10n.titleSongListExportDialog,
         fileName: selectedSongs.length == 1
             ? '${safeFileName(selectedSongs.first.title)}.chordpro'
             : 'selected_songs.chordpro',
-        type: FileType.custom,
-        allowedExtensions: const ['chordpro'],
         bytes: Uint8List.fromList(utf8.encode(text)),
       );
-      if (context.mounted && path != null) {
+      if (context.mounted && savedUri != null) {
         ref.read(multiSongSelectionProvider.notifier).clear();
-        _showError(context, 'Exported ${selectedSongs.length} song(s).');
+        _showError(context, l10n.bodySongListExported(selectedSongs.length));
       }
     } catch (_) {
       if (context.mounted) {
-        _showError(context, 'Could not export selected songs.');
+        _showError(context, l10n.errorSongListExportFailed);
       }
     }
   }
@@ -266,6 +271,7 @@ class SongListScreen extends ConsumerWidget {
     if (selectedSongs.isEmpty) return;
 
     String chosenFormat = 'chordpro';
+    final l10n = AppLocalizations.of(context);
 
     final result = await showDialog<String>(
       context: context,
@@ -273,7 +279,7 @@ class SongListScreen extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text('Share ${selectedSongs.length} selected song(s)'),
+              title: Text(l10n.titleSongListShareDialog(selectedSongs.length)),
               content: RadioGroup<String>(
                 groupValue: chosenFormat,
                 onChanged: (val) {
@@ -281,15 +287,15 @@ class SongListScreen extends ConsumerWidget {
                     setDialogState(() => chosenFormat = val);
                   }
                 },
-                child: const Column(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     RadioListTile<String>(
-                      title: Text('ChordPro (.chordpro)'),
+                      title: Text(l10n.labelSongListFormatChordPro),
                       value: 'chordpro',
                     ),
                     RadioListTile<String>(
-                      title: Text('PDF (.pdf)'),
+                      title: Text(l10n.labelSongListFormatPdf),
                       value: 'pdf',
                     ),
                   ],
@@ -298,12 +304,12 @@ class SongListScreen extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.actionCancel),
                 ),
                 FilledButton(
                   onPressed: () =>
                       Navigator.of(dialogContext).pop(chosenFormat),
-                  child: const Text('Share'),
+                  child: Text(l10n.actionShare),
                 ),
               ],
             );
@@ -328,6 +334,7 @@ class SongListScreen extends ConsumerWidget {
     WidgetRef ref,
     List<SongNote> selectedSongs,
   ) async {
+    final l10n = AppLocalizations.of(context);
     try {
       const service = ChordProService();
       final text = service.formatMultiple(selectedSongs);
@@ -342,7 +349,7 @@ class SongListScreen extends ConsumerWidget {
       }
     } catch (_) {
       if (context.mounted) {
-        _showError(context, 'Could not share selected songs.');
+        _showError(context, l10n.errorSongListShareFailed);
       }
     }
   }
@@ -354,6 +361,7 @@ class SongListScreen extends ConsumerWidget {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context, rootNavigator: true);
+    final l10n = AppLocalizations.of(context);
 
     var dialogOpen = true;
     void closeDialog() {
@@ -384,7 +392,7 @@ class SongListScreen extends ConsumerWidget {
 
       if (bytes.isEmpty) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Could not generate PDF.')),
+          SnackBar(content: Text(l10n.errorSongListPdfFailed)),
         );
         return;
       }
@@ -400,7 +408,7 @@ class SongListScreen extends ConsumerWidget {
     } catch (_) {
       closeDialog();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not share selected songs as PDF.')),
+        SnackBar(content: Text(l10n.errorSongListSharePdfFailed)),
       );
     }
   }
@@ -411,22 +419,21 @@ class SongListScreen extends ConsumerWidget {
   ) async {
     final selectedIds = ref.read(multiSongSelectionProvider);
     if (selectedIds.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Delete ${selectedIds.length} songs?'),
-        content: const Text(
-          'Selected songs will be removed from your songbook.',
-        ),
+        title: Text(l10n.titleSongListDeleteMany(selectedIds.length)),
+        content: Text(l10n.descSongListDeleteManyMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
@@ -442,10 +449,12 @@ class SongListScreen extends ConsumerWidget {
       }
       ref.read(multiSongSelectionProvider.notifier).clear();
       if (context.mounted) {
-        _showError(context, 'Deleted $count song(s).');
+        _showError(context, l10n.bodySongListDeletedMany(count));
       }
     } on AppException catch (e) {
-      if (context.mounted) _showError(context, e.message);
+      if (context.mounted) {
+        _showError(context, e.text(AppLocalizations.of(context)));
+      }
     }
   }
 
@@ -457,7 +466,9 @@ class SongListScreen extends ConsumerWidget {
     try {
       await ref.read(songRepositoryProvider).toggleFavorite(song);
     } on AppException catch (e) {
-      if (context.mounted) _showError(context, e.message);
+      if (context.mounted) {
+        _showError(context, e.text(AppLocalizations.of(context)));
+      }
     }
   }
 
@@ -467,15 +478,23 @@ class SongListScreen extends ConsumerWidget {
     SongNote song,
   ) async {
     try {
-      final newId = await ref.read(songRepositoryProvider).duplicate(song);
+      final newId = await ref
+          .read(songRepositoryProvider)
+          .duplicate(song, words: songTitleWords(AppLocalizations.of(context)));
       ref.read(selectedSongIdProvider.notifier).select(newId);
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Copied "${song.title}".')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).bodySongListCopied(song.title),
+            ),
+          ),
+        );
       }
     } on AppException catch (e) {
-      if (context.mounted) _showError(context, e.message);
+      if (context.mounted) {
+        _showError(context, e.text(AppLocalizations.of(context)));
+      }
     }
   }
 
@@ -484,19 +503,20 @@ class SongListScreen extends ConsumerWidget {
     WidgetRef ref,
     SongNote song,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete song?'),
-        content: Text('"${song.title}" will be removed from your songbook.'),
+        title: Text(l10n.titleSongListDeleteOne),
+        content: Text(l10n.descSongListDeleteOneMessage(song.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
@@ -510,12 +530,14 @@ class SongListScreen extends ConsumerWidget {
         ref.read(selectedSongIdProvider.notifier).select(null);
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Deleted "${song.title}".')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.bodySongListDeletedOne(song.title))),
+        );
       }
     } on AppException catch (e) {
-      if (context.mounted) _showError(context, e.message);
+      if (context.mounted) {
+        _showError(context, e.text(AppLocalizations.of(context)));
+      }
     }
   }
 
@@ -533,7 +555,7 @@ class SongListScreen extends ConsumerWidget {
     context.push(
       '/air-qr-transmit',
       extra: AirQrTransmitterArgs(
-        title: '${selected.length} Selected Songs',
+        title: AppLocalizations.of(context).titleSongListAirQr(selected.length),
         chordProPayload: text,
       ),
     );

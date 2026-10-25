@@ -329,4 +329,85 @@ void main() {
       },
     );
   });
+
+  // Versions 1–7 had no `raga`, `tala` or `tradition` columns. The version 4
+  // and 8 steps read songs, so those columns must exist before they run.
+  group('upgrade from an early schema version', () {
+    for (final version in [1, 2, 3, 7]) {
+      test('a version $version database opens and reads back', () async {
+        buildEarlyDatabase(file, version: version);
+
+        final db = AppDatabase.forTesting(NativeDatabase(file));
+        addTearDown(db.close);
+
+        final songs = await SongRepository(db).watchAllSongs().first;
+        final old = songs.firstWhere((s) => s.title == 'Old Early Song');
+        expect(old.lyrics, '[C]hello there');
+        expect(old.scrollSpeedSet, isFalse);
+        // Below version 4 the upgrade adds the classical sample songs (a
+        // version 4–7 database already received them back then).
+        if (version < 4) {
+          expect(
+            songs.map((s) => s.title),
+            contains('Vathapi Ganapathim (Raga Hamsadhvani)'),
+          );
+        }
+
+        final setlists = await SetlistRepository(db).watchAllSetlists().first;
+        expect(setlists, isA<List<Object>>());
+
+        final userVersion = await db
+            .customSelect('PRAGMA user_version')
+            .getSingle();
+        expect(userVersion.read<int>('user_version'), db.schemaVersion);
+      });
+    }
+  });
+}
+
+/// Builds a database at an early schema [version] (1 to 7) by hand.
+///
+/// Version 1 has only the songs table; version 2 adds the setlist tables;
+/// version 3 adds the per-song scroll columns. Nothing else changed in the
+/// table shape until version 9.
+void buildEarlyDatabase(File file, {required int version}) {
+  final scrollColumns = version >= 3
+      ? ', scroll_speed REAL NOT NULL DEFAULT 1.0, '
+            'scroll_measures INTEGER NOT NULL DEFAULT 32'
+      : '';
+  final db = sqlite3.open(file.path);
+  db.execute('''
+    CREATE TABLE song_notes (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      artist TEXT NOT NULL DEFAULT '',
+      lyrics TEXT NOT NULL DEFAULT '',
+      key TEXT NOT NULL DEFAULT 'C',
+      bpm INTEGER NOT NULL DEFAULT 120,
+      favorite INTEGER NOT NULL DEFAULT 0 CHECK (favorite IN (0, 1)),
+      timestamp INTEGER NOT NULL$scrollColumns
+    )''');
+  if (version >= 2) {
+    db.execute('''
+      CREATE TABLE setlists (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )''');
+    db.execute('''
+      CREATE TABLE setlist_items (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        setlist_id INTEGER NOT NULL REFERENCES setlists(id) ON DELETE CASCADE,
+        song_id INTEGER NOT NULL REFERENCES song_notes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL
+      )''');
+  }
+  db.execute(
+    'INSERT INTO song_notes (title, lyrics, timestamp) '
+    "VALUES ('Old Early Song', '[C]hello there', 1000)",
+  );
+  db.execute('PRAGMA user_version = $version');
+  db.close();
 }

@@ -318,19 +318,19 @@ class ChordShapeService {
 /// A movable barre chord as string offsets above the barre fret.
 ///
 /// `-1` means the string is muted. Index 0 is low E, index 5 is high e.
-class _BarreTemplate {
+enum _BarreTemplate {
+  // E-shape: root on the low E string. A-shape: root on the A string (low E
+  // muted). Offsets are frets above the barre.
+  major([0, 2, 2, 1, 0, 0], [-1, 0, 2, 2, 2, 0]),
+  minor([0, 2, 2, 0, 0, 0], [-1, 0, 2, 2, 1, 0]),
+  dom7([0, 2, 0, 1, 0, 0], [-1, 0, 2, 0, 2, 0]),
+  min7([0, 2, 0, 0, 0, 0], [-1, 0, 2, 0, 1, 0]),
+  maj7([0, 2, 1, 1, 0, 0], [-1, 0, 2, 1, 2, 0]);
+
   final List<int> eShape;
   final List<int> aShape;
 
   const _BarreTemplate(this.eShape, this.aShape);
-
-  // E-shape: root on the low E string. A-shape: root on the A string (low E
-  // muted). Offsets are frets above the barre.
-  static const major = _BarreTemplate([0, 2, 2, 1, 0, 0], [-1, 0, 2, 2, 2, 0]);
-  static const minor = _BarreTemplate([0, 2, 2, 0, 0, 0], [-1, 0, 2, 2, 1, 0]);
-  static const dom7 = _BarreTemplate([0, 2, 0, 1, 0, 0], [-1, 0, 2, 0, 2, 0]);
-  static const min7 = _BarreTemplate([0, 2, 0, 0, 0, 0], [-1, 0, 2, 0, 1, 0]);
-  static const maj7 = _BarreTemplate([0, 2, 1, 1, 0, 0], [-1, 0, 2, 1, 2, 0]);
 }
 
 bool _listEquals(List<int> a, List<int> b) {

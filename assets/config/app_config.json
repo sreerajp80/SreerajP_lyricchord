@@ -1,13 +1,37 @@
 {
-  "appName": "LyricChord",
-  "description": "A lyrics & chords notebook for musicians — write chord sheets, transpose, and auto-scroll while performing.",
-  "version": "2.6.13",
-  "build": "37",
+  "appName": {
+    "en": "LyricChord",
+    "ml": "LyricChord",
+    "sa": "LyricChord"
+  },
+  "description": {
+    "en": "A lyrics & chords notebook for musicians — write chord sheets, transpose, and auto-scroll while performing.",
+    "ml": "സംഗീതജ്ഞർക്കായി വരികളും കോർഡുകളും എഴുതിവയ്ക്കാനുള്ള പുസ്തകം — കോർഡ് ഷീറ്റുകൾ എഴുതുക, ശ്രുതി മാറ്റുക, പാടുമ്പോൾ വരികൾ സ്വയം നീങ്ങട്ടെ.",
+    "sa": "सङ्गीतज्ञानां कृते गीतपाठानां स्वरसमूहानां च पुस्तिका — स्वरसमूहपत्राणि लिख्यन्ताम्, स्वरमानं परिवर्त्यताम्, प्रस्तुतिकाले पाठः स्वयं सर्पतु।"
+  },
+  "version": "2.7.0",
+  "build": "38",
   "details": {
-    "Author": "Sreeraj P",
-    "Email": "sreerajp@zohomail.in",
-    "License": "All libraries used are open source.",
-    "AI used": "Claude Code",
-    "IDE used": "VS Code"
+    "author": {
+      "en": "Sreeraj P",
+      "ml": "Sreeraj P",
+      "sa": "Sreeraj P"
+    },
+    "email": "sreerajp@zohomail.in",
+    "license": {
+      "en": "All libraries used are open source.",
+      "ml": "ഉപയോഗിച്ച എല്ലാ ലൈബ്രറികളും ഓപ്പൺ സോഴ്സ് ആണ്.",
+      "sa": "प्रयुक्ताः सर्वे तन्त्रांशकोशाः मुक्तस्रोतसः सन्ति।"
+    },
+    "aiUsed": {
+      "en": "Claude Code",
+      "ml": "Claude Code",
+      "sa": "Claude Code"
+    },
+    "ideUsed": {
+      "en": "VS Code",
+      "ml": "VS Code",
+      "sa": "VS Code"
+    }
   }
 }

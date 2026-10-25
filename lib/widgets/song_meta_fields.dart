@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/setlist.dart';
 
@@ -65,6 +67,7 @@ class SongMetaFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
@@ -74,10 +77,10 @@ class SongMetaFields extends StatelessWidget {
             onChanged: onTitleChanged,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Title',
-              hintText: 'Song title',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.labelSongMetaTitle,
+              hintText: l10n.labelSongMetaTitleHint,
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -86,27 +89,27 @@ class SongMetaFields extends StatelessWidget {
             onChanged: onArtistChanged,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Artist / Band',
-              hintText: 'Who performs it',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.labelSongMetaArtist,
+              hintText: l10n.labelSongMetaArtistHint,
+              border: const OutlineInputBorder(),
             ),
           ),
           if (onTraditionChanged != null) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<PitchTradition>(
               initialValue: tradition,
-              decoration: const InputDecoration(
-                labelText: 'Notation',
-                helperText: 'Western uses chords. Indian uses swaras.',
-                prefixIcon: Icon(Icons.library_music_outlined),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.labelSongMetaNotation,
+                helperText: l10n.descSongMetaNotationHelper,
+                prefixIcon: const Icon(Icons.library_music_outlined),
+                border: const OutlineInputBorder(),
               ),
               items: PitchTradition.values
                   .map(
                     (t) => DropdownMenuItem<PitchTradition>(
                       value: t,
-                      child: Text(t.displayName),
+                      child: Text(t.label(l10n)),
                     ),
                   )
                   .toList(),
@@ -129,20 +132,20 @@ class SongMetaFields extends StatelessWidget {
                         onChanged: onRagaChanged,
                         textCapitalization: TextCapitalization.words,
                         textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Raga',
-                          hintText: 'Kalyani, Yaman',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: l10n.labelSongMetaRaga,
+                          hintText: l10n.labelSongMetaRagaHint,
+                          border: const OutlineInputBorder(),
                         ),
                       )
                     : TextField(
                         controller: keyController,
                         onChanged: onKeyChanged,
                         textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Original key',
-                          hintText: 'C, Am, F#m',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: l10n.labelSongMetaKey,
+                          hintText: l10n.labelSongMetaKeyHint,
+                          border: const OutlineInputBorder(),
                         ),
                       ),
               ),
@@ -156,10 +159,10 @@ class SongMetaFields extends StatelessWidget {
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(3),
                   ],
-                  decoration: const InputDecoration(
-                    labelText: 'Tempo (BPM)',
-                    hintText: '120',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.labelSongMetaTempo,
+                    hintText: l10n.labelSongMetaTempoHint,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -173,8 +176,8 @@ class SongMetaFields extends StatelessWidget {
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
-                labelText: 'Tala',
-                hintText: 'Adi, Keherwa',
+                labelText: l10n.labelSongMetaTala,
+                hintText: l10n.labelSongMetaTalaHint,
                 helperText: talaWarning,
                 helperMaxLines: 3,
                 helperStyle: talaWarning == null
@@ -188,15 +191,14 @@ class SongMetaFields extends StatelessWidget {
             const SizedBox(height: 12),
             DropdownButtonFormField<int?>(
               initialValue: selectedSetlistId,
-              decoration: const InputDecoration(
-                labelText: 'Add to Setlist (Optional)',
-                prefixIcon: Icon(Icons.queue_music),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.labelSongMetaSetlist,
+                prefixIcon: const Icon(Icons.queue_music),
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text('None (Do not add)'),
+                DropdownMenuItem<int?>(
+                  child: Text(l10n.labelSongMetaSetlistNone),
                 ),
                 ...availableSetlists.map(
                   (setlist) => DropdownMenuItem<int?>(

@@ -1,4 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 
 import 'package:lyricchord/models/carnatic_import_result.dart';
 import 'package:lyricchord/services/carnatic_notation_import_service.dart';
@@ -53,6 +56,7 @@ class _CarnaticNotationSheetState extends State<CarnaticNotationSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final result = _result;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       top: false,
@@ -69,13 +73,12 @@ class _CarnaticNotationSheetState extends State<CarnaticNotationSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Paste Carnatic notation',
+                l10n.actionEditorPasteCarnatic,
                 style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: 4),
               Text(
-                'Tala: ${widget.tala}. Paste one avarta per line, or separate '
-                'them with ||. Underlined runs: write them _like_this_.',
+                l10n.descCarnaticSheetHelp(widget.tala),
                 style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -99,11 +102,8 @@ class _CarnaticNotationSheetState extends State<CarnaticNotationSheet> {
                   setState(() => _applyAnyaSvara = on);
                   _convert();
                 },
-                title: const Text('Shuddha madhyamam in Ga-Ma-Ri'),
-                subtitle: const Text(
-                  'For a bhashanga raga such as Yamunakalyani. Off by default — '
-                  'the notation does not say which madhyamam is meant.',
-                ),
+                title: Text(l10n.labelCarnaticSheetAnyaTitle),
+                subtitle: Text(l10n.descCarnaticSheetAnyaSubtitle),
               ),
               if (result != null) ...[
                 const Divider(height: 24),
@@ -134,7 +134,7 @@ class _CarnaticNotationSheetState extends State<CarnaticNotationSheet> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(l10n.actionCancel),
                   ),
                   const Spacer(),
                   FilledButton.icon(
@@ -144,9 +144,10 @@ class _CarnaticNotationSheetState extends State<CarnaticNotationSheet> {
                     icon: const Icon(Icons.add),
                     label: Text(
                       result == null || !result.hasLines
-                          ? 'Insert'
-                          : 'Insert ${result.melodyLines.length} line'
-                                '${result.melodyLines.length == 1 ? '' : 's'}',
+                          ? l10n.actionInsert
+                          : l10n.actionCarnaticSheetInsertLines(
+                              result.melodyLines.length,
+                            ),
                     ),
                   ),
                 ],
@@ -168,6 +169,7 @@ class _Summary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final fit = result.chosen;
     final good = fit.isPerfect && !result.isAmbiguous;
 
@@ -184,8 +186,11 @@ class _Summary extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '${fit.fitting} of ${fit.total} cycles fit the tala — '
-                'read with ${fit.reading.label}.',
+                l10n.descCarnaticSheetFit(
+                  fit.fitting,
+                  fit.total,
+                  fit.reading.label(l10n),
+                ),
                 style: theme.textTheme.bodyMedium,
               ),
             ),
@@ -195,8 +200,11 @@ class _Summary extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 26, top: 2),
             child: Text(
-              'The other reading (${result.rejected!.reading.label}) fits '
-              '${result.rejected!.fitting} of ${result.rejected!.total}.',
+              l10n.descCarnaticSheetOtherReading(
+                result.rejected!.reading.label(l10n),
+                result.rejected!.fitting,
+                result.rejected!.total,
+              ),
               style: theme.textTheme.bodySmall,
             ),
           ),
@@ -204,7 +212,7 @@ class _Summary extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 26, top: 4),
             child: Text(
-              problem,
+              problem.text(l10n),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
               ),
@@ -214,10 +222,7 @@ class _Summary extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 26, top: 4),
             child: Text(
-              'A Ga-Ma-Ri descent appears in '
-              '${result.anyaSvaraHints.length} cycle'
-              '${result.anyaSvaraHints.length == 1 ? '' : 's'}. '
-              'In a bhashanga raga that madhyamam is the shuddha one.',
+              l10n.descCarnaticSheetAnyaHint(result.anyaSvaraHints.length),
               style: theme.textTheme.bodySmall,
             ),
           ),

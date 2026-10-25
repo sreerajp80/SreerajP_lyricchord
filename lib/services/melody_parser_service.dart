@@ -6,7 +6,7 @@
 /// **Nothing here throws.** A melody line is written by hand, so it will be
 /// wrong sometimes. Anything unreadable becomes an `unknown` beat, keeping its
 /// place in the line so every later beat stays where the writer put it, and a
-/// plain-English note is added to `MelodyLine.problems` (CLAUDE.md hard rule 4).
+/// [MelodyProblem] is added to `MelodyLine.problems` (CLAUDE.md hard rule 4).
 ///
 /// The format, in full:
 ///
@@ -93,7 +93,7 @@ class MelodyParser {
     }
 
     final beats = <MelodyBeat>[];
-    final problems = <String>[];
+    final problems = <MelodyProblem>[];
 
     for (final token in source.split(RegExp(r'\s+'))) {
       if (token.isEmpty) continue;
@@ -104,7 +104,7 @@ class MelodyParser {
   }
 
   /// Reads one whitespace-separated token into a beat.
-  MelodyBeat _beat(String token, List<String> problems) {
+  MelodyBeat _beat(String token, List<MelodyProblem> problems) {
     if (token == '|') return const MelodyBeat.barLine();
     if (token == ',') return const MelodyBeat.hold();
     // Published notation writes a whole beat of extension as `;` — two
@@ -146,14 +146,22 @@ class MelodyParser {
 
       final note = _note(piece);
       if (note == null) {
-        problems.add('Could not read "$piece" in "$token".');
+        problems.add(
+          MelodyProblem(
+            MelodyProblemKind.unreadablePiece,
+            token: token,
+            piece: piece,
+          ),
+        );
         return MelodyBeat.unknown(token);
       }
       parts.add(MelodySlot.note(note));
     }
 
     if (parts.isEmpty) {
-      problems.add('Nothing to play in "$token".');
+      problems.add(
+        MelodyProblem(MelodyProblemKind.nothingToPlay, token: token),
+      );
       return MelodyBeat.unknown(token);
     }
 

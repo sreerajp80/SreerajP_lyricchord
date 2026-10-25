@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/widgets/carnatic_notation_sheet.dart';
 
 /// Opens the sheet on its own and hands back whatever it returns.
@@ -10,6 +12,8 @@ Future<List<String>?> _show(
   List<String>? returned;
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: appLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: Builder(
           builder: (context) => ElevatedButton(
@@ -38,7 +42,7 @@ void main() {
     ) async {
       await _show(tester);
 
-      expect(find.text('Paste Carnatic notation'), findsOneWidget);
+      expect(find.text('Paste Carnatic'), findsOneWidget);
       final button = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(button.onPressed, isNull);
     });
@@ -99,7 +103,10 @@ void main() {
       await tester.tap(find.byType(SwitchListTile));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Ma1'), findsOneWidget);
+      // The switch label itself says "Ma1 in Ga-Ma-Ri", so the converted line
+      // is the second widget containing Ma1.
+      expect(find.textContaining('Ma2'), findsNothing);
+      expect(find.textContaining('Ma1'), findsNWidgets(2));
     });
 
     testWidgets('Insert hands the converted lines back', (tester) async {
@@ -112,7 +119,7 @@ void main() {
 
       // The sheet closed; that it returned lines is covered by the importer
       // tests, so here it is enough that Insert dismissed it.
-      expect(find.text('Paste Carnatic notation'), findsNothing);
+      expect(find.text('Paste Carnatic'), findsNothing);
     });
 
     testWidgets('Cancel returns nothing', (tester) async {
@@ -121,7 +128,7 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Paste Carnatic notation'), findsNothing);
+      expect(find.text('Paste Carnatic'), findsNothing);
     });
 
     testWidgets('junk input never throws', (tester) async {

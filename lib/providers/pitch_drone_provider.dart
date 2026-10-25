@@ -52,7 +52,6 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
       fontScaleIndex:
           prefs.getInt(AppConstants.prefFontScaleIndex) ??
           defaults.fontScaleIndex,
-      dronePlaying: false,
     );
   }
 
@@ -163,8 +162,8 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
         ? state.copyWith(clearError: true)
         : state.copyWith(
             lastError: targetMode == DroneMode.western
-                ? 'Could not play the chord cue.'
-                : 'Could not play the pitch cue.',
+                ? DroneError.chordCue
+                : DroneError.pitchCue,
           );
     return played;
   }
@@ -202,10 +201,7 @@ class PitchDroneNotifier extends Notifier<PitchDroneSettings> {
     _soundingKey = started ? key : null;
     state = started
         ? state.copyWith(dronePlaying: true, clearError: true)
-        : state.copyWith(
-            dronePlaying: false,
-            lastError: 'Could not start the drone.',
-          );
+        : state.copyWith(dronePlaying: false, lastError: DroneError.startDrone);
     return started;
   }
 

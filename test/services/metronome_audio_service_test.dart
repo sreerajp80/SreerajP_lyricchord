@@ -43,7 +43,7 @@ void main() {
     });
 
     test('the declared data size matches the bytes actually written', () {
-      final wav = synth.generateClickWav(durationSeconds: 0.03);
+      final wav = synth.generateClickWav();
       // 30 ms at 44100 Hz, mono, 2 bytes per sample.
       const expectedSamples = 1323;
       expect(readUint32(wav, 40), expectedSamples * 2);
@@ -89,7 +89,7 @@ void main() {
       int peakOf(Uint8List wav) =>
           samplesOf(wav).map((s) => s.abs()).reduce(math.max);
 
-      final normal = synth.generateClickWav(frequency: 1000, amplitude: 0.7);
+      final normal = synth.generateClickWav(amplitude: 0.7);
       final accent = synth.generateClickWav(frequency: 1500, amplitude: 0.95);
       expect(peakOf(accent), greaterThan(peakOf(normal)));
     });

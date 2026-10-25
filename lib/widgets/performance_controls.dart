@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/metronome_provider.dart';
@@ -59,6 +60,8 @@ class PerformanceControls extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final ragaLine = _ragaLine(l10n);
     final metronomeEnabled = ref.watch(
       metronomeSettingsProvider.select((s) => s.enabled),
     );
@@ -98,7 +101,7 @@ class PerformanceControls extends ConsumerWidget {
                     // before the song begins, so it belongs on the ordinary
                     // screen as well.
                     IconButton(
-                      tooltip: 'Pitch pipe & shruti box',
+                      tooltip: l10n.tooltipPerfDrone,
                       visualDensity: VisualDensity.compact,
                       icon: const Icon(Icons.graphic_eq),
                       onPressed: () => showModalBottomSheet<void>(
@@ -122,14 +125,14 @@ class PerformanceControls extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            _statusLine(ref),
+            _statusLine(ref, l10n),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          if (_ragaLine != null)
+          if (ragaLine != null)
             Text(
-              _ragaLine!,
+              ragaLine,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w600,
@@ -141,10 +144,10 @@ class PerformanceControls extends ConsumerWidget {
   }
 
   /// `Raga Yamunakalyani · Tala Adi`, or `null` when the song names neither.
-  String? get _ragaLine {
+  String? _ragaLine(AppLocalizations l10n) {
     final parts = [
-      if (raga != null && raga!.isNotEmpty) 'Raga $raga',
-      if (tala != null && tala!.isNotEmpty) 'Tala $tala',
+      if (raga != null && raga!.isNotEmpty) l10n.labelInfoRaga(raga!),
+      if (tala != null && tala!.isNotEmpty) l10n.labelInfoTala(tala!),
     ];
     return parts.isEmpty ? null : parts.join('  ·  ');
   }
@@ -156,18 +159,21 @@ class PerformanceControls extends ConsumerWidget {
   /// `Auto-scroll · 120 BPM`, with the raga and tala on the line below. A
   /// Western note letter has no place on an Indian sheet, and a swara is
   /// already named relative to Sa, so there is nothing a key would add.
-  String _statusLine(WidgetRef ref) {
+  String _statusLine(WidgetRef ref, AppLocalizations l10n) {
     final semitones = ref.watch(
       performanceSettingsProvider.select((s) => s.semitones),
     );
     final settings = ref.watch(autoScrollProvider);
 
     final isIndian = raga != null && raga!.isNotEmpty;
-    final keyHint =
-        'Key $currentKey${semitones == 0 ? '' : ' (${_signed(semitones)})'}';
-    final base = isIndian
-        ? 'Auto-scroll  ·  $bpm BPM'
-        : 'Auto-scroll  ·  $keyHint  ·  $bpm BPM';
+    final keyHint = semitones == 0
+        ? l10n.labelInfoKey(currentKey)
+        : l10n.labelInfoKeyTransposed(currentKey, _signed(semitones));
+    final base = [
+      l10n.labelInfoAutoScroll,
+      if (!isIndian) keyHint,
+      l10n.labelInfoBpm(bpm),
+    ].join('  ·  ');
 
     if (settings.mode != AutoScrollMode.tempo) return base;
 
@@ -177,7 +183,11 @@ class PerformanceControls extends ConsumerWidget {
       beatsPerMeasure: settings.beatsPerMeasure,
     );
     if (duration == Duration.zero) return base;
-    return '$base  ·  ${settings.measures} bars  ·  ${_formatDuration(duration)}';
+    return [
+      base,
+      l10n.labelInfoBars(settings.measures),
+      _formatDuration(duration),
+    ].join('  ·  ');
   }
 
   /// `+2` / `-3`, for the "how far from the written key" hint.
@@ -207,11 +217,14 @@ class _SpeedReadout extends ConsumerWidget {
 
     final theme = Theme.of(context);
     return Tooltip(
-      message: 'Scroll speed — double-tap the sheet to change',
+      message: AppLocalizations.of(context).tooltipPerfSpeed,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Text(
-          formatSpeedLabel(settings.speed),
+          formatSpeedLabel(
+            settings.speed,
+            AppLocalizations.of(context).localeName,
+          ),
           style: theme.textTheme.titleMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             fontFeatures: const [FontFeature.tabularFigures()],
@@ -233,7 +246,9 @@ class _ChordsToggle extends ConsumerWidget {
     );
 
     return IconButton(
-      tooltip: showing ? 'Hide chords' : 'Show chords',
+      tooltip: showing
+          ? AppLocalizations.of(context).tooltipPerfHideChords
+          : AppLocalizations.of(context).tooltipPerfShowChords,
       visualDensity: VisualDensity.compact,
       isSelected: showing,
       icon: Icon(showing ? Icons.music_note : Icons.music_off),
@@ -253,7 +268,9 @@ class _MelodyToggle extends ConsumerWidget {
     );
 
     return IconButton(
-      tooltip: showing ? 'Hide melody' : 'Show melody',
+      tooltip: showing
+          ? AppLocalizations.of(context).tooltipPerfHideMelody
+          : AppLocalizations.of(context).tooltipPerfShowMelody,
       visualDensity: VisualDensity.compact,
       isSelected: showing,
       icon: Icon(showing ? Icons.piano : Icons.piano_off),

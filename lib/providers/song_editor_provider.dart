@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lyricchord/core/utils/song_copy.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/models/song_title_words.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/services/chord_suggestion_service.dart';
 
@@ -80,7 +81,7 @@ class SongDraft {
   static const int defaultBpm = 120;
 
   /// The title used when the user saves without typing one.
-  static const String fallbackTitle = 'Untitled Song';
+  static const String fallbackTitle = SongTitleWords.englishUntitled;
 
   /// Builds a draft from a saved song.
   factory SongDraft.fromSong(SongNote song) {
@@ -191,11 +192,14 @@ class SongDraft {
   }
 
   /// Turns the draft into a savable [SongNote], filling in safe defaults.
-  SongNote toSong({required int timestamp}) {
+  SongNote toSong({
+    required int timestamp,
+    String untitledTitle = fallbackTitle,
+  }) {
     final cleanTitle = title.trim();
     return SongNote(
       id: id,
-      title: cleanTitle.isEmpty ? fallbackTitle : cleanTitle,
+      title: cleanTitle.isEmpty ? untitledTitle : cleanTitle,
       artist: artist.trim(),
       lyrics: lyrics,
       key: key.trim().isEmpty ? defaultKey : key.trim(),
@@ -266,12 +270,15 @@ class SongEditorNotifier extends AsyncNotifier<SongDraft> {
   ///
   /// Creates the song when it is new, updates it otherwise. Storage problems
   /// come back as a `StorageException` for the screen to show in a `SnackBar`.
-  Future<int> save() async {
+  Future<int> save({SongTitleWords words = SongTitleWords.english}) async {
     final draft = state.value;
     if (draft == null) return 0;
 
     final repository = ref.read(songRepositoryProvider);
-    final song = draft.toSong(timestamp: DateTime.now().millisecondsSinceEpoch);
+    final song = draft.toSong(
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      untitledTitle: words.untitled,
+    );
 
     if (draft.id == 0) {
       final newId = await repository.insert(song);
@@ -291,17 +298,20 @@ class SongEditorNotifier extends AsyncNotifier<SongDraft> {
   /// new row titled `"<title> (Copy)"`, carrying whatever key, lyrics, and other
   /// changes the user has made in this session. The editor's own draft is left
   /// as it was, still pointing at the original song.
-  Future<int> saveAsCopy() async {
+  Future<int> saveAsCopy({
+    SongTitleWords words = SongTitleWords.english,
+  }) async {
     final draft = state.value;
     if (draft == null) return 0;
 
     final repository = ref.read(songRepositoryProvider);
     final source = draft.toSong(
       timestamp: DateTime.now().millisecondsSinceEpoch,
+      untitledTitle: words.untitled,
     );
     final copy = source.copyWith(
       id: 0,
-      title: copiedTitle(source.title),
+      title: copiedTitle(source.title, words),
       favorite: false,
     );
     return repository.insert(copy);

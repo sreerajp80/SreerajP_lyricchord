@@ -84,7 +84,7 @@ void main() {
     expect(started, isFalse);
     final settings = container.read(pitchDroneProvider);
     expect(settings.dronePlaying, isFalse);
-    expect(settings.lastError, 'Could not start the drone.');
+    expect(settings.lastError, DroneError.startDrone);
   });
 
   test('a drone that does sound is reported as playing', () async {
@@ -110,10 +110,7 @@ void main() {
         .playPitchCue(key: 'A');
 
     expect(played, isFalse);
-    expect(
-      container.read(pitchDroneProvider).lastError,
-      'Could not play the pitch cue.',
-    );
+    expect(container.read(pitchDroneProvider).lastError, DroneError.pitchCue);
   });
 
   test(

@@ -137,4 +137,86 @@ void main() {
       expect(progress.reassembledContent, equals(payload));
     });
   });
+
+  group('AirQR rejects impossible frames', () {
+    String v1(String total, String seq, {String payload = 'SGVsbG8='}) =>
+        'AIRQR|v1|123456|$total|$seq|1|$payload';
+
+    test('block count must be between 1 and the maximum', () {
+      expect(AirQrFrame.parse(v1('0', '0')), isNull);
+      expect(AirQrFrame.parse(v1('-3', '0')), isNull);
+      expect(
+        AirQrFrame.parse(v1('${AirQrFrame.maxTotalBlocks + 1}', '0')),
+        isNull,
+      );
+      expect(AirQrFrame.parse(v1('3', '2')), isNotNull);
+    });
+
+    test('a sequence index outside the stream is refused', () {
+      expect(AirQrFrame.parse(v1('3', '3')), isNull);
+      expect(AirQrFrame.parse(v1('3', '-1')), isNull);
+    });
+
+    test('an empty payload is refused', () {
+      expect(AirQrFrame.parse(v1('3', '0', payload: '')), isNull);
+    });
+
+    test('parity indices must be in range, unique and match the degree', () {
+      expect(AirQrFrame.parse('AIRQR|LT1|1|4|2:0,9|1|SGVsbG8='), isNull);
+      expect(AirQrFrame.parse('AIRQR|LT1|1|4|2:1,1|1|SGVsbG8='), isNull);
+      expect(AirQrFrame.parse('AIRQR|LT1|1|4|3:0,1|1|SGVsbG8='), isNull);
+      expect(AirQrFrame.parse('AIRQR|LT1|1|4|2:0,1|1|SGVsbG8='), isNotNull);
+    });
+
+    test('junk frames never count as progress', () {
+      final frames = AirQrService.encodePayload('Hello AirQR', blockSize: 8);
+      final decoder = AirQrService();
+      var progress = decoder.processFrameString(
+        frames.first.toQrString(),
+        const AirQrProgress(),
+      );
+      final received = progress.receivedBlockCount;
+
+      // Same stream, but claims a different block count.
+      final wrongCount = frames.first.toQrString().replaceFirst(
+        '|${frames.first.totalBlocks}|',
+        '|${frames.first.totalBlocks + 5}|',
+      );
+      progress = decoder.processFrameString(wrongCount, progress);
+      expect(progress.receivedBlockCount, received);
+      expect(progress.status, isNot(AirQrStatus.completed));
+    });
+
+    test('a damaged parity frame is ignored', () {
+      const payload = 'Parity frames must pass their checksum too.';
+      final frames = AirQrService.encodePayload(
+        payload,
+        blockSize: 16,
+        extraParityRatioPercent: 100,
+      );
+      final systematic = frames.where((f) => !f.isParity).toList();
+      final parity = frames.firstWhere((f) => f.degree == 2);
+
+      final decoder = AirQrService();
+      var progress = const AirQrProgress();
+      // Feed every block except one the parity frame covers.
+      final missing = parity.indices.first;
+      for (final f in systematic.where((f) => f.sequenceIndex != missing)) {
+        progress = decoder.processFrameString(f.toQrString(), progress);
+      }
+      final damaged = AirQrFrame(
+        streamId: parity.streamId,
+        totalBlocks: parity.totalBlocks,
+        sequenceIndex: -1,
+        isParity: true,
+        degree: parity.degree,
+        indices: parity.indices,
+        checksum: parity.checksum ^ 1,
+        payloadBytes: parity.payloadBytes,
+      );
+      progress = decoder.processFrameString(damaged.toQrString(), progress);
+      expect(progress.status, AirQrStatus.receiving);
+      expect(progress.capturedIndices, isNot(contains(missing)));
+    });
+  });
 }

@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// Shown when the songbook could not be read from the database.
 ///
@@ -18,6 +20,7 @@ class SongbookError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Center(
       child: Padding(
@@ -28,14 +31,13 @@ class SongbookError extends StatelessWidget {
             Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
-              'Could not open your songbook',
+              l10n.errorSongbookErrorTitle,
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Your songs are still saved. The app could not read them just '
-              'now.',
+              l10n.errorSongbookErrorMessage,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -55,7 +57,7 @@ class SongbookError extends StatelessWidget {
             FilledButton.tonalIcon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Try again'),
+              label: Text(l10n.actionTryAgain),
             ),
           ],
         ),

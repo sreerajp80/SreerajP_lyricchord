@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// The Quick Chord Inserter: a scrolling row of chord chips plus a button for
 /// adding a chord that is not in the list.
@@ -25,6 +27,7 @@ class ChordInserterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -43,15 +46,15 @@ class ChordInserterBar extends StatelessWidget {
             for (final chord in chords) ...[
               ActionChip(
                 label: Text(chord),
-                tooltip: 'Insert [$chord]',
+                tooltip: l10n.tooltipChordInserterInsert(chord),
                 onPressed: () => onChordTap(chord),
               ),
               const SizedBox(width: 8),
             ],
             ActionChip(
               avatar: const Icon(Icons.add, size: 18),
-              label: const Text('Custom'),
-              tooltip: 'Add your own chord',
+              label: Text(l10n.actionChordInserterCustom),
+              tooltip: l10n.tooltipChordInserterCustom,
               onPressed: () => _askForChord(context),
             ),
           ],
@@ -94,25 +97,26 @@ class _CustomChordDialogState extends State<_CustomChordDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Custom chord'),
+      title: Text(l10n.titleChordInserterDialog),
       content: TextField(
         controller: _controller,
         autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Chord',
-          hintText: 'F#m7, Cmaj7, D/F#',
+        decoration: InputDecoration(
+          labelText: l10n.labelChordInserterChord,
+          hintText: l10n.labelChordInserterChordHint,
         ),
         onSubmitted: (value) => Navigator.of(context).pop(value),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n.actionCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text('Add'),
+          child: Text(l10n.actionAdd),
         ),
       ],
     );

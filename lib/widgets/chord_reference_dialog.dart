@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/services/chord_shape_service.dart';
 import 'package:lyricchord/widgets/guitar_chord_diagram.dart';
@@ -55,6 +56,7 @@ class ChordReferenceDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(24),
@@ -67,27 +69,29 @@ class ChordReferenceDialog extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    swaraMode ? 'Swara Reference' : 'Chord Reference',
+                    swaraMode
+                        ? l10n.actionPerfSwaraReference
+                        : l10n.titleChordRef,
                     style: theme.textTheme.titleLarge,
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Close',
+                  tooltip: l10n.actionClose,
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close),
                 ),
               ],
             ),
           ),
-          Flexible(child: swaraMode ? _swaraBody() : _chordBody()),
+          Flexible(child: swaraMode ? _swaraBody(l10n) : _chordBody(l10n)),
         ],
       ),
     );
   }
 
   /// One scrolling grid of keyboards, each showing where that swara sits.
-  Widget _swaraBody() {
-    if (chords.isEmpty) return const _Empty(message: 'No swaras in this song');
+  Widget _swaraBody(AppLocalizations l10n) {
+    if (chords.isEmpty) return _Empty(message: l10n.emptyChordRefNoSwaras);
 
     return _DiagramGrid(
       chords: chords,
@@ -96,18 +100,24 @@ class ChordReferenceDialog extends StatelessWidget {
   }
 
   /// The two-tab guitar and harmonium view, unchanged.
-  Widget _chordBody() {
-    if (chords.isEmpty) return const _Empty(message: 'No chords in this song');
+  Widget _chordBody(AppLocalizations l10n) {
+    if (chords.isEmpty) return _Empty(message: l10n.emptyChordRefNoChords);
 
     return DefaultTabController(
       length: 2,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const TabBar(
+          TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.music_note), text: 'Guitar'),
-              Tab(icon: Icon(Icons.piano), text: 'Harmonium'),
+              Tab(
+                icon: const Icon(Icons.music_note),
+                text: l10n.tabChordRefGuitar,
+              ),
+              Tab(
+                icon: const Icon(Icons.piano),
+                text: l10n.tabChordRefHarmonium,
+              ),
             ],
           ),
           Flexible(

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lyricchord/models/melody_beat.dart';
+import 'package:lyricchord/models/melody_line.dart';
 import 'package:lyricchord/services/melody_player_service.dart';
 import 'package:lyricchord/services/melody_parser_service.dart';
 
@@ -331,6 +332,14 @@ void main() {
 
     test('a star on its own is still unreadable', () {
       expect(parser.parse('{melody} * , Sa').problems, isNotEmpty);
+    });
+
+    test('a problem says what could not be read and where', () {
+      final problems = parser.parse('{melody} Sa Qx Ri').problems;
+
+      expect(problems, isNotEmpty);
+      expect(problems.first.kind, MelodyProblemKind.unreadablePiece);
+      expect(problems.first.token, 'Qx');
     });
   });
 

@@ -1,11 +1,14 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/screens/chord_settings_screen.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   Future<SharedPreferences> pumpChords(
@@ -20,7 +23,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-        child: const MaterialApp(home: ChordSettingsScreen()),
+        child: const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ChordSettingsScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -46,6 +53,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Dsus4');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
     await tester.pumpAndSettle();
+    expectAllIconButtonsHaveTooltips(tester);
 
     expect(find.widgetWithText(ListTile, 'Dsus4'), findsOneWidget);
     expect(prefs.getStringList(AppConstants.prefCustomChords), ['Dsus4']);

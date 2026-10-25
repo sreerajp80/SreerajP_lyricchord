@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/performance_provider.dart';
 import 'package:lyricchord/services/chord_transposer.dart';
@@ -67,6 +68,7 @@ class TransposeSheet extends ConsumerWidget {
     final settings = ref.watch(performanceSettingsProvider);
     final controls = ref.read(performanceSettingsProvider.notifier);
     final currentKey = _transposer.transposeKey(writtenKey, settings.semitones);
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -75,7 +77,7 @@ class TransposeSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Performance controls', style: theme.textTheme.titleMedium),
+            Text(l10n.actionPerfControls, style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
             if (showTranspose)
               Wrap(
@@ -85,13 +87,16 @@ class TransposeSheet extends ConsumerWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
-                    child: Text('Transpose', style: theme.textTheme.bodyLarge),
+                    child: Text(
+                      l10n.labelTranspose,
+                      style: theme.textTheme.bodyLarge,
+                    ),
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton.filledTonal(
-                        tooltip: 'Transpose down',
+                        tooltip: l10n.tooltipTransposeDown,
                         onPressed: controls.transposeDown,
                         icon: const Icon(Icons.remove),
                       ),
@@ -104,7 +109,7 @@ class TransposeSheet extends ConsumerWidget {
                         ),
                       ),
                       IconButton.filledTonal(
-                        tooltip: 'Transpose up',
+                        tooltip: l10n.tooltipTransposeUp,
                         onPressed: controls.transposeUp,
                         icon: const Icon(Icons.add),
                       ),
@@ -112,7 +117,7 @@ class TransposeSheet extends ConsumerWidget {
                         onPressed: settings.isTransposed
                             ? controls.resetTranspose
                             : null,
-                        child: const Text('Reset'),
+                        child: Text(l10n.actionReset),
                       ),
                     ],
                   ),
@@ -120,21 +125,21 @@ class TransposeSheet extends ConsumerWidget {
               ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Show chords'),
+              title: Text(l10n.tooltipPerfShowChords),
               value: settings.showChords,
               onChanged: (_) => controls.toggleChords(),
             ),
             if (showMelodyToggle)
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Show melody'),
-                subtitle: const Text('Full screen never shows the melody'),
+                title: Text(l10n.tooltipPerfShowMelody),
+                subtitle: Text(l10n.descTransposeMelodySubtitle),
                 value: settings.showMelody,
                 onChanged: (_) => controls.toggleMelody(),
               ),
             const SizedBox(height: 4),
             Text(
-              'Tip: pinch the lyrics with two fingers to change the text size.',
+              l10n.descTransposePinchTip,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

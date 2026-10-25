@@ -61,7 +61,6 @@ void main() {
         final firstRepo = SongRepository(first);
         await firstRepo.insert(
           const SongNote(
-            id: 0,
             title: 'ദൈവം കനിവായ് തന്നതല്ലേ ഈ ജന്മം',
             lyrics: '[C]line',
             timestamp: 1,
@@ -80,7 +79,7 @@ void main() {
 
         // And a write from the second connection also goes through.
         final id = await secondRepo.insert(
-          const SongNote(id: 0, title: 'Second Song', lyrics: '', timestamp: 2),
+          const SongNote(title: 'Second Song', timestamp: 2),
         );
         expect(id, greaterThan(0));
 

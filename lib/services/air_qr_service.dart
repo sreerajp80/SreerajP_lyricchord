@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
+import 'package:lyricchord/core/logging/app_logger.dart';
 import 'package:lyricchord/models/air_qr_frame.dart';
 import 'package:lyricchord/models/air_qr_progress.dart';
 
@@ -12,6 +12,7 @@ class AirQrService {
   int _totalBlocks = 0;
   final Map<int, List<int>> _resolvedBlocks = {};
   final List<AirQrFrame> _pendingParityFrames = [];
+  int? _blockSize;
 
   DateTime? _lastFrameTime;
   int _frameCountInWindow = 0;
@@ -23,6 +24,7 @@ class AirQrService {
     _totalBlocks = 0;
     _resolvedBlocks.clear();
     _pendingParityFrames.clear();
+    _blockSize = null;
     _lastFrameTime = null;
     _frameCountInWindow = 0;
     _currentFps = 0.0;
@@ -43,6 +45,13 @@ class AirQrService {
       _activeStreamId = frame.streamId;
       _totalBlocks = frame.totalBlocks;
     }
+
+    // Every block of one stream has the same size and the same block count.
+    // A frame that disagrees is not part of this stream; mixing it in would
+    // corrupt the XOR maths.
+    if (frame.totalBlocks != _totalBlocks) return currentProgress;
+    _blockSize ??= frame.payloadBytes.length;
+    if (frame.payloadBytes.length != _blockSize) return currentProgress;
 
     // Insert systematic frame directly
     if (!frame.isParity) {
@@ -98,6 +107,8 @@ class AirQrService {
   }
 
   void _addParityFrame(AirQrFrame frame) {
+    // A damaged parity frame would plant a wrong block, so check it first.
+    if (!_validateChecksum(frame.payloadBytes, frame.checksum)) return;
     // Simplify frame using currently resolved blocks
     final List<int> unresolvedIndices = [];
     List<int> payload = List.from(frame.payloadBytes);
@@ -116,7 +127,9 @@ class AirQrService {
         _resolvedBlocks[singleIdx] = payload;
         _reducePendingParityFrames();
       }
-    } else if (unresolvedIndices.length > 1) {
+    } else if (unresolvedIndices.length > 1 &&
+        _pendingParityFrames.length < _totalBlocks * 4) {
+      // Bounded so a long scan of repeating frames cannot grow memory forever.
       _pendingParityFrames.add(
         AirQrFrame(
           streamId: frame.streamId,
@@ -219,7 +232,7 @@ class AirQrService {
       final String result = utf8.decode(fullBytes, allowMalformed: true);
       return result;
     } catch (e) {
-      if (kDebugMode) debugPrint('Payload reassembly error: $e');
+      AppLogger.warning('AirQR payload reassembly failed', error: e);
       return null;
     }
   }

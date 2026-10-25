@@ -51,3 +51,19 @@ android/*.keystore
 
 # Obfuscation symbols
 build/symbols/
+
+# Release artifacts (engineering standard §20.4) — build/ already covers the
+# default output folders; these catch copies made elsewhere.
+*.apk
+*.aab
+*.ipa
+
+# Apple signing material — never commit (guideline.md §2.5)
+*.p12
+*.pfx
+*.p8
+*.mobileprovision
+*.provisionprofile
+
+# Machine-local state
+.flutter-plugins

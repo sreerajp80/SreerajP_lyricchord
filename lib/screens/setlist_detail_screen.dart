@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:lyricchord/core/errors/app_exception.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 import 'package:lyricchord/models/setlist.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
@@ -21,21 +23,22 @@ class SetlistDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final setlistAsync = ref.watch(setlistByIdProvider(setlistId));
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return setlistAsync.when(
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Setlist')),
+        appBar: AppBar(title: Text(l10n.titleSetlist)),
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (err, _) => Scaffold(
-        appBar: AppBar(title: const Text('Setlist')),
-        body: Center(child: Text('Error loading setlist: $err')),
+        appBar: AppBar(title: Text(l10n.titleSetlist)),
+        body: Center(child: Text(l10n.errorSetlistLoadOne('$err'))),
       ),
       data: (setlist) {
         if (setlist == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Setlist')),
-            body: const Center(child: Text('Setlist not found.')),
+            appBar: AppBar(title: Text(l10n.titleSetlist)),
+            body: Center(child: Text(l10n.errorSetlistNotFound)),
           );
         }
 
@@ -45,17 +48,17 @@ class SetlistDetailScreen extends ConsumerWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.qr_code_2_rounded),
-                tooltip: 'Share Setlist via AirQR Stream',
+                tooltip: l10n.tooltipSetlistShareAirQr,
                 onPressed: () => _shareSetlistAirQr(context, setlist),
               ),
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Edit setlist info',
+                tooltip: l10n.tooltipSetlistEditInfo,
                 onPressed: () => _editSetlist(context, ref, setlist),
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline),
-                tooltip: 'Delete setlist',
+                tooltip: l10n.tooltipSetlistDelete,
                 onPressed: () => _deleteSetlist(context, ref, setlist),
               ),
             ],
@@ -64,7 +67,7 @@ class SetlistDetailScreen extends ConsumerWidget {
               ? FloatingActionButton.extended(
                   onPressed: () => _performSetlist(context, ref, setlist, 0),
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Perform Setlist'),
+                  label: Text(l10n.actionSetlistPerformAll),
                 )
               : null,
           body: Column(
@@ -93,7 +96,7 @@ class SetlistDetailScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Text(
-                      '${setlist.songCount} ${setlist.songCount == 1 ? 'Song' : 'Songs'}',
+                      l10n.titleSetlistSongCount(setlist.songCount),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -102,7 +105,7 @@ class SetlistDetailScreen extends ConsumerWidget {
                     OutlinedButton.icon(
                       onPressed: () => _addSongs(context, ref, setlist),
                       icon: const Icon(Icons.add),
-                      label: const Text('Add Songs'),
+                      label: Text(l10n.actionSetlistAddSongs),
                     ),
                   ],
                 ),
@@ -121,14 +124,14 @@ class SetlistDetailScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'No songs in this setlist',
+                              l10n.emptySetlistNoSongs,
                               style: theme.textTheme.titleSmall,
                             ),
                             const SizedBox(height: 8),
                             ElevatedButton.icon(
                               onPressed: () => _addSongs(context, ref, setlist),
                               icon: const Icon(Icons.add),
-                              label: const Text('Add Songs Now'),
+                              label: Text(l10n.actionSetlistAddSongsNow),
                             ),
                           ],
                         ),
@@ -172,7 +175,16 @@ class SetlistDetailScreen extends ConsumerWidget {
                                 ),
                               ),
                               subtitle: Text(
-                                '${song.artist.isNotEmpty ? '${song.artist} • ' : ''}Key: ${song.key} • ${song.bpm} BPM',
+                                song.artist.isNotEmpty
+                                    ? l10n.descSetlistSongDetailsWithArtist(
+                                        song.artist,
+                                        song.key,
+                                        song.bpm,
+                                      )
+                                    : l10n.descSetlistSongDetails(
+                                        song.key,
+                                        song.bpm,
+                                      ),
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -182,7 +194,7 @@ class SetlistDetailScreen extends ConsumerWidget {
                                       Icons.remove_circle_outline,
                                     ),
                                     color: theme.colorScheme.error,
-                                    tooltip: 'Remove from setlist',
+                                    tooltip: l10n.tooltipSetlistRemoveSong,
                                     onPressed: () => _removeSong(
                                       context,
                                       ref,
@@ -240,9 +252,9 @@ class SetlistDetailScreen extends ConsumerWidget {
           );
     } on AppException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.text(AppLocalizations.of(context)))),
+        );
       }
     }
   }
@@ -252,42 +264,46 @@ class SetlistDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Setlist setlist,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete setlist?'),
-        content: Text(
-          '"${setlist.name}" will be deleted. Songs in your library will not be deleted.',
-        ),
+        title: Text(l10n.titleSetlistDelete),
+        content: Text(l10n.descSetlistDeleteMessage(setlist.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
     );
 
-    if (confirm != true) return;
+    if (confirm != true || !context.mounted) return;
+
+    // Close the screen first, then delete. This screen watches the setlist
+    // live, so deleting first made it redraw as "Setlist not found." for a
+    // moment before it closed. The page stays visible while its closing
+    // animation runs, so the delete also waits for that to finish. Keep what
+    // is needed once the screen has gone.
+    final repository = ref.read(setlistRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final route = ModalRoute.of(context);
+    context.pop();
+    if (route != null) await route.completed;
 
     try {
-      await ref.read(setlistRepositoryProvider).deleteSetlist(setlist.id);
-      if (context.mounted) {
-        context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Deleted setlist "${setlist.name}".')),
-        );
-      }
+      await repository.deleteSetlist(setlist.id);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.bodySetlistDeleted(setlist.name))),
+      );
     } on AppException catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
-      }
+      // The setlist is still in the list, so nothing is lost.
+      messenger.showSnackBar(SnackBar(content: Text(e.text(l10n))));
     }
   }
 
@@ -309,9 +325,9 @@ class SetlistDetailScreen extends ConsumerWidget {
           .reorderSongs(setlist.id, selectedIds);
     } on AppException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.text(AppLocalizations.of(context)))),
+        );
       }
     }
   }
@@ -331,9 +347,9 @@ class SetlistDetailScreen extends ConsumerWidget {
       await ref.read(setlistRepositoryProvider).reorderSongs(setlist.id, ids);
     } on AppException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.text(AppLocalizations.of(context)))),
+        );
       }
     }
   }
@@ -352,18 +368,19 @@ class SetlistDetailScreen extends ConsumerWidget {
       await ref.read(setlistRepositoryProvider).reorderSongs(setlist.id, ids);
     } on AppException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.text(AppLocalizations.of(context)))),
+        );
       }
     }
   }
 
   void _shareSetlistAirQr(BuildContext context, Setlist setlist) {
+    final l10n = AppLocalizations.of(context);
     if (setlist.songs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No songs in setlist to share.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.bodySetlistNothingToShare)));
       return;
     }
     const service = ChordProService();
@@ -371,7 +388,7 @@ class SetlistDetailScreen extends ConsumerWidget {
     context.push(
       '/air-qr-transmit',
       extra: AirQrTransmitterArgs(
-        title: 'Setlist: ${setlist.name}',
+        title: l10n.titleSetlistAirQr(setlist.name),
         chordProPayload: text,
       ),
     );

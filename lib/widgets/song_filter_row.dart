@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lyricchord/providers/song_list_provider.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// The "All Songs" / "Starred" chips with live counts. The counts come from
 /// [songCountsProvider], so they update as songs are added, starred, or
@@ -13,6 +14,7 @@ class SongFilterRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(songFilterProvider);
     final counts = ref.watch(songCountsProvider);
+    final l10n = AppLocalizations.of(context);
 
     void select(SongFilter value) =>
         ref.read(songFilterProvider.notifier).setFilter(value);
@@ -25,13 +27,13 @@ class SongFilterRow extends ConsumerWidget {
       child: Row(
         children: [
           ChoiceChip(
-            label: Text('All Songs (${counts.total})'),
+            label: Text(l10n.labelSongFilterAll(counts.total)),
             selected: filter == SongFilter.all,
             onSelected: (_) => select(SongFilter.all),
           ),
           const SizedBox(width: 8),
           ChoiceChip(
-            label: Text('Starred (${counts.starred})'),
+            label: Text(l10n.labelSongFilterStarred(counts.starred)),
             selected: filter == SongFilter.starred,
             onSelected: (_) => select(SongFilter.starred),
           ),

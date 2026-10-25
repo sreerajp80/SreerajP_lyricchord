@@ -1,10 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
 import 'package:lyricchord/widgets/stage_hud.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   late ProviderContainer container;
@@ -24,6 +27,8 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: StageHud(
               visible: visible,
@@ -79,6 +84,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.fullscreen_exit));
     await tester.pump();
+    expectAllIconButtonsHaveTooltips(tester);
 
     expect(container.read(stageModeProvider).enabled, isFalse);
   });

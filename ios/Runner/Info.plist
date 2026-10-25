@@ -26,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>LyricChord uses the camera only to scan AirQR codes when you choose to receive songs from another device.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>LyricChord reads a photo you pick only to find an AirQR code in it.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>LyricChord uses Face ID to unlock Stage Lock.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

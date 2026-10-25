@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/core/utils/formatting_locale.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
@@ -38,7 +40,7 @@ class AutoScrollControls extends ConsumerWidget {
             width: _CircleToggle.size,
             height: _CircleToggle.size,
             child: IconButton.filledTonal(
-              tooltip: 'Full screen',
+              tooltip: AppLocalizations.of(context).tooltipAutoScrollFullScreen,
               onPressed: ref.read(stageModeProvider.notifier).enter,
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.fullscreen),
@@ -60,19 +62,20 @@ class _ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _CircleToggle(
-          label: 'M',
-          tooltip: 'Manual',
+          label: l10n.actionAutoScrollManualShort,
+          tooltip: l10n.labelAutoScrollManual,
           selected: mode == AutoScrollMode.manual,
           onPressed: () => onChanged(AutoScrollMode.manual),
         ),
         const SizedBox(width: 6),
         _CircleToggle(
-          label: 'T',
-          tooltip: 'Tempo',
+          label: l10n.actionAutoScrollTempoShort,
+          tooltip: l10n.labelAutoScrollTempo,
           selected: mode == AutoScrollMode.tempo,
           onPressed: () => onChanged(AutoScrollMode.tempo),
         ),
@@ -112,22 +115,24 @@ class _CircleToggle extends StatelessWidget {
       ),
     );
 
-    return Tooltip(
-      message: tooltip,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: selected
-            ? IconButton.filled(
-                onPressed: onPressed,
-                style: IconButton.styleFrom(
-                  backgroundColor: scheme.primary,
-                  foregroundColor: scheme.onPrimary,
-                ),
-                icon: child,
-              )
-            : IconButton.outlined(onPressed: onPressed, icon: child),
-      ),
+    return SizedBox(
+      width: size,
+      height: size,
+      child: selected
+          ? IconButton.filled(
+              onPressed: onPressed,
+              tooltip: tooltip,
+              style: IconButton.styleFrom(
+                backgroundColor: scheme.primary,
+                foregroundColor: scheme.onPrimary,
+              ),
+              icon: child,
+            )
+          : IconButton.outlined(
+              onPressed: onPressed,
+              tooltip: tooltip,
+              icon: child,
+            ),
     );
   }
 }
@@ -137,5 +142,6 @@ class _CircleToggle extends StatelessWidget {
 ///
 /// Always two decimals so the width does not jump as the value changes. Used by
 /// the gesture layer, which flashes this label whenever a double-tap changes the
-/// speed.
-String formatSpeedLabel(double speed) => '${speed.toStringAsFixed(2)}x';
+/// speed. [localeName] is the app language (`AppLocalizations.localeName`).
+String formatSpeedLabel(double speed, String localeName) =>
+    '${formatFixed(speed, 2, localeName)}x';

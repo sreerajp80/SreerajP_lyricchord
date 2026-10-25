@@ -1,10 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/widgets/performance_controls.dart';
+import '../helpers/tooltip_expectations.dart';
 
 /// The status line above the chord sheet.
 ///
@@ -31,6 +34,8 @@ void main() {
       ProviderScope(
         overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: PerformanceControls(
               currentKey: currentKey,
@@ -56,7 +61,7 @@ void main() {
 
     final modes = tester.getRect(find.text('M'));
     final speed = tester.getRect(find.text('1.00x'));
-    final pitch = tester.getRect(find.byTooltip('Pitch pipe & shruti box'));
+    final pitch = tester.getRect(find.byTooltip('Pitch pipe & drone'));
     final row = tester.getRect(find.byType(PerformanceControls));
 
     expect(speed.left, greaterThan(modes.right));
@@ -103,19 +108,20 @@ void main() {
       await pumpControls(tester);
 
       expect(
-        find.byTooltip('Pitch pipe & shruti box'),
+        find.byTooltip('Pitch pipe & drone'),
         findsOneWidget,
         reason: 'a singer needs a starting note without entering Stage Mode',
       );
     });
 
     testWidgets('opens the sheet on the song key', (tester) async {
-      await pumpControls(tester, currentKey: 'G');
+      await pumpControls(tester);
 
-      await tester.tap(find.byTooltip('Pitch pipe & shruti box'));
+      await tester.tap(find.byTooltip('Pitch pipe & drone'));
       await tester.pumpAndSettle();
+      expectAllIconButtonsHaveTooltips(tester);
 
-      expect(find.text('Pitch Pipe & Shruti Box'), findsOneWidget);
+      expect(find.text('Pitch Pipe & Drone'), findsOneWidget);
       expect(find.text('Song key:  G'), findsOneWidget);
     });
 
@@ -124,7 +130,7 @@ void main() {
     ) async {
       await pumpControls(tester, raga: 'Mishra Gara', tala: 'Keherwa');
 
-      await tester.tap(find.byTooltip('Pitch pipe & shruti box'));
+      await tester.tap(find.byTooltip('Pitch pipe & drone'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('safed'), findsWidgets);

@@ -10,10 +10,7 @@ enum DroneMode {
   classical,
   western;
 
-  String get displayName => switch (this) {
-    DroneMode.classical => 'Classical (Shruti)',
-    DroneMode.western => 'Western (Chords)',
-  };
+  // Screen names live in `lib/l10n/l10n_labels.dart` (no UI text in models).
 
   String get storageKey => name;
 
@@ -33,10 +30,7 @@ enum ChordQuality {
   major,
   minor;
 
-  String get displayName => switch (this) {
-    ChordQuality.major => 'Major',
-    ChordQuality.minor => 'Minor',
-  };
+  // Screen names live in `lib/l10n/l10n_labels.dart` (no UI text in models).
 
   String get shortName => switch (this) {
     ChordQuality.major => 'maj',
@@ -55,6 +49,10 @@ enum ChordQuality {
     return fallback;
   }
 }
+
+/// Why the last pitch pipe or drone sound failed. The screen turns this into
+/// words (`lib/l10n/l10n_labels.dart`).
+enum DroneError { chordCue, pitchCue, startDrone }
 
 /// Settings and state model for Pitch Pipe, Shruti Box Drone, Western Chord Drone, and Dynamic Font Scale.
 @immutable
@@ -106,7 +104,7 @@ class PitchDroneSettings {
 
   /// Why the last audio call failed, or `null` when all is well. The UI shows
   /// this once as a `SnackBar` rather than failing silently.
-  final String? lastError;
+  final DroneError? lastError;
 
   /// Returns current text scale factor (e.g. 1.00).
   double get fontScaleFactor =>
@@ -122,7 +120,7 @@ class PitchDroneSettings {
     double? volume,
     int? fontScaleIndex,
     bool? dronePlaying,
-    String? lastError,
+    DroneError? lastError,
     bool clearError = false,
   }) {
     return PitchDroneSettings(

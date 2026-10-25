@@ -1,43 +1,4465 @@
 {
   "@@locale": "en",
-  "appTitle": "LyricChord",
-  "@appTitle": {
+  "titleApp": "LyricChord",
+  "@titleApp": {
     "description": "The title of the application"
   },
-  "about": "About",
-  "@about": {
+  "titleAbout": "About",
+  "@titleAbout": {
     "description": "Title of the About screen"
   },
-  "settings": "Settings",
-  "@settings": {
+  "titleSettings": "Settings",
+  "@titleSettings": {
     "description": "Title of the Settings screen"
   },
-  "songs": "Songs",
-  "@songs": {
+  "titleSongs": "Songs",
+  "@titleSongs": {
     "description": "Title of the songs list view"
   },
-  "setlists": "Setlists",
-  "@setlists": {
+  "titleSetlists": "Setlists",
+  "@titleSetlists": {
     "description": "Title of the setlists view"
   },
-  "search": "Search",
-  "@search": {
+  "labelSearch": "Search",
+  "@labelSearch": {
     "description": "Placeholder hint for search fields"
   },
-  "cancel": "Cancel",
-  "@cancel": {
+  "actionCancel": "Cancel",
+  "@actionCancel": {
     "description": "Label for cancel actions"
   },
-  "save": "Save",
-  "@save": {
+  "actionSave": "Save",
+  "@actionSave": {
     "description": "Label for save actions"
   },
-  "delete": "Delete",
-  "@delete": {
+  "actionDelete": "Delete",
+  "@actionDelete": {
     "description": "Label for delete actions"
   },
-  "edit": "Edit",
-  "@edit": {
+  "actionEdit": "Edit",
+  "@actionEdit": {
     "description": "Label for edit actions"
+  },
+  "labelStageUnlockReason": "Unlock Stage Mode",
+  "@labelStageUnlockReason": {
+    "description": "Reason shown in the system fingerprint / PIN prompt when unlocking Stage Lock"
+  },
+  "bodyStageUnlockDenied": "Stage is still locked. Unlock to continue.",
+  "@bodyStageUnlockDenied": {
+    "description": "SnackBar when the user cancels or fails the Stage Lock unlock prompt"
+  },
+  "bodyStageUnlockedWithoutCheck": "Stage unlocked. Screen lock check was not available.",
+  "@bodyStageUnlockedWithoutCheck": {
+    "description": "SnackBar when Stage Lock was opened without a fingerprint/PIN check because the check could not run"
+  },
+  "bodyQuietModeOn": "Quiet Mode on: calls and notifications are silenced.",
+  "@bodyQuietModeOn": {
+    "description": "SnackBar after Stage Quiet Mode silenced the ringer"
+  },
+  "bodyQuietModeOff": "Quiet Mode off: ringer restored.",
+  "@bodyQuietModeOff": {
+    "description": "SnackBar after Stage Quiet Mode put the ringer back"
+  },
+  "bodyQuietModeNeedsAccess": "To silence calls, allow Do Not Disturb access for LyricChord.",
+  "@bodyQuietModeNeedsAccess": {
+    "description": "SnackBar when Android needs Do Not Disturb access before Quiet Mode can work"
+  },
+  "actionQuietModeOpenSettings": "Open settings",
+  "@actionQuietModeOpenSettings": {
+    "description": "SnackBar action that opens the Do Not Disturb access system page"
+  },
+  "errorQuietModeFailed": "Could not silence the phone.",
+  "@errorQuietModeFailed": {
+    "description": "SnackBar when Quiet Mode could not change the ringer"
+  },
+  "bodyQuietModeUnsupported": "Quiet Mode is not available on this device.",
+  "@bodyQuietModeUnsupported": {
+    "description": "SnackBar when the platform cannot change the ringer"
+  },
+  "errorImportFileTooLarge": "{fileName} is too large to import (limit {limitMb} MB).",
+  "@errorImportFileTooLarge": {
+    "description": "SnackBar when an imported file is over the size limit",
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      },
+      "limitMb": {
+        "type": "int"
+      }
+    }
+  },
+  "errorImportFileUnreadable": "Could not read {fileName}.",
+  "@errorImportFileUnreadable": {
+    "description": "SnackBar when an opened file could not be read",
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "errorImportNoSongsFound": "No songs found in {fileName}.",
+  "@errorImportNoSongsFound": {
+    "description": "SnackBar when an opened file has no song content",
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "errorImportFilesSkippedTooLarge": "Skipped files over {limitMb} MB: {fileNames}",
+  "@errorImportFilesSkippedTooLarge": {
+    "description": "SnackBar listing chosen files that were too large to import",
+    "placeholders": {
+      "limitMb": {
+        "type": "int"
+      },
+      "fileNames": {
+        "type": "String"
+      }
+    }
+  },
+  "errorImportFilesSkippedUnreadable": "Could not read: {fileNames}",
+  "@errorImportFilesSkippedUnreadable": {
+    "description": "SnackBar listing chosen files that could not be read during import",
+    "placeholders": {
+      "fileNames": {
+        "type": "String"
+      }
+    }
+  },
+  "errorAirQrTransferFailed": "Transfer failed. Tap Reset and scan again.",
+  "@errorAirQrTransferFailed": {
+    "description": "AirQR receiver message when all codes arrived but the song could not be rebuilt"
+  },
+  "actionAirQrReset": "Reset",
+  "@actionAirQrReset": {
+    "description": "SnackBar action that clears a failed AirQR transfer so scanning can start again"
+  },
+  "actionCreate": "Create",
+  "@actionCreate": {
+    "description": "Button that creates a new item"
+  },
+  "actionShare": "Share",
+  "@actionShare": {
+    "description": "Button that shares the chosen items"
+  },
+  "actionTryAgain": "Try again",
+  "@actionTryAgain": {
+    "description": "Button that retries a failed load"
+  },
+  "titleHomePickSong": "Pick a song",
+  "@titleHomePickSong": {
+    "description": "Tablet right pane title when no song is open"
+  },
+  "descHomePickSongMessage": "Choose a song on the left to open it here.",
+  "@descHomePickSongMessage": {
+    "description": "Tablet right pane hint when no song is open"
+  },
+  "descAppSubtitle": "Lyrics & Chords Notebook",
+  "@descAppSubtitle": {
+    "description": "Subtitle under the app name on the song list"
+  },
+  "titleSongListSelectedCount": "{count} selected",
+  "@titleSongListSelectedCount": {
+    "description": "App bar title while songs are selected",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tooltipSongListCancelSelection": "Cancel selection",
+  "@tooltipSongListCancelSelection": {
+    "description": "Tooltip: leave multi-select mode"
+  },
+  "tooltipSongListExportSelected": "Export selected",
+  "@tooltipSongListExportSelected": {
+    "description": "Tooltip: export selected songs to a ChordPro file"
+  },
+  "tooltipSongListShareSelectedAirQr": "Send via AirQR",
+  "@tooltipSongListShareSelectedAirQr": {
+    "description": "Tooltip: send selected songs as an AirQR stream"
+  },
+  "tooltipSongListShareSelected": "Share selected",
+  "@tooltipSongListShareSelected": {
+    "description": "Tooltip: share selected songs as a file"
+  },
+  "tooltipSongListSelectAll": "Select all",
+  "@tooltipSongListSelectAll": {
+    "description": "Tooltip: select every song in the list"
+  },
+  "tooltipSongListDeselectAll": "Deselect all",
+  "@tooltipSongListDeselectAll": {
+    "description": "Tooltip: clear the selection"
+  },
+  "tooltipSongListDeleteSelected": "Delete selected",
+  "@tooltipSongListDeleteSelected": {
+    "description": "Tooltip: delete the selected songs"
+  },
+  "tooltipSongListScanAirQr": "Scan AirQR Song",
+  "@tooltipSongListScanAirQr": {
+    "description": "Tooltip: open the AirQR receiver"
+  },
+  "tooltipSongListNewSong": "New song",
+  "@tooltipSongListNewSong": {
+    "description": "Tooltip on the add-song button"
+  },
+  "titleSongListExportDialog": "Export selected",
+  "@titleSongListExportDialog": {
+    "description": "Title of the system save dialog for exporting selected songs"
+  },
+  "bodySongListExported": "{count, plural, =1{Exported 1 song.} other{Exported {count} songs.}}",
+  "@bodySongListExported": {
+    "description": "SnackBar after selected songs were exported",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorSongListExportFailed": "Could not export selected songs.",
+  "@errorSongListExportFailed": {
+    "description": "SnackBar when exporting selected songs failed"
+  },
+  "titleSongListShareDialog": "{count, plural, =1{Share 1 song} other{Share {count} songs}}",
+  "@titleSongListShareDialog": {
+    "description": "Title of the dialog that asks which format to share in",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "labelSongListFormatChordPro": "ChordPro (.chordpro)",
+  "@labelSongListFormatChordPro": {
+    "description": "Share format option: ChordPro file"
+  },
+  "labelSongListFormatPdf": "PDF (.pdf)",
+  "@labelSongListFormatPdf": {
+    "description": "Share format option: PDF file"
+  },
+  "errorSongListShareFailed": "Could not share selected songs.",
+  "@errorSongListShareFailed": {
+    "description": "SnackBar when sharing selected songs as ChordPro failed"
+  },
+  "errorSongListPdfFailed": "Could not generate PDF.",
+  "@errorSongListPdfFailed": {
+    "description": "SnackBar when the PDF came out empty"
+  },
+  "errorSongListSharePdfFailed": "Could not share selected songs as PDF.",
+  "@errorSongListSharePdfFailed": {
+    "description": "SnackBar when sharing selected songs as PDF failed"
+  },
+  "titleSongListDeleteMany": "{count, plural, =1{Delete 1 song?} other{Delete {count} songs?}}",
+  "@titleSongListDeleteMany": {
+    "description": "Title of the dialog confirming deletion of selected songs",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "descSongListDeleteManyMessage": "Selected songs will be removed from your songbook.",
+  "@descSongListDeleteManyMessage": {
+    "description": "Body of the dialog confirming deletion of selected songs"
+  },
+  "bodySongListDeletedMany": "{count, plural, =1{Deleted 1 song.} other{Deleted {count} songs.}}",
+  "@bodySongListDeletedMany": {
+    "description": "SnackBar after selected songs were deleted",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bodySongListCopied": "Copied \"{title}\".",
+  "@bodySongListCopied": {
+    "description": "SnackBar after a song was duplicated",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "titleSongListDeleteOne": "Delete song?",
+  "@titleSongListDeleteOne": {
+    "description": "Title of the dialog confirming deletion of one song"
+  },
+  "descSongListDeleteOneMessage": "\"{title}\" will be removed from your songbook.",
+  "@descSongListDeleteOneMessage": {
+    "description": "Body of the dialog confirming deletion of one song",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "bodySongListDeletedOne": "Deleted \"{title}\".",
+  "@bodySongListDeletedOne": {
+    "description": "SnackBar after one song was deleted",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "titleSongListAirQr": "{count, plural, =1{1 Selected Song} other{{count} Selected Songs}}",
+  "@titleSongListAirQr": {
+    "description": "Title shown on the AirQR transmitter for selected songs",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "emptySongbookNoMatchesTitle": "No matches",
+  "@emptySongbookNoMatchesTitle": {
+    "description": "Empty list title when the search matched nothing"
+  },
+  "emptySongbookNoMatchesMessage": "No song matched your search. Try different words.",
+  "@emptySongbookNoMatchesMessage": {
+    "description": "Empty list message when the search matched nothing"
+  },
+  "emptySongbookNoStarredTitle": "No starred songs",
+  "@emptySongbookNoStarredTitle": {
+    "description": "Empty list title when the Starred filter has nothing"
+  },
+  "emptySongbookNoStarredMessage": "Tap the star on a song to keep it here.",
+  "@emptySongbookNoStarredMessage": {
+    "description": "Empty list message when the Starred filter has nothing"
+  },
+  "emptySongbookEmptyTitle": "Your songbook is empty",
+  "@emptySongbookEmptyTitle": {
+    "description": "Empty list title when there are no songs"
+  },
+  "emptySongbookEmptyMessage": "Tap + to write your first lyric chord sheet.",
+  "@emptySongbookEmptyMessage": {
+    "description": "Empty list message when there are no songs"
+  },
+  "errorSongbookErrorTitle": "Could not open your songbook",
+  "@errorSongbookErrorTitle": {
+    "description": "Title when the song list failed to load"
+  },
+  "errorSongbookErrorMessage": "Your songs are still saved. The app could not read them just now.",
+  "@errorSongbookErrorMessage": {
+    "description": "Message when the song list failed to load"
+  },
+  "labelSongCardKeySemantics": "Key {key}",
+  "@labelSongCardKeySemantics": {
+    "description": "Screen-reader label for the song key badge",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "labelSongCardBpm": "{bpm} BPM",
+  "@labelSongCardBpm": {
+    "description": "Tempo badge on a song card",
+    "placeholders": {
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "descSongCardBpmSemantics": "{bpm} beats per minute",
+  "@descSongCardBpmSemantics": {
+    "description": "Screen-reader label for the tempo badge",
+    "placeholders": {
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "tooltipSongCardAddStar": "Add to starred",
+  "@tooltipSongCardAddStar": {
+    "description": "Tooltip: star a song"
+  },
+  "tooltipSongCardRemoveStar": "Remove from starred",
+  "@tooltipSongCardRemoveStar": {
+    "description": "Tooltip: unstar a song"
+  },
+  "tooltipSongCardDuplicate": "Duplicate song",
+  "@tooltipSongCardDuplicate": {
+    "description": "Tooltip: copy a song"
+  },
+  "tooltipSongCardDelete": "Delete song",
+  "@tooltipSongCardDelete": {
+    "description": "Tooltip: delete a song"
+  },
+  "descSongSearchHint": "Search songs, artists, lyrics",
+  "@descSongSearchHint": {
+    "description": "Hint in the song search field"
+  },
+  "tooltipSongSearchClear": "Clear search",
+  "@tooltipSongSearchClear": {
+    "description": "Tooltip: clear the search text"
+  },
+  "labelSongFilterAll": "All Songs ({count})",
+  "@labelSongFilterAll": {
+    "description": "Filter chip showing all songs with a count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "labelSongFilterStarred": "Starred ({count})",
+  "@labelSongFilterStarred": {
+    "description": "Filter chip showing starred songs with a count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorSetlistLoad": "Error loading setlists: {error}",
+  "@errorSetlistLoad": {
+    "description": "Shown when the setlists could not be loaded",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "emptySetlistEmptyTitle": "No setlists yet",
+  "@emptySetlistEmptyTitle": {
+    "description": "Empty setlist tab title"
+  },
+  "emptySetlistEmptyMessage": "Create setlists to group and arrange your songs for gigs and rehearsals.",
+  "@emptySetlistEmptyMessage": {
+    "description": "Empty setlist tab message"
+  },
+  "actionSetlistCreate": "Create Setlist",
+  "@actionSetlistCreate": {
+    "description": "Button on the empty setlist tab"
+  },
+  "labelSetlistSongCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@labelSetlistSongCount": {
+    "description": "Song count badge on a setlist card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionSetlistPerform": "Perform",
+  "@actionSetlistPerform": {
+    "description": "Button that starts performing a setlist"
+  },
+  "actionSetlistEditSongs": "Edit Songs",
+  "@actionSetlistEditSongs": {
+    "description": "Button that opens a setlist to edit its songs"
+  },
+  "actionSetlistNew": "New Setlist",
+  "@actionSetlistNew": {
+    "description": "Button and dialog title for a new setlist"
+  },
+  "titleSetlist": "Setlist",
+  "@titleSetlist": {
+    "description": "App bar title while a setlist loads or is missing"
+  },
+  "errorSetlistLoadOne": "Error loading setlist: {error}",
+  "@errorSetlistLoadOne": {
+    "description": "Shown when one setlist could not be loaded",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorSetlistNotFound": "Setlist not found.",
+  "@errorSetlistNotFound": {
+    "description": "Shown when the setlist no longer exists"
+  },
+  "tooltipSetlistShareAirQr": "Send via AirQR",
+  "@tooltipSetlistShareAirQr": {
+    "description": "Tooltip: send the setlist as an AirQR stream"
+  },
+  "tooltipSetlistEditInfo": "Edit setlist info",
+  "@tooltipSetlistEditInfo": {
+    "description": "Tooltip: edit the setlist name and description"
+  },
+  "tooltipSetlistDelete": "Delete setlist",
+  "@tooltipSetlistDelete": {
+    "description": "Tooltip: delete the setlist"
+  },
+  "actionSetlistPerformAll": "Perform Setlist",
+  "@actionSetlistPerformAll": {
+    "description": "Button that performs the setlist from the first song"
+  },
+  "titleSetlistSongCount": "{count, plural, =1{1 Song} other{{count} Songs}}",
+  "@titleSetlistSongCount": {
+    "description": "Song count heading on the setlist screen",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionSetlistAddSongs": "Add Songs",
+  "@actionSetlistAddSongs": {
+    "description": "Button that opens the song picker for a setlist"
+  },
+  "emptySetlistNoSongs": "No songs in this setlist",
+  "@emptySetlistNoSongs": {
+    "description": "Empty state on the setlist screen"
+  },
+  "actionSetlistAddSongsNow": "Add Songs Now",
+  "@actionSetlistAddSongsNow": {
+    "description": "Button in the empty setlist state"
+  },
+  "descSetlistSongDetails": "Key: {key} • {bpm} BPM",
+  "@descSetlistSongDetails": {
+    "description": "Subtitle of a song row in a setlist",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "descSetlistSongDetailsWithArtist": "{artist} • Key: {key} • {bpm} BPM",
+  "@descSetlistSongDetailsWithArtist": {
+    "description": "Subtitle of a song row in a setlist when the song has an artist",
+    "placeholders": {
+      "artist": {
+        "type": "String"
+      },
+      "key": {
+        "type": "String"
+      },
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "tooltipSetlistRemoveSong": "Remove from setlist",
+  "@tooltipSetlistRemoveSong": {
+    "description": "Tooltip: take a song out of the setlist"
+  },
+  "titleSetlistDelete": "Delete setlist?",
+  "@titleSetlistDelete": {
+    "description": "Title of the dialog confirming setlist deletion"
+  },
+  "descSetlistDeleteMessage": "\"{name}\" will be deleted. Songs in your library will not be deleted.",
+  "@descSetlistDeleteMessage": {
+    "description": "Body of the dialog confirming setlist deletion",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "bodySetlistDeleted": "Deleted setlist \"{name}\".",
+  "@bodySetlistDeleted": {
+    "description": "SnackBar after a setlist was deleted",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "bodySetlistNothingToShare": "No songs in setlist to share.",
+  "@bodySetlistNothingToShare": {
+    "description": "SnackBar when sharing an empty setlist"
+  },
+  "titleSetlistAirQr": "Setlist: {name}",
+  "@titleSetlistAirQr": {
+    "description": "Title shown on the AirQR transmitter for a setlist",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "titleSetlistEdit": "Edit Setlist",
+  "@titleSetlistEdit": {
+    "description": "Title of the dialog that edits a setlist"
+  },
+  "labelSetlistName": "Setlist Name",
+  "@labelSetlistName": {
+    "description": "Label of the setlist name field"
+  },
+  "descSetlistNameHint": "e.g. Sunday Gig, Acoustic Practice",
+  "@descSetlistNameHint": {
+    "description": "Hint in the setlist name field"
+  },
+  "errorSetlistNameRequired": "Please enter a setlist name",
+  "@errorSetlistNameRequired": {
+    "description": "Error when the setlist name is empty"
+  },
+  "labelSetlistDescription": "Details (optional)",
+  "@labelSetlistDescription": {
+    "description": "Label of the setlist description field"
+  },
+  "descSetlistDescriptionHint": "e.g. Venue, lineup, or notes",
+  "@descSetlistDescriptionHint": {
+    "description": "Hint in the setlist description field"
+  },
+  "titleSetlistPicker": "Add Songs to Setlist",
+  "@titleSetlistPicker": {
+    "description": "Title of the setlist song picker"
+  },
+  "actionSetlistPickerDone": "Done ({count})",
+  "@actionSetlistPickerDone": {
+    "description": "Button that closes the song picker, with the number chosen",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "descSetlistPickerSearchHint": "Search songs...",
+  "@descSetlistPickerSearchHint": {
+    "description": "Hint in the song picker search field"
+  },
+  "errorSetlistPickerLoad": "Error loading songs: {error}",
+  "@errorSetlistPickerLoad": {
+    "description": "Shown when the song picker could not load songs",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "emptySetlistPickerNoSongs": "No songs found",
+  "@emptySetlistPickerNoSongs": {
+    "description": "Shown when the song picker search matched nothing"
+  },
+  "actionDiscard": "Discard",
+  "@actionDiscard": {
+    "description": "Button that throws away unsaved work"
+  },
+  "actionKeepEditing": "Keep editing",
+  "@actionKeepEditing": {
+    "description": "Button that closes a discard dialog and goes back to editing"
+  },
+  "actionInsert": "Insert",
+  "@actionInsert": {
+    "description": "Button that inserts the result into the song"
+  },
+  "actionAdd": "Add",
+  "@actionAdd": {
+    "description": "Button that adds the typed item"
+  },
+  "actionClear": "Clear",
+  "@actionClear": {
+    "description": "Button that empties the current entry"
+  },
+  "labelTraditionWestern": "Western",
+  "@labelTraditionWestern": {
+    "description": "Notation tradition: Western chords"
+  },
+  "labelTraditionCarnatic": "Carnatic",
+  "@labelTraditionCarnatic": {
+    "description": "Notation tradition: Carnatic (South Indian) swaras"
+  },
+  "labelTraditionHindustani": "Hindustani",
+  "@labelTraditionHindustani": {
+    "description": "Notation tradition: Hindustani (North Indian) swaras"
+  },
+  "descCarnaticReadingDuration": "case means note length",
+  "@descCarnaticReadingDuration": {
+    "description": "How published Carnatic notation was read: letter case gives the note length"
+  },
+  "descCarnaticReadingOctave": "case means octave",
+  "@descCarnaticReadingOctave": {
+    "description": "How published Carnatic notation was read: letter case gives the octave"
+  },
+  "titleEditorNew": "New Song Note",
+  "@titleEditorNew": {
+    "description": "Editor title when writing a new song"
+  },
+  "titleEditorEdit": "Edit Song Note",
+  "@titleEditorEdit": {
+    "description": "Editor title when changing an existing song"
+  },
+  "tooltipEditorUndo": "Undo",
+  "@tooltipEditorUndo": {
+    "description": "Tooltip: undo the last edit"
+  },
+  "tooltipEditorRedo": "Redo",
+  "@tooltipEditorRedo": {
+    "description": "Tooltip: redo the last undone edit"
+  },
+  "tooltipEditorMoreOptions": "More options",
+  "@tooltipEditorMoreOptions": {
+    "description": "Tooltip on the editor overflow menu"
+  },
+  "actionEditorMelodyKeypad": "Melody keypad",
+  "@actionEditorMelodyKeypad": {
+    "description": "Menu item and sheet title for the melody keypad"
+  },
+  "actionEditorPasteCarnatic": "Paste Carnatic",
+  "@actionEditorPasteCarnatic": {
+    "description": "Menu item and sheet title for pasting Carnatic notation"
+  },
+  "actionEditorSaveAsCopy": "Save as copy",
+  "@actionEditorSaveAsCopy": {
+    "description": "Menu item that saves the edits as a new song"
+  },
+  "errorEditorLoad": "This song could not be opened.",
+  "@errorEditorLoad": {
+    "description": "Shown when the song to edit could not be loaded"
+  },
+  "descEditorLyricsHint": "Write your lyrics here.\nTap a chord above to drop it in at the cursor.",
+  "@descEditorLyricsHint": {
+    "description": "Hint in the empty lyrics area"
+  },
+  "errorEditorNeedsTala": "Add a {directive} line first — the notation is checked against the tala''s beats.",
+  "@errorEditorNeedsTala": {
+    "description": "SnackBar when Carnatic notation is pasted into a song with no tala line",
+    "placeholders": {
+      "directive": {
+        "type": "String"
+      }
+    }
+  },
+  "titleEditorDiscard": "Discard changes?",
+  "@titleEditorDiscard": {
+    "description": "Title of the dialog when leaving the editor with unsaved edits"
+  },
+  "descEditorDiscardMessage": "Your edits to this song will not be saved.",
+  "@descEditorDiscardMessage": {
+    "description": "Body of the dialog when leaving the editor with unsaved edits"
+  },
+  "labelEditorUntitled": "Untitled",
+  "@labelEditorUntitled": {
+    "description": "Shown in the folded editor header when the song has no title"
+  },
+  "labelUntitledSong": "Untitled Song",
+  "@labelUntitledSong": {
+    "description": "Title saved for a song that has none (typed, imported or received). It is stored in the songbook."
+  },
+  "labelSongCopyTitle": "{title} (Copy)",
+  "@labelSongCopyTitle": {
+    "description": "Title saved for a copy of a song. It is stored in the songbook.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "labelEditorSummaryKey": "Key {key}",
+  "@labelEditorSummaryKey": {
+    "description": "Song key in the folded editor header",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "labelEditorSummaryBpm": "{bpm} BPM",
+  "@labelEditorSummaryBpm": {
+    "description": "Tempo in the folded editor header",
+    "placeholders": {
+      "bpm": {
+        "type": "String"
+      }
+    }
+  },
+  "descEditorTalaWarning": "\"{tala}\" is usually a {tradition} tala. You can still save it.",
+  "@descEditorTalaWarning": {
+    "description": "Warning under the Tala field when the tala belongs to the other Indian tradition",
+    "placeholders": {
+      "tala": {
+        "type": "String"
+      },
+      "tradition": {
+        "type": "String"
+      }
+    }
+  },
+  "labelSongMetaTitle": "Title",
+  "@labelSongMetaTitle": {
+    "description": "Label of the song title field"
+  },
+  "labelSongMetaTitleHint": "Song title",
+  "@labelSongMetaTitleHint": {
+    "description": "Hint in the song title field"
+  },
+  "labelSongMetaArtist": "Artist / Band",
+  "@labelSongMetaArtist": {
+    "description": "Label of the artist field"
+  },
+  "labelSongMetaArtistHint": "Who performs it",
+  "@labelSongMetaArtistHint": {
+    "description": "Hint in the artist field"
+  },
+  "labelSongMetaNotation": "Notation",
+  "@labelSongMetaNotation": {
+    "description": "Label of the notation tradition picker"
+  },
+  "descSongMetaNotationHelper": "Western uses chords. Indian uses swaras.",
+  "@descSongMetaNotationHelper": {
+    "description": "Help under the notation tradition picker"
+  },
+  "labelSongMetaRaga": "Raga",
+  "@labelSongMetaRaga": {
+    "description": "Label of the raga field"
+  },
+  "labelSongMetaRagaHint": "Kalyani, Yaman",
+  "@labelSongMetaRagaHint": {
+    "description": "Hint in the raga field: example raga names"
+  },
+  "labelSongMetaKey": "Original key",
+  "@labelSongMetaKey": {
+    "description": "Label of the song key field"
+  },
+  "labelSongMetaKeyHint": "C, Am, F#m",
+  "@labelSongMetaKeyHint": {
+    "description": "Hint in the song key field: example keys"
+  },
+  "labelSongMetaTempo": "Tempo (BPM)",
+  "@labelSongMetaTempo": {
+    "description": "Label of the tempo field"
+  },
+  "labelSongMetaTempoHint": "120",
+  "@labelSongMetaTempoHint": {
+    "description": "Hint in the tempo field: an example tempo"
+  },
+  "labelSongMetaTala": "Tala",
+  "@labelSongMetaTala": {
+    "description": "Label of the tala field"
+  },
+  "labelSongMetaTalaHint": "Adi, Keherwa",
+  "@labelSongMetaTalaHint": {
+    "description": "Hint in the tala field: example tala names"
+  },
+  "labelSongMetaSetlist": "Add to setlist",
+  "@labelSongMetaSetlist": {
+    "description": "Label of the setlist picker in the editor"
+  },
+  "labelSongMetaSetlistNone": "None (Do not add)",
+  "@labelSongMetaSetlistNone": {
+    "description": "Setlist picker choice that adds the song to no setlist"
+  },
+  "tooltipChordInserterInsert": "Insert [{chord}]",
+  "@tooltipChordInserterInsert": {
+    "description": "Tooltip on a chord chip; the brackets show how it is written in the song",
+    "placeholders": {
+      "chord": {
+        "type": "String"
+      }
+    }
+  },
+  "actionChordInserterCustom": "Custom",
+  "@actionChordInserterCustom": {
+    "description": "Chip that opens the custom chord dialog"
+  },
+  "tooltipChordInserterCustom": "Add your own chord",
+  "@tooltipChordInserterCustom": {
+    "description": "Tooltip on the custom chord chip"
+  },
+  "titleChordInserterDialog": "Custom chord",
+  "@titleChordInserterDialog": {
+    "description": "Title of the custom chord dialog"
+  },
+  "labelChordInserterChord": "Chord",
+  "@labelChordInserterChord": {
+    "description": "Label of the custom chord field"
+  },
+  "labelChordInserterChordHint": "F#m7, Cmaj7, D/F#",
+  "@labelChordInserterChordHint": {
+    "description": "Hint in the custom chord field: example chords"
+  },
+  "titleRenameImport": "Duplicate Song Title",
+  "@titleRenameImport": {
+    "description": "Title of the dialog when an imported song has the same title as an existing one"
+  },
+  "descRenameImportExists": "A song titled \"{title}\" already exists in your songbook.",
+  "@descRenameImportExists": {
+    "description": "Explains the title clash on import",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "descRenameImportPrompt": "Enter a new title for the imported song:",
+  "@descRenameImportPrompt": {
+    "description": "Asks for a new title for the imported song"
+  },
+  "labelRenameImport": "Song Title",
+  "@labelRenameImport": {
+    "description": "Label of the new title field"
+  },
+  "errorRenameImportRequired": "Please enter a title",
+  "@errorRenameImportRequired": {
+    "description": "Error when the new title is empty"
+  },
+  "actionRenameImportSave": "Save with New Title",
+  "@actionRenameImportSave": {
+    "description": "Button that imports the song under the new title"
+  },
+  "titleMelodyKeypadDiscard": "Discard this melody?",
+  "@titleMelodyKeypadDiscard": {
+    "description": "Title of the dialog when closing the keypad with unsaved notes"
+  },
+  "descMelodyKeypadDiscardMessage": "What you tapped will be lost.",
+  "@descMelodyKeypadDiscardMessage": {
+    "description": "Body of the dialog when closing the keypad with unsaved notes"
+  },
+  "labelMelodyKeypadHold": "Hold ,",
+  "@labelMelodyKeypadHold": {
+    "description": "Keypad key: hold the note one more beat. Keep the comma, it is the symbol written"
+  },
+  "tooltipMelodyKeypadHold": "Hold one more beat",
+  "@tooltipMelodyKeypadHold": {
+    "description": "Tooltip on the Hold key"
+  },
+  "labelMelodyKeypadBar": "Bar |",
+  "@labelMelodyKeypadBar": {
+    "description": "Keypad key: group divider. Keep the | symbol"
+  },
+  "tooltipMelodyKeypadBar": "Group divider",
+  "@tooltipMelodyKeypadBar": {
+    "description": "Tooltip on the Bar key"
+  },
+  "labelMelodyKeypadShare": "Share -",
+  "@labelMelodyKeypadShare": {
+    "description": "Keypad key: next note shares this beat. Keep the - symbol"
+  },
+  "tooltipMelodyKeypadShare": "Share this beat",
+  "@tooltipMelodyKeypadShare": {
+    "description": "Tooltip on the Share key"
+  },
+  "labelMelodyKeypadTie": "Tie ,-",
+  "@labelMelodyKeypadTie": {
+    "description": "Keypad key: start the next note part-way through a beat. Keep the ,- symbol"
+  },
+  "tooltipMelodyKeypadTie": "Start mid-beat",
+  "@tooltipMelodyKeypadTie": {
+    "description": "Tooltip on the Tie key"
+  },
+  "labelMelodyKeypadSilence": "Silence x",
+  "@labelMelodyKeypadSilence": {
+    "description": "Keypad key: stop the sound. Keep the x symbol"
+  },
+  "tooltipMelodyKeypadSilence": "Stop the sound",
+  "@tooltipMelodyKeypadSilence": {
+    "description": "Tooltip on the Silence key"
+  },
+  "labelMelodyKeypadOctaveUp": "Octave ↑",
+  "@labelMelodyKeypadOctaveUp": {
+    "description": "Keypad toggle: move the last note up an octave"
+  },
+  "labelMelodyKeypadOctaveDown": "Octave ↓",
+  "@labelMelodyKeypadOctaveDown": {
+    "description": "Keypad toggle: move the last note down an octave"
+  },
+  "labelMelodyKeypadSlide": "Slide !",
+  "@labelMelodyKeypadSlide": {
+    "description": "Keypad toggle: slide into the last note. Keep the ! symbol"
+  },
+  "labelMelodyKeypadShake": "Shake ~",
+  "@labelMelodyKeypadShake": {
+    "description": "Keypad toggle: shake the last note. Keep the ~ symbol"
+  },
+  "tooltipMelodyKeypadBackspace": "Backspace",
+  "@tooltipMelodyKeypadBackspace": {
+    "description": "Tooltip: remove the last entry"
+  },
+  "labelMelodyKeypadBeats": "{count, plural, =1{1 beat} other{{count} beats}}",
+  "@labelMelodyKeypadBeats": {
+    "description": "Beat count when no known tala is set",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "descMelodyKeypadFits": "{count, plural, =1{1 beat — fits {tala}} other{{count} beats — fits {tala}}}",
+  "@descMelodyKeypadFits": {
+    "description": "Beat count when the line fills the tala",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "tala": {
+        "type": "String"
+      }
+    }
+  },
+  "labelMelodyKeypadOfBeats": "{count} of {total} beats",
+  "@labelMelodyKeypadOfBeats": {
+    "description": "Beat count when the line does not yet fill the tala",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "descMelodyKeypadStartHint": "Tap a swara to start. Hold adds a beat, Bar marks a group.",
+  "@descMelodyKeypadStartHint": {
+    "description": "Hint shown in the keypad preview before anything is entered"
+  },
+  "descCarnaticSheetHelp": "Tala: {tala}. Paste one avarta per line, or separate them with ||. Underlined runs: write them _like_this_.",
+  "@descCarnaticSheetHelp": {
+    "description": "Help under the Carnatic paste sheet title. Keep || and _like_this_ as they are",
+    "placeholders": {
+      "tala": {
+        "type": "String"
+      }
+    }
+  },
+  "labelCarnaticSheetAnyaTitle": "Ma1 in Ga-Ma-Ri",
+  "@labelCarnaticSheetAnyaTitle": {
+    "description": "Switch: read Ma as shuddha madhyamam in Ga-Ma-Ri descents"
+  },
+  "descCarnaticSheetAnyaSubtitle": "For a bhashanga raga such as Yamunakalyani. Off by default — the notation does not say which madhyamam is meant.",
+  "@descCarnaticSheetAnyaSubtitle": {
+    "description": "Explains the shuddha madhyamam switch"
+  },
+  "actionCarnaticSheetInsertLines": "{count, plural, =1{Insert 1 line} other{Insert {count} lines}}",
+  "@actionCarnaticSheetInsertLines": {
+    "description": "Button that inserts the converted melody lines",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "descCarnaticSheetFit": "{fitting} of {total} cycles fit the tala — read with {reading}.",
+  "@descCarnaticSheetFit": {
+    "description": "How many cycles matched the tala, and which reading was used",
+    "placeholders": {
+      "fitting": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "reading": {
+        "type": "String"
+      }
+    }
+  },
+  "descCarnaticSheetOtherReading": "The other reading ({reading}) fits {fitting} of {total}.",
+  "@descCarnaticSheetOtherReading": {
+    "description": "How the reading that was not used would have fitted",
+    "placeholders": {
+      "reading": {
+        "type": "String"
+      },
+      "fitting": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "descCarnaticSheetAnyaHint": "{count, plural, =1{A Ga-Ma-Ri descent appears in 1 cycle. In a bhashanga raga that madhyamam is the shuddha one.} other{A Ga-Ma-Ri descent appears in {count} cycles. In a bhashanga raga that madhyamam is the shuddha one.}}",
+  "@descCarnaticSheetAnyaHint": {
+    "description": "Hint when the notation has Ga-Ma-Ri descents",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "labelMelodyLineLoop": "Loop",
+  "@labelMelodyLineLoop": {
+    "description": "Toggle: repeat the melody line"
+  },
+  "labelMelodyLineHalfSpeed": "Half speed",
+  "@labelMelodyLineHalfSpeed": {
+    "description": "Toggle: play the melody line at half speed"
+  },
+  "errorMelodyLinePlayFailed": "Could not play this melody.",
+  "@errorMelodyLinePlayFailed": {
+    "description": "SnackBar when the melody could not start playing"
+  },
+  "tooltipMelodyLineStop": "Stop",
+  "@tooltipMelodyLineStop": {
+    "description": "Tooltip: stop the melody"
+  },
+  "tooltipMelodyLinePlay": "Hum this line",
+  "@tooltipMelodyLinePlay": {
+    "description": "Tooltip: play the melody line"
+  },
+  "tooltipMelodyLineNeedsTonic": "Needs a {directive} line",
+  "@tooltipMelodyLineNeedsTonic": {
+    "description": "Tooltip when the melody cannot play because the song has no tonic line",
+    "placeholders": {
+      "directive": {
+        "type": "String"
+      }
+    }
+  },
+  "actionClose": "Close",
+  "@actionClose": {
+    "description": "Tooltip/button that closes a dialog or sheet"
+  },
+  "actionExport": "Export",
+  "@actionExport": {
+    "description": "Button and menu item that exports the song"
+  },
+  "tooltipPlay": "Play",
+  "@tooltipPlay": {
+    "description": "Tooltip: start auto-scroll"
+  },
+  "tooltipPause": "Pause",
+  "@tooltipPause": {
+    "description": "Tooltip: pause auto-scroll"
+  },
+  "actionReset": "Reset",
+  "@actionReset": {
+    "description": "Button that returns a value to its default"
+  },
+  "labelInfoRaga": "Raga {raga}",
+  "@labelInfoRaga": {
+    "description": "Raga part of the song info line",
+    "placeholders": {
+      "raga": {
+        "type": "String"
+      }
+    }
+  },
+  "labelInfoTala": "Tala {tala}",
+  "@labelInfoTala": {
+    "description": "Tala part of the song info line",
+    "placeholders": {
+      "tala": {
+        "type": "String"
+      }
+    }
+  },
+  "labelInfoKey": "Key {key}",
+  "@labelInfoKey": {
+    "description": "Key part of the song info line",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "labelInfoKeyTransposed": "Key {key} ({semitones})",
+  "@labelInfoKeyTransposed": {
+    "description": "Key part of the info line when transposed; semitones is like +2 or -3",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "semitones": {
+        "type": "String"
+      }
+    }
+  },
+  "labelInfoBpm": "{bpm} BPM",
+  "@labelInfoBpm": {
+    "description": "Tempo part of the song info line",
+    "placeholders": {
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "labelInfoBars": "{count, plural, =1{1 bar} other{{count} bars}}",
+  "@labelInfoBars": {
+    "description": "Number of bars (measures) for Tempo auto-scroll",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "labelInfoAutoScroll": "Auto-scroll",
+  "@labelInfoAutoScroll": {
+    "description": "First part of the status line under the performance controls"
+  },
+  "titlePerfSong": "Song",
+  "@titlePerfSong": {
+    "description": "App bar title while the song loads or when there is none"
+  },
+  "tooltipPerfPreviousSong": "Previous song",
+  "@tooltipPerfPreviousSong": {
+    "description": "Tooltip: go to the previous song in the setlist"
+  },
+  "tooltipPerfNextSong": "Next song",
+  "@tooltipPerfNextSong": {
+    "description": "Tooltip: go to the next song in the setlist"
+  },
+  "tooltipPerfSetlistSongs": "Setlist songs",
+  "@tooltipPerfSetlistSongs": {
+    "description": "Tooltip: open the list of songs in this setlist"
+  },
+  "tooltipPerfEditSong": "Edit song",
+  "@tooltipPerfEditSong": {
+    "description": "Tooltip: open the editor for this song"
+  },
+  "titlePerfSetlistPosition": "{name} ({position}/{total})",
+  "@titlePerfSetlistPosition": {
+    "description": "App bar subtitle: setlist name and the song position in it",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "errorPerfNotFoundTitle": "Song not found",
+  "@errorPerfNotFoundTitle": {
+    "description": "Shown when the song no longer exists"
+  },
+  "descPerfNotFoundMessage": "It may have been deleted from your songbook.",
+  "@descPerfNotFoundMessage": {
+    "description": "Explains why the song was not found"
+  },
+  "actionPerfControls": "Performance controls",
+  "@actionPerfControls": {
+    "description": "Menu item and sheet title for transpose and display controls"
+  },
+  "tooltipPerfGesturesHelp": "Gestures help",
+  "@tooltipPerfGesturesHelp": {
+    "description": "Menu item and tooltip that open the gestures help"
+  },
+  "actionPerfSwaraReference": "Swara Reference",
+  "@actionPerfSwaraReference": {
+    "description": "Menu item and dialog title for the swara keyboard reference"
+  },
+  "actionPerfChordReferenceGuide": "Chord Reference",
+  "@actionPerfChordReferenceGuide": {
+    "description": "Menu item that opens the chord diagrams"
+  },
+  "titlePerfExportDialog": "Export song",
+  "@titlePerfExportDialog": {
+    "description": "Title of the dialog that asks which format to export"
+  },
+  "titlePerfShareDialog": "Share song",
+  "@titlePerfShareDialog": {
+    "description": "Title of the dialog that asks how to share"
+  },
+  "labelPerfFormatAirQr": "AirQR stream",
+  "@labelPerfFormatAirQr": {
+    "description": "Share option: send the song as animated QR codes"
+  },
+  "errorPerfShareChordProFailed": "Could not share the ChordPro file.",
+  "@errorPerfShareChordProFailed": {
+    "description": "SnackBar when sharing as ChordPro failed"
+  },
+  "errorPerfPdfNoPages": "Could not export the PDF (no pages).",
+  "@errorPerfPdfNoPages": {
+    "description": "SnackBar when the PDF came out empty"
+  },
+  "errorPerfPdfTimeout": "PDF export took too long and was stopped.",
+  "@errorPerfPdfTimeout": {
+    "description": "SnackBar when making the PDF timed out"
+  },
+  "errorPerfSharePdfFailed": "Could not share the PDF.",
+  "@errorPerfSharePdfFailed": {
+    "description": "SnackBar when sharing as PDF failed"
+  },
+  "titlePerfExportPdf": "Export as PDF",
+  "@titlePerfExportPdf": {
+    "description": "Title of the system save dialog for a PDF"
+  },
+  "titlePerfExportChordPro": "Export as ChordPro",
+  "@titlePerfExportChordPro": {
+    "description": "Title of the system save dialog for a ChordPro file"
+  },
+  "bodyPerfExported": "Exported \"{title}\".",
+  "@bodyPerfExported": {
+    "description": "SnackBar after the song was exported",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPerfExportPdfFailed": "Could not export the PDF.",
+  "@errorPerfExportPdfFailed": {
+    "description": "SnackBar when exporting the PDF failed"
+  },
+  "errorPerfExportChordProFailed": "Could not export the ChordPro file.",
+  "@errorPerfExportChordProFailed": {
+    "description": "SnackBar when exporting the ChordPro file failed"
+  },
+  "tooltipPerfDrone": "Pitch pipe & drone",
+  "@tooltipPerfDrone": {
+    "description": "Tooltip: open the pitch pipe and shruti box"
+  },
+  "tooltipPerfSpeed": "Scroll speed",
+  "@tooltipPerfSpeed": {
+    "description": "Tooltip on the manual scroll speed read-out"
+  },
+  "tooltipPerfHideChords": "Hide chords",
+  "@tooltipPerfHideChords": {
+    "description": "Tooltip: hide the chord line"
+  },
+  "tooltipPerfShowChords": "Show chords",
+  "@tooltipPerfShowChords": {
+    "description": "Tooltip and switch: show the chord line"
+  },
+  "tooltipPerfHideMelody": "Hide melody",
+  "@tooltipPerfHideMelody": {
+    "description": "Tooltip: hide the melody rows"
+  },
+  "tooltipPerfShowMelody": "Show melody",
+  "@tooltipPerfShowMelody": {
+    "description": "Tooltip and switch: show the melody rows"
+  },
+  "tooltipAutoScrollFullScreen": "Full screen",
+  "@tooltipAutoScrollFullScreen": {
+    "description": "Tooltip and title for full screen (Stage Mode)"
+  },
+  "labelAutoScrollManual": "Manual",
+  "@labelAutoScrollManual": {
+    "description": "Auto-scroll mode with a fixed speed"
+  },
+  "labelAutoScrollTempo": "Tempo",
+  "@labelAutoScrollTempo": {
+    "description": "Auto-scroll mode worked out from tempo and bars"
+  },
+  "actionAutoScrollManualShort": "M",
+  "@actionAutoScrollManualShort": {
+    "description": "One-letter label of the Manual mode button"
+  },
+  "actionAutoScrollTempoShort": "T",
+  "@actionAutoScrollTempoShort": {
+    "description": "One-letter label of the Tempo mode button"
+  },
+  "labelTranspose": "Transpose",
+  "@labelTranspose": {
+    "description": "Label of the transpose row"
+  },
+  "tooltipTransposeDown": "Transpose down",
+  "@tooltipTransposeDown": {
+    "description": "Tooltip: transpose one semitone down"
+  },
+  "tooltipTransposeUp": "Transpose up",
+  "@tooltipTransposeUp": {
+    "description": "Tooltip: transpose one semitone up"
+  },
+  "descTransposeMelodySubtitle": "Full screen never shows the melody",
+  "@descTransposeMelodySubtitle": {
+    "description": "Note under the Show melody switch"
+  },
+  "descTransposePinchTip": "Tip: pinch the lyrics with two fingers to change the text size.",
+  "@descTransposePinchTip": {
+    "description": "Tip at the bottom of the performance controls sheet"
+  },
+  "titleChordRef": "Chord Reference",
+  "@titleChordRef": {
+    "description": "Title of the chord diagrams dialog"
+  },
+  "emptyChordRefNoSwaras": "No swaras in this song",
+  "@emptyChordRefNoSwaras": {
+    "description": "Shown when the song has no swaras to draw"
+  },
+  "emptyChordRefNoChords": "No chords in this song",
+  "@emptyChordRefNoChords": {
+    "description": "Shown when the song has no chords to draw"
+  },
+  "tabChordRefGuitar": "Guitar",
+  "@tabChordRefGuitar": {
+    "description": "Tab with guitar chord diagrams"
+  },
+  "tabChordRefHarmonium": "Harmonium",
+  "@tabChordRefHarmonium": {
+    "description": "Tab with harmonium chord diagrams"
+  },
+  "tooltipStageExitFullScreen": "Exit full screen",
+  "@tooltipStageExitFullScreen": {
+    "description": "Tooltip: leave Stage Mode"
+  },
+  "tooltipStageLock": "Lock Stage View",
+  "@tooltipStageLock": {
+    "description": "Tooltip: lock Stage Mode against stray touches"
+  },
+  "tooltipStageQuietActive": "Turn off Quiet Mode",
+  "@tooltipStageQuietActive": {
+    "description": "Tooltip while Quiet Mode is on"
+  },
+  "tooltipStageQuietInactive": "Turn on Quiet Mode",
+  "@tooltipStageQuietInactive": {
+    "description": "Tooltip while Quiet Mode is off"
+  },
+  "tooltipStageFewerBars": "Fewer bars",
+  "@tooltipStageFewerBars": {
+    "description": "Tooltip: fewer bars in Tempo mode"
+  },
+  "tooltipStageMoreBars": "More bars",
+  "@tooltipStageMoreBars": {
+    "description": "Tooltip: more bars in Tempo mode"
+  },
+  "tooltipStageSlower": "Slower",
+  "@tooltipStageSlower": {
+    "description": "Tooltip: slower manual scroll"
+  },
+  "tooltipStageFaster": "Faster",
+  "@tooltipStageFaster": {
+    "description": "Tooltip: faster manual scroll"
+  },
+  "labelStageLocked": "Stage Locked",
+  "@labelStageLocked": {
+    "description": "Chip shown while Stage Mode is locked"
+  },
+  "labelStagePlaying": "Playing",
+  "@labelStagePlaying": {
+    "description": "Flash after a two-finger tap starts auto-scroll"
+  },
+  "labelStagePaused": "Paused",
+  "@labelStagePaused": {
+    "description": "Flash after a two-finger tap pauses auto-scroll"
+  },
+  "descStageHelpSubtitle": "Only the words, and these gestures.",
+  "@descStageHelpSubtitle": {
+    "description": "Subtitle of the first-time Stage Mode guide"
+  },
+  "labelStageHelpTapOnce": "Tap once",
+  "@labelStageHelpTapOnce": {
+    "description": "Gesture name in the Stage Mode guide"
+  },
+  "descStageHelpTapOnceMeaning": "Show or hide the controls",
+  "@descStageHelpTapOnceMeaning": {
+    "description": "What a single tap does in Stage Mode"
+  },
+  "labelStageHelpDoubleTapTop": "Double-tap up top",
+  "@labelStageHelpDoubleTapTop": {
+    "description": "Gesture name in the Stage Mode guide"
+  },
+  "labelStageHelpDoubleTapBottom": "Double-tap down low",
+  "@labelStageHelpDoubleTapBottom": {
+    "description": "Gesture name in the Stage Mode guide"
+  },
+  "labelStageHelpTwoFingers": "Tap with two fingers",
+  "@labelStageHelpTwoFingers": {
+    "description": "Gesture name in the Stage Mode guide and gestures help"
+  },
+  "descStageHelpTwoFingersMeaning": "Play or pause",
+  "@descStageHelpTwoFingersMeaning": {
+    "description": "What a two-finger tap does in Stage Mode"
+  },
+  "labelStageHelpPinch": "Pinch",
+  "@labelStageHelpPinch": {
+    "description": "Gesture name in the Stage Mode guide"
+  },
+  "descStageHelpPinchMeaning": "Change the text size",
+  "@descStageHelpPinchMeaning": {
+    "description": "What a pinch does in Stage Mode"
+  },
+  "labelStageHelpBack": "Back",
+  "@labelStageHelpBack": {
+    "description": "Gesture name in the Stage Mode guide: the system back gesture"
+  },
+  "descStageHelpBackMeaning": "Leave full screen",
+  "@descStageHelpBackMeaning": {
+    "description": "What Back does in Stage Mode"
+  },
+  "descStageHelpStart": "Tap anywhere to start",
+  "@descStageHelpStart": {
+    "description": "Closes the first-time Stage Mode guide"
+  },
+  "titleGestures": "Gestures & Shortcuts",
+  "@titleGestures": {
+    "description": "Title of the gestures help dialog"
+  },
+  "descGesturesSubtitle": "Control the sheet hands-free while playing",
+  "@descGesturesSubtitle": {
+    "description": "Subtitle of the gestures help dialog"
+  },
+  "labelGesturesDoubleTapTop": "Double-tap top",
+  "@labelGesturesDoubleTapTop": {
+    "description": "Gesture name in the gestures help"
+  },
+  "descGesturesDoubleTapTopMeaning": "Faster in Manual mode, or adds 4 bars in Tempo mode.",
+  "@descGesturesDoubleTapTopMeaning": {
+    "description": "What a double-tap on the top half does"
+  },
+  "labelGesturesDoubleTapBottom": "Double-tap bottom",
+  "@labelGesturesDoubleTapBottom": {
+    "description": "Gesture name in the gestures help"
+  },
+  "descGesturesDoubleTapBottomMeaning": "Slower in Manual mode, or removes 4 bars in Tempo mode.",
+  "@descGesturesDoubleTapBottomMeaning": {
+    "description": "What a double-tap on the bottom half does"
+  },
+  "descGesturesTwoFingersMeaning": "Play or pause auto-scroll without touching any button.",
+  "@descGesturesTwoFingersMeaning": {
+    "description": "What a two-finger tap does"
+  },
+  "labelGesturesDrag": "Drag with one finger",
+  "@labelGesturesDrag": {
+    "description": "Gesture name in the gestures help"
+  },
+  "descGesturesDragMeaning": "Move the sheet by hand; auto-scroll waits and resumes when you lift.",
+  "@descGesturesDragMeaning": {
+    "description": "What a one-finger drag does"
+  },
+  "labelGesturesPinch": "Two-finger pinch",
+  "@labelGesturesPinch": {
+    "description": "Gesture name in the gestures help"
+  },
+  "descGesturesPinchMeaning": "Zoom in or out to make the chord and lyric text larger or smaller.",
+  "@descGesturesPinchMeaning": {
+    "description": "What a pinch does"
+  },
+  "labelGesturesFullScreen": "Full screen",
+  "@labelGesturesFullScreen": {
+    "description": "Gesture name in the gestures help"
+  },
+  "descGesturesFullScreenMeaning": "Single tap toggles HUD controls; back gesture leaves full screen.",
+  "@descGesturesFullScreenMeaning": {
+    "description": "How touches work in full screen"
+  },
+  "actionGesturesHelpCenter": "Help Center",
+  "@actionGesturesHelpCenter": {
+    "description": "Button that opens the in-app help"
+  },
+  "actionGesturesGotIt": "Got it",
+  "@actionGesturesGotIt": {
+    "description": "Button that closes the gestures help"
+  },
+  "descMetronomeTapAlong": "Tap along with the music",
+  "@descMetronomeTapAlong": {
+    "description": "Tap tempo hint before any tap"
+  },
+  "descMetronomeKeepTapping": "Keep tapping…",
+  "@descMetronomeKeepTapping": {
+    "description": "Tap tempo hint after the first tap"
+  },
+  "descMetronomeTapsNeeded": "{count, plural, =1{Good — 1 more tap to steady it} other{Good — {count} more taps to steady it}}",
+  "@descMetronomeTapsNeeded": {
+    "description": "Tap tempo hint: taps still needed for a steady tempo",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "descMetronomeSteady": "Steady",
+  "@descMetronomeSteady": {
+    "description": "Tap tempo hint once enough taps were made"
+  },
+  "titleMetronomeTempo": "Metronome tempo",
+  "@titleMetronomeTempo": {
+    "description": "Title of the metronome tempo sheet"
+  },
+  "descMetronomeSetByYou": "Set by you for this session",
+  "@descMetronomeSetByYou": {
+    "description": "Tempo source: changed by the user"
+  },
+  "descMetronomeUsingSongTempo": "Using this song''s saved tempo",
+  "@descMetronomeUsingSongTempo": {
+    "description": "Tempo source: the song tempo"
+  },
+  "descMetronomeNoSongTempo": "This song has no saved tempo",
+  "@descMetronomeNoSongTempo": {
+    "description": "Tempo source: the song has no tempo"
+  },
+  "tooltipMetronomeSlowerByOne": "Slower by 1",
+  "@tooltipMetronomeSlowerByOne": {
+    "description": "Tooltip: lower the tempo by 1 BPM"
+  },
+  "tooltipMetronomeFasterByOne": "Faster by 1",
+  "@tooltipMetronomeFasterByOne": {
+    "description": "Tooltip: raise the tempo by 1 BPM"
+  },
+  "labelMetronomeBpmUnit": "BPM",
+  "@labelMetronomeBpmUnit": {
+    "description": "Unit under the big tempo number (beats per minute)"
+  },
+  "actionMetronomeTapTempo": "Tap tempo",
+  "@actionMetronomeTapTempo": {
+    "description": "Button: set the tempo by tapping"
+  },
+  "actionMetronomeUseSongTempo": "Use song tempo",
+  "@actionMetronomeUseSongTempo": {
+    "description": "Button: go back to the song tempo"
+  },
+  "actionMetronomeNoSongTempoToRestore": "No song tempo",
+  "@actionMetronomeNoSongTempoToRestore": {
+    "description": "Disabled button when the song has no tempo"
+  },
+  "tooltipMetronomeStop": "Stop metronome",
+  "@tooltipMetronomeStop": {
+    "description": "Tooltip on the running metronome button"
+  },
+  "tooltipMetronomeStart": "Start metronome",
+  "@tooltipMetronomeStart": {
+    "description": "Tooltip on the stopped metronome button"
+  },
+  "errorDroneCouldNotPlay": "Could not play the sound.",
+  "@errorDroneCouldNotPlay": {
+    "description": "SnackBar when a pitch sound could not play and no reason is known"
+  },
+  "titleDrone": "Pitch Pipe & Drone",
+  "@titleDrone": {
+    "description": "Title of the pitch pipe sheet"
+  },
+  "labelDroneModeClassical": "Classical (Shruti)",
+  "@labelDroneModeClassical": {
+    "description": "Drone mode: Indian classical shruti"
+  },
+  "labelDroneModeWestern": "Western (Chords)",
+  "@labelDroneModeWestern": {
+    "description": "Drone mode: Western chords"
+  },
+  "labelDroneSaPa": "Sa + Pa (5th)",
+  "@labelDroneSaPa": {
+    "description": "Drone interval: Sa with Pa"
+  },
+  "labelDroneSaMa": "Sa + Ma (4th)",
+  "@labelDroneSaMa": {
+    "description": "Drone interval: Sa with Ma"
+  },
+  "labelDroneMajor": "Major (maj)",
+  "@labelDroneMajor": {
+    "description": "Chord quality: major"
+  },
+  "labelDroneMinor": "Minor (min)",
+  "@labelDroneMinor": {
+    "description": "Chord quality: minor"
+  },
+  "actionDroneChordCue": "Chord Cue (2s)",
+  "@actionDroneChordCue": {
+    "description": "Button: play the chord for two seconds"
+  },
+  "actionDronePitchCue": "Pitch Cue (2s)",
+  "@actionDronePitchCue": {
+    "description": "Button: play the pitch for two seconds"
+  },
+  "actionDroneStop": "Stop Drone",
+  "@actionDroneStop": {
+    "description": "Button: stop the drone"
+  },
+  "actionDroneChord": "Chord Drone",
+  "@actionDroneChord": {
+    "description": "Button: start a chord drone"
+  },
+  "actionDroneShruti": "Shruti Drone",
+  "@actionDroneShruti": {
+    "description": "Button: start a shruti drone"
+  },
+  "labelDroneTextScale": "Stage Text Scale",
+  "@labelDroneTextScale": {
+    "description": "Label of the Stage Mode text size choices"
+  },
+  "labelDroneYourSa": "Your Sa:  {name}",
+  "@labelDroneYourSa": {
+    "description": "Where the pitch came from: the singer Sa",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "labelDroneSongKey": "Song key:  {key}",
+  "@labelDroneSongKey": {
+    "description": "Where the pitch came from: the song key",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "labelDroneRootKey": "Root Pitch Key",
+  "@labelDroneRootKey": {
+    "description": "Prompt to pick a root pitch"
+  },
+  "emptySheetNoLyrics": "This song has no lyrics yet.",
+  "@emptySheetNoLyrics": {
+    "description": "Shown when the song has no lyrics"
+  },
+  "descDiagramNoGuitar": "No guitar chord diagram for {name}",
+  "@descDiagramNoGuitar": {
+    "description": "Screen-reader label when a chord cannot be drawn on guitar",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "descDiagramGuitar": "Guitar chord diagram for {name}",
+  "@descDiagramGuitar": {
+    "description": "Screen-reader label of a guitar chord diagram",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "labelDiagramNone": "No diagram",
+  "@labelDiagramNone": {
+    "description": "Shown in place of a guitar diagram that cannot be drawn"
+  },
+  "descDiagramHarmonium": "Harmonium chord diagram for {name}",
+  "@descDiagramHarmonium": {
+    "description": "Screen-reader label of a harmonium chord diagram",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "descDiagramSwara": "Swara diagram for {swara}",
+  "@descDiagramSwara": {
+    "description": "Screen-reader label of a swara keyboard diagram",
+    "placeholders": {
+      "swara": {
+        "type": "String"
+      }
+    }
+  },
+  "labelMelodyGridHold": "hold",
+  "@labelMelodyGridHold": {
+    "description": "Screen-reader word for a held beat in the melody grid"
+  },
+  "labelMelodyGridBarLine": "bar line",
+  "@labelMelodyGridBarLine": {
+    "description": "Screen-reader word for a group divider in the melody grid"
+  },
+  "descMelodyGridUnreadable": "could not read {text}",
+  "@descMelodyGridUnreadable": {
+    "description": "Screen-reader words for a melody token that could not be read",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "titleSettingsGeneral": "General",
+  "@titleSettingsGeneral": {
+    "description": "Settings card and screen title: general settings"
+  },
+  "descSettingsGeneralSubtitle": "Import and metronome",
+  "@descSettingsGeneralSubtitle": {
+    "description": "Settings card subtitle for General"
+  },
+  "titleSettingsThemes": "Themes",
+  "@titleSettingsThemes": {
+    "description": "Settings card and screen title: theme choice"
+  },
+  "descSettingsThemesSubtitle": "System, light, or dark look",
+  "@descSettingsThemesSubtitle": {
+    "description": "Settings card subtitle for Themes"
+  },
+  "titleSettingsChords": "Chords",
+  "@titleSettingsChords": {
+    "description": "Settings card and screen title: custom chords"
+  },
+  "descSettingsChordsSubtitle": "Your own chord notations for the editor",
+  "@descSettingsChordsSubtitle": {
+    "description": "Settings card subtitle for Chords"
+  },
+  "titleSettingsFonts": "Fonts",
+  "@titleSettingsFonts": {
+    "description": "Settings card and screen title: lyric font"
+  },
+  "descSettingsFontsSubtitle": "Pick the lyric font (English and Malayalam)",
+  "@descSettingsFontsSubtitle": {
+    "description": "Settings card subtitle for Fonts"
+  },
+  "titleSettingsHelp": "Help",
+  "@titleSettingsHelp": {
+    "description": "Settings card: in-app help"
+  },
+  "descSettingsHelpSubtitle": "How to use setlists, metronome, export and more",
+  "@descSettingsHelpSubtitle": {
+    "description": "Settings card subtitle for Help"
+  },
+  "descSettingsAboutSubtitle": "App version, author, and licenses",
+  "@descSettingsAboutSubtitle": {
+    "description": "Settings card subtitle for About"
+  },
+  "titleGeneralImport": "Import",
+  "@titleGeneralImport": {
+    "description": "General settings card: import ChordPro files"
+  },
+  "descGeneralImportSubtitle": "Bring in ChordPro files as songs",
+  "@descGeneralImportSubtitle": {
+    "description": "Subtitle of the Import card"
+  },
+  "titleGeneralImportSettings": "Import Settings",
+  "@titleGeneralImportSettings": {
+    "description": "General settings card and screen title: duplicate handling on import"
+  },
+  "descGeneralImportSettingsSubtitle": "Configure duplicate song handling for ChordPro files",
+  "@descGeneralImportSettingsSubtitle": {
+    "description": "Subtitle of the Import Settings card"
+  },
+  "descGeneralAutoScrollSubtitle": "Starting speed for manual scrolling",
+  "@descGeneralAutoScrollSubtitle": {
+    "description": "Subtitle of the Auto-scroll card"
+  },
+  "titleGeneralMetronome": "Metronome",
+  "@titleGeneralMetronome": {
+    "description": "General settings card and screen title: metronome"
+  },
+  "descGeneralMetronomeSubtitle": "Turn the beat on or off",
+  "@descGeneralMetronomeSubtitle": {
+    "description": "Subtitle of the Metronome card"
+  },
+  "descGeneralDroneSubtitle": "Reference pitch tones, a steady drone, and your Sa (kattai)",
+  "@descGeneralDroneSubtitle": {
+    "description": "Subtitle of the Pitch Pipe & Drone card"
+  },
+  "labelThemeSystem": "System theme",
+  "@labelThemeSystem": {
+    "description": "Theme choice: follow the device"
+  },
+  "labelThemeLight": "Light theme",
+  "@labelThemeLight": {
+    "description": "Theme choice: light"
+  },
+  "labelThemeDark": "Dark theme",
+  "@labelThemeDark": {
+    "description": "Theme choice: dark"
+  },
+  "descFontSettingsNote": "Used for song lyrics on screen and in exported PDFs. Malayalam always prints in PDFs, even with an English font.",
+  "@descFontSettingsNote": {
+    "description": "Note at the top of the font settings"
+  },
+  "labelFontSystemDefault": "System default",
+  "@labelFontSystemDefault": {
+    "description": "Font choice: the app default font"
+  },
+  "titleScrollStartingSpeed": "Starting speed",
+  "@titleScrollStartingSpeed": {
+    "description": "Heading of the default scroll speed setting"
+  },
+  "descScrollStartingSpeedNote": "Manual scrolling starts at this speed for a song you have not set a speed for yet.",
+  "@descScrollStartingSpeedNote": {
+    "description": "Explains the default scroll speed"
+  },
+  "actionScrollResetTo": "Reset to {speed}",
+  "@actionScrollResetTo": {
+    "description": "Button that resets the default scroll speed; speed is like 1.00x",
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "errorChordSettingsAddFailed": "Could not add that chord. Use at most {max} characters and no repeats.",
+  "@errorChordSettingsAddFailed": {
+    "description": "SnackBar when a custom chord is too long or already there",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "bodyChordSettingsRemoved": "Removed \"{chord}\".",
+  "@bodyChordSettingsRemoved": {
+    "description": "SnackBar after a custom chord was removed",
+    "placeholders": {
+      "chord": {
+        "type": "String"
+      }
+    }
+  },
+  "descChordSettingsIntro": "Add your own chord notations. They always appear in the editor''s chord bar, after the key''s own chords.",
+  "@descChordSettingsIntro": {
+    "description": "Intro text on the custom chords screen"
+  },
+  "labelChordSettings": "Chord notation",
+  "@labelChordSettings": {
+    "description": "Label of the custom chord field"
+  },
+  "emptyChordSettings": "No custom chords yet.",
+  "@emptyChordSettings": {
+    "description": "Shown when there are no custom chords"
+  },
+  "tooltipChordSettingsRemove": "Remove {chord}",
+  "@tooltipChordSettingsRemove": {
+    "description": "Tooltip: remove a custom chord",
+    "placeholders": {
+      "chord": {
+        "type": "String"
+      }
+    }
+  },
+  "descImportSettingsQuestion": "When importing a song whose title matches an existing song in your songbook:",
+  "@descImportSettingsQuestion": {
+    "description": "Question above the duplicate handling choices"
+  },
+  "labelImportStrategyOverwrite": "Overwrite",
+  "@labelImportStrategyOverwrite": {
+    "description": "Duplicate handling choice: replace the existing song"
+  },
+  "descImportStrategyOverwrite": "Replace existing song content with the imported song",
+  "@descImportStrategyOverwrite": {
+    "description": "Explains the Overwrite choice"
+  },
+  "labelImportStrategyRenameImported": "Rename imported",
+  "@labelImportStrategyRenameImported": {
+    "description": "Duplicate handling choice: rename the new song"
+  },
+  "descImportStrategyRenameImported": "Automatically rename imported song by adding timestamp to the title",
+  "@descImportStrategyRenameImported": {
+    "description": "Explains the Rename imported choice"
+  },
+  "labelImportStrategyRenameExisting": "Rename existing",
+  "@labelImportStrategyRenameExisting": {
+    "description": "Duplicate handling choice: rename the old song"
+  },
+  "descImportStrategyRenameExisting": "Automatically rename existing song by adding timestamp to the title",
+  "@descImportStrategyRenameExisting": {
+    "description": "Explains the Rename existing choice"
+  },
+  "labelImportStrategyUserSuggested": "Ask for a new name",
+  "@labelImportStrategyUserSuggested": {
+    "description": "Duplicate handling choice: ask for a new name"
+  },
+  "descImportStrategyUserSuggested": "Prompt UI for user to type custom name for imported song",
+  "@descImportStrategyUserSuggested": {
+    "description": "Explains the user suggested name choice"
+  },
+  "labelMetronomeEnable": "Enable metronome",
+  "@labelMetronomeEnable": {
+    "description": "Switch: turn the metronome on"
+  },
+  "descMetronomeEnableSubtitle": "Keep the beat at the song tempo",
+  "@descMetronomeEnableSubtitle": {
+    "description": "Subtitle of the metronome switch"
+  },
+  "labelMetronomeFlash": "Flash",
+  "@labelMetronomeFlash": {
+    "description": "Switch: flash on every beat"
+  },
+  "descMetronomeFlashSubtitle": "Blink on every beat (good when muted)",
+  "@descMetronomeFlashSubtitle": {
+    "description": "Subtitle of the Flash switch"
+  },
+  "labelMetronomeClick": "Click",
+  "@labelMetronomeClick": {
+    "description": "Switch: click sound on every beat"
+  },
+  "descMetronomeClickSubtitle": "Play a tick on every beat",
+  "@descMetronomeClickSubtitle": {
+    "description": "Subtitle of the Click switch"
+  },
+  "labelMetronomeClickVolume": "Click volume",
+  "@labelMetronomeClickVolume": {
+    "description": "Label of the click volume slider"
+  },
+  "titleMetronomeBarHeading": "Bar",
+  "@titleMetronomeBarHeading": {
+    "description": "Section heading for bar settings (a bar is a measure)"
+  },
+  "labelMetronomeBeatsInBar": "Beats in a bar",
+  "@labelMetronomeBeatsInBar": {
+    "description": "Setting: number of beats in a bar"
+  },
+  "descMetronomeBeatsInBarSubtitle": "Beat 1 is the one you count on",
+  "@descMetronomeBeatsInBarSubtitle": {
+    "description": "Subtitle of the Beats in a bar setting"
+  },
+  "labelMetronomeAccent": "Accent beat 1",
+  "@labelMetronomeAccent": {
+    "description": "Switch: make the first beat louder"
+  },
+  "descMetronomeAccentSubtitle": "Louder, higher click on the first beat",
+  "@descMetronomeAccentSubtitle": {
+    "description": "Subtitle of the accent switch"
+  },
+  "labelMetronomeTest": "Test the sound",
+  "@labelMetronomeTest": {
+    "description": "Row that plays a test bar"
+  },
+  "descMetronomeTestSubtitle": "Plays one bar at {bpm} BPM. If you hear nothing, raise the media volume.",
+  "@descMetronomeTestSubtitle": {
+    "description": "Subtitle of the test row",
+    "placeholders": {
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "descDroneSettingsTestWesternMajor": "Test plays: Western major chord on {key}",
+  "@descDroneSettingsTestWesternMajor": {
+    "description": "What the test buttons play: a major chord",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "descDroneSettingsTestWesternMinor": "Test plays: Western minor chord on {key}",
+  "@descDroneSettingsTestWesternMinor": {
+    "description": "What the test buttons play: a minor chord",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "descDroneSettingsTestClassical": "Test plays: Classical drone on {key} + {interval}",
+  "@descDroneSettingsTestClassical": {
+    "description": "What the test buttons play: a shruti drone; interval is Pa or Ma",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "interval": {
+        "type": "String"
+      }
+    }
+  },
+  "titleDroneSettingsNaming": "Pitch naming",
+  "@titleDroneSettingsNaming": {
+    "description": "Section title: how pitches are named"
+  },
+  "descDroneSettingsNamingCaption": "Sets how pitches are named, and how a song is treated when it names no raga or tala.",
+  "@descDroneSettingsNamingCaption": {
+    "description": "Caption of the Pitch naming section"
+  },
+  "descDroneSettingsUsesIndian": "Songs with no raga or tala use the Indian songs settings below.",
+  "@descDroneSettingsUsesIndian": {
+    "description": "Note when pitch naming is Indian"
+  },
+  "descDroneSettingsUsesWestern": "Songs with no raga or tala use the Western songs settings below.",
+  "@descDroneSettingsUsesWestern": {
+    "description": "Note when pitch naming is Western"
+  },
+  "titleDroneSettingsIndianSongs": "Indian songs",
+  "@titleDroneSettingsIndianSongs": {
+    "description": "Section title: settings for Indian songs"
+  },
+  "descDroneSettingsIndianCaption": "Used for songs with a raga or tala. These always play the Classical shruti drone, on your Sa.",
+  "@descDroneSettingsIndianCaption": {
+    "description": "Caption of the Indian songs section"
+  },
+  "labelDroneSettingsYourSa": "Your Sa (Shruti)",
+  "@labelDroneSettingsYourSa": {
+    "description": "Setting: the singer Sa"
+  },
+  "descDroneSettingsSaSits": "Where your Sa sits: {name}",
+  "@descDroneSettingsSaSits": {
+    "description": "Subtitle of the Sa setting",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "labelDroneSettingsInterval": "Drone Interval",
+  "@labelDroneSettingsInterval": {
+    "description": "Setting: the second drone note"
+  },
+  "descDroneSettingsIntervalPa": "Sa + Pa (fifth) — the usual shruti box drone",
+  "@descDroneSettingsIntervalPa": {
+    "description": "Explains the Pa interval"
+  },
+  "descDroneSettingsIntervalMa": "Sa + Ma (fourth) — for ragas that leave out Pa",
+  "@descDroneSettingsIntervalMa": {
+    "description": "Explains the Ma interval"
+  },
+  "titleDroneSettingsWesternSongs": "Western songs",
+  "@titleDroneSettingsWesternSongs": {
+    "description": "Section title: settings for Western songs"
+  },
+  "descDroneSettingsWesternCaption": "Used for songs with no raga or tala, when pitch naming is Western.",
+  "@descDroneSettingsWesternCaption": {
+    "description": "Caption of the Western songs section"
+  },
+  "labelDroneSettingsDefaultKey": "Default key",
+  "@labelDroneSettingsDefaultKey": {
+    "description": "Setting: key used when a song names none"
+  },
+  "descDroneSettingsDefaultKeySubtitle": "Used when a song names no key: {key}",
+  "@descDroneSettingsDefaultKeySubtitle": {
+    "description": "Subtitle of the Default key setting",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "labelDroneSettingsDefaultMode": "Default drone mode",
+  "@labelDroneSettingsDefaultMode": {
+    "description": "Setting: Classical or Western drone"
+  },
+  "descDroneSettingsModeClassicalNote": "Classical Shruti drone (Sa + Pa/Ma)",
+  "@descDroneSettingsModeClassicalNote": {
+    "description": "Explains the Classical drone mode"
+  },
+  "descDroneSettingsModeWesternNote": "Western backing chords (Major / Minor)",
+  "@descDroneSettingsModeWesternNote": {
+    "description": "Explains the Western drone mode"
+  },
+  "labelDroneSettingsClassical": "Classical",
+  "@labelDroneSettingsClassical": {
+    "description": "Drone mode choice: Classical"
+  },
+  "labelDroneSettingsDefaultQuality": "Chord quality",
+  "@labelDroneSettingsDefaultQuality": {
+    "description": "Setting: major or minor chord"
+  },
+  "descDroneSettingsMajorNote": "Major triad (Root + Major 3rd + 5th)",
+  "@descDroneSettingsMajorNote": {
+    "description": "Explains the major chord"
+  },
+  "descDroneSettingsMinorNote": "Minor triad (Root + Minor 3rd + 5th)",
+  "@descDroneSettingsMinorNote": {
+    "description": "Explains the minor chord"
+  },
+  "descDroneSettingsQualityOnlyWestern": "Used only when the drone mode above is Western",
+  "@descDroneSettingsQualityOnlyWestern": {
+    "description": "Why the chord quality setting is greyed out"
+  },
+  "labelChordQualityMajor": "Major",
+  "@labelChordQualityMajor": {
+    "description": "Chord quality: major"
+  },
+  "labelChordQualityMinor": "Minor",
+  "@labelChordQualityMinor": {
+    "description": "Chord quality: minor"
+  },
+  "titleDroneSettingsEverything": "All songs",
+  "@titleDroneSettingsEverything": {
+    "description": "Section title: settings for both traditions"
+  },
+  "descDroneSettingsEverythingCaption": "These affect both traditions.",
+  "@descDroneSettingsEverythingCaption": {
+    "description": "Caption of the All songs section"
+  },
+  "labelDroneSettingsVolume": "Volume",
+  "@labelDroneSettingsVolume": {
+    "description": "Setting: drone volume"
+  },
+  "labelDroneSettingsFontScale": "Stage Font Scale",
+  "@labelDroneSettingsFontScale": {
+    "description": "Setting: Stage Mode text size"
+  },
+  "descDroneSettingsFontScaleSubtitle": "Stage mode text zoom: {percent}%",
+  "@descDroneSettingsFontScaleSubtitle": {
+    "description": "Subtitle of the Stage Font Scale setting",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "titleDroneSettingsTryIt": "Try it out",
+  "@titleDroneSettingsTryIt": {
+    "description": "Section title: test buttons"
+  },
+  "descDroneSettingsTryItCaption": "The test uses the settings above.",
+  "@descDroneSettingsTryItCaption": {
+    "description": "Caption of the Try it out section"
+  },
+  "actionDroneSettingsTestChordCue": "Test Chord Cue",
+  "@actionDroneSettingsTestChordCue": {
+    "description": "Button: play a test chord cue"
+  },
+  "actionDroneSettingsTestPitchCue": "Test Pitch Cue",
+  "@actionDroneSettingsTestPitchCue": {
+    "description": "Button: play a test pitch cue"
+  },
+  "actionDroneSettingsTestChordDrone": "Test Chord Drone",
+  "@actionDroneSettingsTestChordDrone": {
+    "description": "Button: start a test chord drone"
+  },
+  "actionDroneSettingsTestDrone": "Test Drone",
+  "@actionDroneSettingsTestDrone": {
+    "description": "Button: start a test drone"
+  },
+  "descDroneSettingsChordDroneNote": "The chord drone holds one steady Western backing chord for as long as it is on.",
+  "@descDroneSettingsChordDroneNote": {
+    "description": "Explains the chord drone"
+  },
+  "descDroneSettingsDroneNote": "The drone holds one steady pair of notes for as long as it is on. It does not follow the tune.",
+  "@descDroneSettingsDroneNote": {
+    "description": "Explains the shruti drone"
+  },
+  "labelAboutVersion": "Version {version}",
+  "@labelAboutVersion": {
+    "description": "App version line on the About screen",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "labelAboutVersionBuild": "{version} (build {build})",
+  "@labelAboutVersionBuild": {
+    "description": "Version with build number",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "labelAboutBuildDate": "Build date",
+  "@labelAboutBuildDate": {
+    "description": "Row title: when this build was made"
+  },
+  "labelAboutLicenses": "Open source licenses",
+  "@labelAboutLicenses": {
+    "description": "Row that opens the open source licenses"
+  },
+  "titleImportExport": "Import & Export",
+  "@titleImportExport": {
+    "description": "Title of the Import & Export screen"
+  },
+  "labelImportExportPickFiles": "Import ChordPro",
+  "@labelImportExportPickFiles": {
+    "description": "Row: pick ChordPro files to import"
+  },
+  "descImportExportPickFilesSubtitle": "Pick one or more .cho, .pro, or text files to add songs.",
+  "@descImportExportPickFilesSubtitle": {
+    "description": "Subtitle of the file import row"
+  },
+  "labelImportExportScan": "Import via AirQR",
+  "@labelImportExportScan": {
+    "description": "Row: receive songs by scanning AirQR codes"
+  },
+  "descImportExportScanSubtitle": "Scan an animated QR song stream from a bandmate''s screen.",
+  "@descImportExportScanSubtitle": {
+    "description": "Subtitle of the AirQR scan row"
+  },
+  "labelImportExportAllChordPro": "Export all songs",
+  "@labelImportExportAllChordPro": {
+    "description": "Row: export every song to one ChordPro file"
+  },
+  "descImportExportAllChordProSubtitle": "Save your entire songbook as a single ChordPro file.",
+  "@descImportExportAllChordProSubtitle": {
+    "description": "Subtitle of the export-all row"
+  },
+  "labelImportExportAllAirQr": "Send all via AirQR",
+  "@labelImportExportAllAirQr": {
+    "description": "Row: send every song as an AirQR stream"
+  },
+  "descImportExportAllAirQrSubtitle": "Broadcast entire songbook as an animated QR stream.",
+  "@descImportExportAllAirQrSubtitle": {
+    "description": "Subtitle of the AirQR export-all row"
+  },
+  "errorImportExportWrongType": "Only .cho, .pro, .chordpro, and .txt files can be imported.",
+  "@errorImportExportWrongType": {
+    "description": "SnackBar when none of the chosen files has a supported type"
+  },
+  "errorImportExportNothingRead": "Could not read any chosen files.",
+  "@errorImportExportNothingRead": {
+    "description": "SnackBar when no chosen file could be read"
+  },
+  "descImportExportFilesSelected": "{count, plural, =1{1 file selected} other{{count} files selected}}",
+  "@descImportExportFilesSelected": {
+    "description": "Import preview subtitle when several files were chosen",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorImportExportImportFailed": "Could not import the files.",
+  "@errorImportExportImportFailed": {
+    "description": "SnackBar when importing files failed"
+  },
+  "bodyImportExportNoSongsToExport": "No songs to export.",
+  "@bodyImportExportNoSongsToExport": {
+    "description": "SnackBar when the songbook is empty on export"
+  },
+  "titleImportExportAllDialog": "Export all songs",
+  "@titleImportExportAllDialog": {
+    "description": "Title of the system save dialog for exporting all songs"
+  },
+  "bodyImportExportExported": "{count, plural, =1{Exported 1 song.} other{Exported {count} songs.}}",
+  "@bodyImportExportExported": {
+    "description": "SnackBar after all songs were exported",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorImportExportExportFailed": "Could not export songs.",
+  "@errorImportExportExportFailed": {
+    "description": "SnackBar when exporting all songs failed"
+  },
+  "bodyImportExportNoSongsToShare": "No songs to share.",
+  "@bodyImportExportNoSongsToShare": {
+    "description": "SnackBar when the songbook is empty on AirQR share"
+  },
+  "titleImportExportFullSongbook": "{count, plural, =1{Songbook (1 song)} other{Songbook ({count} songs)}}",
+  "@titleImportExportFullSongbook": {
+    "description": "AirQR transmitter title when sending the whole songbook",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorImportExportAirQrFailed": "Could not prepare AirQR export.",
+  "@errorImportExportAirQrFailed": {
+    "description": "SnackBar when the AirQR export could not start"
+  },
+  "titleImportPreview": "Import Preview",
+  "@titleImportPreview": {
+    "description": "Title of the import preview screen"
+  },
+  "actionImportPreviewSelectAll": "Select All",
+  "@actionImportPreviewSelectAll": {
+    "description": "Button: select every song in the file"
+  },
+  "actionImportPreviewDeselectAll": "Deselect All",
+  "@actionImportPreviewDeselectAll": {
+    "description": "Button: clear the selection"
+  },
+  "descImportPreviewFound": "{count, plural, =1{Found 1 song in file. Select which songs to import to your songbook.} other{Found {count} songs in file. Select which songs to import to your songbook.}}",
+  "@descImportPreviewFound": {
+    "description": "Banner at the top of the import preview",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "emptyImportPreviewNoSongs": "No valid songs found in this file.",
+  "@emptyImportPreviewNoSongs": {
+    "description": "Shown when the file has no songs"
+  },
+  "labelImportPreviewInSongbook": "In Songbook",
+  "@labelImportPreviewInSongbook": {
+    "description": "Badge on a song whose title is already in the songbook"
+  },
+  "labelImportPreviewAlreadyInSongbook": "Already in Songbook",
+  "@labelImportPreviewAlreadyInSongbook": {
+    "description": "Chip in the song preview when the title is already in the songbook"
+  },
+  "labelImportPreviewKey": "Key: {key}",
+  "@labelImportPreviewKey": {
+    "description": "Key chip in the song preview",
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "actionImportPreviewPreview": "Preview",
+  "@actionImportPreviewPreview": {
+    "description": "Button that opens a song preview"
+  },
+  "actionImportPreviewImporting": "Importing...",
+  "@actionImportPreviewImporting": {
+    "description": "Import button text while importing"
+  },
+  "actionImportPreviewImportSelected": "Import ({count})",
+  "@actionImportPreviewImportSelected": {
+    "description": "Import button with the number of chosen songs",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bodyImportPreviewImportedOne": "Imported \"{title}\".",
+  "@bodyImportPreviewImportedOne": {
+    "description": "SnackBar after one song was imported",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "bodyImportPreviewImportedMany": "{count, plural, =1{Imported 1 song.} other{Imported {count} songs.}}",
+  "@bodyImportPreviewImportedMany": {
+    "description": "SnackBar after several songs were imported",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorImportPreviewFailed": "Import failed: {reason}",
+  "@errorImportPreviewFailed": {
+    "description": "SnackBar when import failed; reason is technical detail",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "titleAirQrReceiver": "AirQR Song Receiver",
+  "@titleAirQrReceiver": {
+    "description": "Title of the AirQR receiver screen"
+  },
+  "tooltipAirQrReceiverGallery": "Scan a photo",
+  "@tooltipAirQrReceiverGallery": {
+    "description": "Tooltip: scan an AirQR code from a photo"
+  },
+  "tooltipAirQrReceiverResetStream": "Reset Stream",
+  "@tooltipAirQrReceiverResetStream": {
+    "description": "Tooltip: clear the received blocks"
+  },
+  "errorAirQrReceiverNoCode": "No AirQR code detected in chosen photo.",
+  "@errorAirQrReceiverNoCode": {
+    "description": "SnackBar when a photo has no AirQR code"
+  },
+  "errorAirQrReceiverPhotoFailed": "Could not scan photo.",
+  "@errorAirQrReceiverPhotoFailed": {
+    "description": "SnackBar when a photo could not be scanned"
+  },
+  "descAirQrReceiverStarting": "Initializing AirQR Camera Receiver...",
+  "@descAirQrReceiverStarting": {
+    "description": "Shown while the camera starts or cannot start"
+  },
+  "labelAirQrReceiverFileName": "AirQR Stream Share",
+  "@labelAirQrReceiverFileName": {
+    "description": "Name shown in the import preview for songs received by AirQR"
+  },
+  "descAirQrHudReassembled": "STREAM REASSEMBLED - OPENING PREVIEW...",
+  "@descAirQrHudReassembled": {
+    "description": "AirQR status when every block arrived"
+  },
+  "descAirQrHudReceiving": "RECEIVING AIRQR SONG STREAM...",
+  "@descAirQrHudReceiving": {
+    "description": "AirQR status while blocks arrive"
+  },
+  "descAirQrHudPointAt": "POINT AT ANIMATED QR CODE STREAM",
+  "@descAirQrHudPointAt": {
+    "description": "AirQR status before any block arrived"
+  },
+  "descAirQrHudCaptured": "Captured: {received} / {total} Blocks",
+  "@descAirQrHudCaptured": {
+    "description": "How many AirQR blocks arrived",
+    "placeholders": {
+      "received": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "labelAirQrHudMissing": "Missing: {count}",
+  "@labelAirQrHudMissing": {
+    "description": "How many AirQR blocks are still missing",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "titleAirQrTransmitter": "AirQR Share: {title}",
+  "@titleAirQrTransmitter": {
+    "description": "Title of the AirQR sending screen",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "descAirQrTransmitterSize": "{bytes} bytes • {frames} Optical Frames",
+  "@descAirQrTransmitterSize": {
+    "description": "Size of the AirQR stream",
+    "placeholders": {
+      "bytes": {
+        "type": "int"
+      },
+      "frames": {
+        "type": "int"
+      }
+    }
+  },
+  "labelAirQrTransmitterSpeed": "Stream Speed:",
+  "@labelAirQrTransmitterSpeed": {
+    "description": "Label of the frames-per-second slider"
+  },
+  "actionAirQrTransmitterPause": "Pause stream",
+  "@actionAirQrTransmitterPause": {
+    "description": "Button: pause the QR animation"
+  },
+  "actionAirQrTransmitterResume": "Resume stream",
+  "@actionAirQrTransmitterResume": {
+    "description": "Button: resume the QR animation"
+  },
+  "emptyAirQrTransmitterNoFrames": "No frames generated",
+  "@emptyAirQrTransmitterNoFrames": {
+    "description": "Shown when there is nothing to send"
+  },
+  "descAirQrTransmitterParityFrame": "Frame {index}/{total} • Fountain FEC",
+  "@descAirQrTransmitterParityFrame": {
+    "description": "Label of a repair (parity) frame",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "descAirQrTransmitterBlockFrame": "Frame {index}/{total} • Block {block}",
+  "@descAirQrTransmitterBlockFrame": {
+    "description": "Label of a data frame",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "block": {
+        "type": "int"
+      }
+    }
+  },
+  "descAirQrTransmitterHint": "Point receiving phone camera at this screen.\nNo internet, Bluetooth, or Wi-Fi required.",
+  "@descAirQrTransmitterHint": {
+    "description": "Hint under the AirQR code"
+  },
+  "titleHelpSongbook": "Your songbook",
+  "@titleHelpSongbook": {
+    "description": "Help › topic title (songbook)"
+  },
+  "helpSongbookSummary": "Find, star, copy and remove songs",
+  "@helpSongbookSummary": {
+    "description": "Help › Your songbook › one-line summary on the hub card"
+  },
+  "helpSongbookIntro": "The home screen is your songbook. It has two tabs — Songs and Setlists. The Songs tab holds everything you have written or brought in, with the most recently changed song at the top.",
+  "@helpSongbookIntro": {
+    "description": "Help › Your songbook › opening paragraph"
+  },
+  "helpSongbookS1Heading": "Add a song",
+  "@helpSongbookS1Heading": {
+    "description": "Help › Your songbook › section heading"
+  },
+  "helpSongbookS1P1": "Tap the + button at the bottom right to write a new one.",
+  "@helpSongbookS1P1": {
+    "description": "Help › Your songbook › Add a song — point 1"
+  },
+  "helpSongbookS1P2": "Or bring songs in from a file — see the Import topic.",
+  "@helpSongbookS1P2": {
+    "description": "Help › Your songbook › Add a song — point 2"
+  },
+  "helpSongbookS1P3": "A new install already has three sample songs and one setlist, so you can try everything before typing anything.",
+  "@helpSongbookS1P3": {
+    "description": "Help › Your songbook › Add a song — point 3"
+  },
+  "helpSongbookS2Heading": "Find a song",
+  "@helpSongbookS2Heading": {
+    "description": "Help › Your songbook › section heading"
+  },
+  "helpSongbookS2P1": "Type in the search box at the top. It looks in the title, the artist and the words, so half a remembered line is enough.",
+  "@helpSongbookS2P1": {
+    "description": "Help › Your songbook › Find a song — point 1"
+  },
+  "helpSongbookS2P2": "Tap the X in the box to clear the search.",
+  "@helpSongbookS2P2": {
+    "description": "Help › Your songbook › Find a song — point 2"
+  },
+  "helpSongbookS2P3": "Below it are two chips, \"All Songs\" and \"Starred\", each with a count of how many songs it holds.",
+  "@helpSongbookS2P3": {
+    "description": "Help › Your songbook › Find a song — point 3"
+  },
+  "helpSongbookS2P4": "Tap the star on a song to put it in Starred. Tap it again to take it out.",
+  "@helpSongbookS2P4": {
+    "description": "Help › Your songbook › Find a song — point 4"
+  },
+  "helpSongbookS3Heading": "What a song card shows",
+  "@helpSongbookS3Heading": {
+    "description": "Help › Your songbook › section heading"
+  },
+  "helpSongbookS3P1": "The title and the artist.",
+  "@helpSongbookS3P1": {
+    "description": "Help › Your songbook › What a song card shows — point 1"
+  },
+  "helpSongbookS3P2": "The key, such as C or Am, and the tempo, such as 120 BPM, when the song has them.",
+  "@helpSongbookS3P2": {
+    "description": "Help › Your songbook › What a song card shows — point 2"
+  },
+  "helpSongbookS3P3": "A star, a copy button and a delete button.",
+  "@helpSongbookS3P3": {
+    "description": "Help › Your songbook › What a song card shows — point 3"
+  },
+  "helpSongbookS4Heading": "Copy or delete one song",
+  "@helpSongbookS4Heading": {
+    "description": "Help › Your songbook › section heading"
+  },
+  "helpSongbookS4P1": "Copy makes a second, separate song named \"<Title> (Copy)\". Handy for a different arrangement of the same song.",
+  "@helpSongbookS4P1": {
+    "description": "Help › Your songbook › Copy or delete one song — point 1"
+  },
+  "helpSongbookS4P2": "Delete asks first, then takes the song out of your library and out of every setlist that held it.",
+  "@helpSongbookS4P2": {
+    "description": "Help › Your songbook › Copy or delete one song — point 2"
+  },
+  "helpSongbookS4P3": "To act on several songs at once, see the Select Songs topic.",
+  "@helpSongbookS4P3": {
+    "description": "Help › Your songbook › Copy or delete one song — point 3"
+  },
+  "helpSongbookS5Heading": "On a tablet",
+  "@helpSongbookS5Heading": {
+    "description": "Help › Your songbook › section heading"
+  },
+  "helpSongbookS5P1": "A wide screen shows the list on the left and the song on the right, so picking a song does not hide the list.",
+  "@helpSongbookS5P1": {
+    "description": "Help › Your songbook › On a tablet — point 1"
+  },
+  "helpSongbookS5P2": "Full screen is not offered in that right-hand half, because it would fill only that half and not the whole screen.",
+  "@helpSongbookS5P2": {
+    "description": "Help › Your songbook › On a tablet — point 2"
+  },
+  "titleHelpEditor": "Write a song",
+  "@titleHelpEditor": {
+    "description": "Help › topic title (editor)"
+  },
+  "helpEditorSummary": "Type the words, put chords over them, save",
+  "@helpEditorSummary": {
+    "description": "Help › Write a song › one-line summary on the hub card"
+  },
+  "helpEditorIntro": "The editor is one plain box for the words, with a few fields above it for the title, artist, key and tempo. Chords go inside the words in square brackets.",
+  "@helpEditorIntro": {
+    "description": "Help › Write a song › opening paragraph"
+  },
+  "helpEditorS1Heading": "Chords in the words",
+  "@helpEditorS1Heading": {
+    "description": "Help › Write a song › section heading"
+  },
+  "helpEditorS1P1": "Put the chord in square brackets right before the syllable it falls on: [G]Amazing [C]grace.",
+  "@helpEditorS1P1": {
+    "description": "Help › Write a song › Chords in the words — point 1"
+  },
+  "helpEditorS1P2": "On the song screen that chord is drawn floating above the syllable. The brackets are never shown.",
+  "@helpEditorS1P2": {
+    "description": "Help › Write a song › Chords in the words — point 2"
+  },
+  "helpEditorS1P3": "This is standard ChordPro, so a file written in another app reads the same way here.",
+  "@helpEditorS1P3": {
+    "description": "Help › Write a song › Chords in the words — point 3"
+  },
+  "helpEditorS2Heading": "The chord bar above the keyboard",
+  "@helpEditorS2Heading": {
+    "description": "Help › Write a song › section heading"
+  },
+  "helpEditorS2P1": "While you are typing the words, a row of chord buttons sits just above the keyboard.",
+  "@helpEditorS2P1": {
+    "description": "Help › Write a song › The chord bar above the keyboard — point 1"
+  },
+  "helpEditorS2P2": "The chords offered are the ones that usually belong to the key you picked — I, ii, iii, IV, V, vi and so on.",
+  "@helpEditorS2P2": {
+    "description": "Help › Write a song › The chord bar above the keyboard — point 2"
+  },
+  "helpEditorS2P3": "Tap one and it goes in at the cursor, brackets and all.",
+  "@helpEditorS2P3": {
+    "description": "Help › Write a song › The chord bar above the keyboard — point 3"
+  },
+  "helpEditorS2P4": "If the key is blank or cannot be read, the bar quietly falls back to the key of C rather than showing nothing.",
+  "@helpEditorS2P4": {
+    "description": "Help › Write a song › The chord bar above the keyboard — point 4"
+  },
+  "helpEditorS2P5": "Your own chords come after those. Tap \"Custom\" to add one on the spot, or keep the whole list in Settings → Chords.",
+  "@helpEditorS2P5": {
+    "description": "Help › Write a song › The chord bar above the keyboard — point 5"
+  },
+  "helpEditorS2P6": "A custom chord can be up to 12 characters, and the same one is never stored twice.",
+  "@helpEditorS2P6": {
+    "description": "Help › Write a song › The chord bar above the keyboard — point 6"
+  },
+  "helpEditorS3Heading": "The fields at the top",
+  "@helpEditorS3Heading": {
+    "description": "Help › Write a song › section heading"
+  },
+  "helpEditorS3P1": "Title, and Artist / Band.",
+  "@helpEditorS3P1": {
+    "description": "Help › Write a song › The fields at the top — point 1"
+  },
+  "helpEditorS3P2": "Notation: Western, Carnatic or Hindustani. Western shows an \"Original key\" box; either Indian choice replaces it with Raga and Tala — see the Carnatic & Hindustani topic.",
+  "@helpEditorS3P2": {
+    "description": "Help › Write a song › The fields at the top — point 2"
+  },
+  "helpEditorS3P3": "Tempo (BPM) drives the metronome and the Tempo auto-scroll.",
+  "@helpEditorS3P3": {
+    "description": "Help › Write a song › The fields at the top — point 3"
+  },
+  "helpEditorS3P4": "\"Add to setlist\" drops the song into a setlist as you save it.",
+  "@helpEditorS3P4": {
+    "description": "Help › Write a song › The fields at the top — point 4"
+  },
+  "helpEditorS3P5": "The fields fold into a one-line summary as soon as you tap into the words, so the words get the screen. Tap the summary to open them again.",
+  "@helpEditorS3P5": {
+    "description": "Help › Write a song › The fields at the top — point 5"
+  },
+  "helpEditorS4Heading": "Undo, save and copy",
+  "@helpEditorS4Heading": {
+    "description": "Help › Write a song › section heading"
+  },
+  "helpEditorS4P1": "The undo and redo arrows in the top bar step back and forward through your typing.",
+  "@helpEditorS4P1": {
+    "description": "Help › Write a song › Undo, save and copy — point 1"
+  },
+  "helpEditorS4P2": "Save keeps the song and closes the editor.",
+  "@helpEditorS4P2": {
+    "description": "Help › Write a song › Undo, save and copy — point 2"
+  },
+  "helpEditorS4P3": "More options → \"Save as copy\" saves what is on screen right now, including edits you have not saved yet, as a brand-new song. The original is left as it was.",
+  "@helpEditorS4P3": {
+    "description": "Help › Write a song › Undo, save and copy — point 3"
+  },
+  "helpEditorS4P4": "Leaving with unsaved edits asks first, so a stray back gesture cannot throw your work away. With nothing changed it just closes.",
+  "@helpEditorS4P4": {
+    "description": "Help › Write a song › Undo, save and copy — point 4"
+  },
+  "helpEditorS5Heading": "More options",
+  "@helpEditorS5Heading": {
+    "description": "Help › Write a song › section heading"
+  },
+  "helpEditorS5P1": "Melody keypad — tap out a tune instead of typing it. See the Melody Lines topic.",
+  "@helpEditorS5P1": {
+    "description": "Help › Write a song › More options — point 1"
+  },
+  "helpEditorS5P2": "Paste Carnatic — turn a block of published notation into melody lines. See the Indian songs topic.",
+  "@helpEditorS5P2": {
+    "description": "Help › Write a song › More options — point 2"
+  },
+  "titleHelpSetlists": "Setlists",
+  "@titleHelpSetlists": {
+    "description": "Help › topic title (setlists)"
+  },
+  "helpSetlistsSummary": "Group and order songs for a gig or rehearsal",
+  "@helpSetlistsSummary": {
+    "description": "Help › Setlists › one-line summary on the hub card"
+  },
+  "helpSetlistsIntro": "A setlist is an ordered group of songs you can play through in one go, without hunting for each song. Setlists never make copies — they just point to songs already in your library.",
+  "@helpSetlistsIntro": {
+    "description": "Help › Setlists › opening paragraph"
+  },
+  "helpSetlistsS1Heading": "Create a setlist",
+  "@helpSetlistsS1Heading": {
+    "description": "Help › Setlists › section heading"
+  },
+  "helpSetlistsS1P1": "Open the \"Setlists\" tab on the home screen.",
+  "@helpSetlistsS1P1": {
+    "description": "Help › Setlists › Create a setlist — point 1"
+  },
+  "helpSetlistsS1P2": "Tap \"New Setlist\".",
+  "@helpSetlistsS1P2": {
+    "description": "Help › Setlists › Create a setlist — point 2"
+  },
+  "helpSetlistsS1P3": "Give it a name, and an optional description.",
+  "@helpSetlistsS1P3": {
+    "description": "Help › Setlists › Create a setlist — point 3"
+  },
+  "helpSetlistsS2Heading": "Add and arrange songs",
+  "@helpSetlistsS2Heading": {
+    "description": "Help › Setlists › section heading"
+  },
+  "helpSetlistsS2P1": "Inside a setlist, tap \"Add Songs\" to pick from your library.",
+  "@helpSetlistsS2P1": {
+    "description": "Help › Setlists › Add and arrange songs — point 1"
+  },
+  "helpSetlistsS2P2": "Drag the handle on the right to change the order.",
+  "@helpSetlistsS2P2": {
+    "description": "Help › Setlists › Add and arrange songs — point 2"
+  },
+  "helpSetlistsS2P3": "Tap the red minus to take a song out of the setlist.",
+  "@helpSetlistsS2P3": {
+    "description": "Help › Setlists › Add and arrange songs — point 3"
+  },
+  "helpSetlistsS2P4": "Removing a song from a setlist does not delete it from your library.",
+  "@helpSetlistsS2P4": {
+    "description": "Help › Setlists › Add and arrange songs — point 4"
+  },
+  "helpSetlistsS3Heading": "Perform a setlist",
+  "@helpSetlistsS3Heading": {
+    "description": "Help › Setlists › section heading"
+  },
+  "helpSetlistsS3P1": "Tap \"Perform Setlist\" to start from the first song.",
+  "@helpSetlistsS3P1": {
+    "description": "Help › Setlists › Perform a setlist — point 1"
+  },
+  "helpSetlistsS3P2": "Or tap any song in the list to start from there.",
+  "@helpSetlistsS3P2": {
+    "description": "Help › Setlists › Perform a setlist — point 2"
+  },
+  "helpSetlistsS3P3": "While performing, move between songs in the setlist order.",
+  "@helpSetlistsS3P3": {
+    "description": "Help › Setlists › Perform a setlist — point 3"
+  },
+  "helpSetlistsS4Heading": "Delete a setlist",
+  "@helpSetlistsS4Heading": {
+    "description": "Help › Setlists › section heading"
+  },
+  "helpSetlistsS4P1": "Open the setlist and use the delete (trash) icon in the top bar.",
+  "@helpSetlistsS4P1": {
+    "description": "Help › Setlists › Delete a setlist — point 1"
+  },
+  "helpSetlistsS4P2": "This removes only the setlist. The songs stay in your library.",
+  "@helpSetlistsS4P2": {
+    "description": "Help › Setlists › Delete a setlist — point 2"
+  },
+  "titleHelpTranspose": "Transpose & chords",
+  "@titleHelpTranspose": {
+    "description": "Help › topic title (transpose)"
+  },
+  "helpTransposeSummary": "Change the key, hide chords, see the shapes",
+  "@helpTransposeSummary": {
+    "description": "Help › Transpose & chords › one-line summary on the hub card"
+  },
+  "helpTransposeIntro": "Transposing moves every chord in the song up or down by the same amount, so you can play in a key that suits the singer without rewriting anything.",
+  "@helpTransposeIntro": {
+    "description": "Help › Transpose & chords › opening paragraph"
+  },
+  "helpTransposeS1Heading": "Change the key",
+  "@helpTransposeS1Heading": {
+    "description": "Help › Transpose & chords › section heading"
+  },
+  "helpTransposeS1P1": "Open the song, then the top-bar menu (More options) → \"Performance controls\".",
+  "@helpTransposeS1P1": {
+    "description": "Help › Transpose & chords › Change the key — point 1"
+  },
+  "helpTransposeS1P2": "Use - and + to move down or up one semitone at a time.",
+  "@helpTransposeS1P2": {
+    "description": "Help › Transpose & chords › Change the key — point 2"
+  },
+  "helpTransposeS1P3": "The key the sheet now sounds in is shown between the two buttons.",
+  "@helpTransposeS1P3": {
+    "description": "Help › Transpose & chords › Change the key — point 3"
+  },
+  "helpTransposeS1P4": "The line under the controls row says how far you have moved, like \"Key A (+2)\".",
+  "@helpTransposeS1P4": {
+    "description": "Help › Transpose & chords › Change the key — point 4"
+  },
+  "helpTransposeS1P5": "\"Reset\" puts the song back to its written key.",
+  "@helpTransposeS1P5": {
+    "description": "Help › Transpose & chords › Change the key — point 5"
+  },
+  "helpTransposeS1P6": "The range is 11 semitones down to 11 semitones up. A full 12 would only land on the same key again.",
+  "@helpTransposeS1P6": {
+    "description": "Help › Transpose & chords › Change the key — point 6"
+  },
+  "helpTransposeS2Heading": "What it changes",
+  "@helpTransposeS2Heading": {
+    "description": "Help › Transpose & chords › section heading"
+  },
+  "helpTransposeS2P1": "Slash chords move too: C/E shifted up 2 becomes D/F#.",
+  "@helpTransposeS2P1": {
+    "description": "Help › Transpose & chords › What it changes — point 1"
+  },
+  "helpTransposeS2P2": "Sharps or flats are chosen to suit the new key, so you get Bb and not A#.",
+  "@helpTransposeS2P2": {
+    "description": "Help › Transpose & chords › What it changes — point 2"
+  },
+  "helpTransposeS2P3": "The change belongs to this sheet only — it is never written back into the song.",
+  "@helpTransposeS2P3": {
+    "description": "Help › Transpose & chords › What it changes — point 3"
+  },
+  "helpTransposeS2P4": "Export and Share simply use the key you are looking at, so a transposed song goes out transposed.",
+  "@helpTransposeS2P4": {
+    "description": "Help › Transpose & chords › What it changes — point 4"
+  },
+  "helpTransposeS2P5": "A Carnatic or Hindustani song has no transpose control, because swaras are named relative to Sa and do not move.",
+  "@helpTransposeS2P5": {
+    "description": "Help › Transpose & chords › What it changes — point 5"
+  },
+  "helpTransposeS3Heading": "Hide the chords",
+  "@helpTransposeS3Heading": {
+    "description": "Help › Transpose & chords › section heading"
+  },
+  "helpTransposeS3P1": "The same Performance controls sheet has a \"Show chords\" switch.",
+  "@helpTransposeS3P1": {
+    "description": "Help › Transpose & chords › Hide the chords — point 1"
+  },
+  "helpTransposeS3P2": "Turning it off leaves clean words only, which is usually what a singer wants.",
+  "@helpTransposeS3P2": {
+    "description": "Help › Transpose & chords › Hide the chords — point 2"
+  },
+  "helpTransposeS3P3": "The music note button in the row above the song does the same in one tap.",
+  "@helpTransposeS3P3": {
+    "description": "Help › Transpose & chords › Hide the chords — point 3"
+  },
+  "helpTransposeS4Heading": "Chord Reference",
+  "@helpTransposeS4Heading": {
+    "description": "Help › Transpose & chords › section heading"
+  },
+  "helpTransposeS4P1": "Top-bar menu → \"Chord Reference\" lists every chord used in the song, already moved to the key you are playing in.",
+  "@helpTransposeS4P1": {
+    "description": "Help › Transpose & chords › Chord Reference — point 1"
+  },
+  "helpTransposeS4P2": "Each chord is drawn two ways: a six-string guitar fretboard with finger dots and O and X marks for open and muted strings, and a harmonium or piano keyboard with the notes lit up.",
+  "@helpTransposeS4P2": {
+    "description": "Help › Transpose & chords › Chord Reference — point 2"
+  },
+  "helpTransposeS4P3": "The root note is one colour; the bass note of a slash chord, such as the E in C/E, is another.",
+  "@helpTransposeS4P3": {
+    "description": "Help › Transpose & chords › Chord Reference — point 3"
+  },
+  "helpTransposeS4P4": "It knows the common open shapes and works out movable barre shapes for everything else.",
+  "@helpTransposeS4P4": {
+    "description": "Help › Transpose & chords › Chord Reference — point 4"
+  },
+  "helpTransposeS4P5": "On a Carnatic or Hindustani song this becomes \"Swara Reference\" and shows where each swara sits on the keyboard, low to high, instead of chord shapes.",
+  "@helpTransposeS4P5": {
+    "description": "Help › Transpose & chords › Chord Reference — point 5"
+  },
+  "titleHelpAutoScroll": "Auto-scroll",
+  "@titleHelpAutoScroll": {
+    "description": "Help › topic title (auto-scroll)"
+  },
+  "helpAutoScrollSummary": "Scroll the sheet hands-free while you play",
+  "@helpAutoScrollSummary": {
+    "description": "Help › Auto-scroll › one-line summary on the hub card"
+  },
+  "helpAutoScrollIntro": "Auto-scroll moves the chord sheet up for you while you perform, so you do not have to touch the screen. There are two modes: Manual and Tempo.",
+  "@helpAutoScrollIntro": {
+    "description": "Help › Auto-scroll › opening paragraph"
+  },
+  "helpAutoScrollS1Heading": "Two modes",
+  "@helpAutoScrollS1Heading": {
+    "description": "Help › Auto-scroll › section heading"
+  },
+  "helpAutoScrollS1P1": "Manual scrolls at a steady speed you set yourself, from 0.10x up to 2.00x. Change it by double-tapping the sheet; each tap changes it by 0.05x.",
+  "@helpAutoScrollS1P1": {
+    "description": "Help › Auto-scroll › Two modes — point 1"
+  },
+  "helpAutoScrollS1P2": "A song remembers the speed you set for it. A song you have never set a speed for opens at the starting speed in Settings → General → Auto-scroll.",
+  "@helpAutoScrollS1P2": {
+    "description": "Help › Auto-scroll › Two modes — point 2"
+  },
+  "helpAutoScrollS1P3": "Tempo works out how long the song lasts and paces the scroll to finish exactly at the end of the song.",
+  "@helpAutoScrollS1P3": {
+    "description": "Help › Auto-scroll › Two modes — point 3"
+  },
+  "helpAutoScrollS2Heading": "What \"bars\" means",
+  "@helpAutoScrollS2Heading": {
+    "description": "Help › Auto-scroll › section heading"
+  },
+  "helpAutoScrollS2P1": "A bar (also called a measure) is a musical unit of time.",
+  "@helpAutoScrollS2P1": {
+    "description": "Help › Auto-scroll › What \"bars\" means — point 1"
+  },
+  "helpAutoScrollS2P2": "A song that names no tala uses common 4/4 time, so one bar is 4 beats.",
+  "@helpAutoScrollS2P2": {
+    "description": "Help › Auto-scroll › What \"bars\" means — point 2"
+  },
+  "helpAutoScrollS2P3": "A song with a '{tala}' line counts that tala''s own beats instead, so a misra chapu song has 7 beats to the bar.",
+  "@helpAutoScrollS2P3": {
+    "description": "Help › Auto-scroll › What \"bars\" means — point 3"
+  },
+  "helpAutoScrollS2P4": "Songs open at 32 bars. Change the count by double-tapping the sheet — each double-tap adds or removes 4 bars.",
+  "@helpAutoScrollS2P4": {
+    "description": "Help › Auto-scroll › What \"bars\" means — point 4"
+  },
+  "helpAutoScrollS2P5": "The count can go from 1 bar up to 512.",
+  "@helpAutoScrollS2P5": {
+    "description": "Help › Auto-scroll › What \"bars\" means — point 5"
+  },
+  "helpAutoScrollS3Heading": "How Tempo sets the speed",
+  "@helpAutoScrollS3Heading": {
+    "description": "Help › Auto-scroll › section heading"
+  },
+  "helpAutoScrollS3P1": "Song length comes from the bars and the song''s BPM: bars x 4 beats, at the BPM you set.",
+  "@helpAutoScrollS3P1": {
+    "description": "Help › Auto-scroll › How Tempo sets the speed — point 1"
+  },
+  "helpAutoScrollS3P2": "More bars or a slower BPM makes a longer, slower scroll.",
+  "@helpAutoScrollS3P2": {
+    "description": "Help › Auto-scroll › How Tempo sets the speed — point 2"
+  },
+  "helpAutoScrollS3P3": "A higher BPM makes a shorter, faster scroll.",
+  "@helpAutoScrollS3P3": {
+    "description": "Help › Auto-scroll › How Tempo sets the speed — point 3"
+  },
+  "helpAutoScrollS3P4": "The status line shows the bars and the computed length, like \"32 bars · 1:04\".",
+  "@helpAutoScrollS3P4": {
+    "description": "Help › Auto-scroll › How Tempo sets the speed — point 4"
+  },
+  "helpAutoScrollS4Heading": "Changing the speed by tapping",
+  "@helpAutoScrollS4Heading": {
+    "description": "Help › Auto-scroll › section heading"
+  },
+  "helpAutoScrollS4G1Title": "Double-tap up top",
+  "@helpAutoScrollS4G1Title": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — gesture 1 name"
+  },
+  "helpAutoScrollS4G1Description": "Faster",
+  "@helpAutoScrollS4G1Description": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — what gesture 1 does"
+  },
+  "helpAutoScrollS4G2Title": "Double-tap down low",
+  "@helpAutoScrollS4G2Title": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — gesture 2 name"
+  },
+  "helpAutoScrollS4G2Description": "Slower",
+  "@helpAutoScrollS4G2Description": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — what gesture 2 does"
+  },
+  "helpAutoScrollS4G3Title": "Tap with two fingers",
+  "@helpAutoScrollS4G3Title": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — gesture 3 name"
+  },
+  "helpAutoScrollS4G3Description": "Play or pause",
+  "@helpAutoScrollS4G3Description": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — what gesture 3 does"
+  },
+  "helpAutoScrollS4P1": "The same taps work here and in full screen, so there is only one thing to remember.",
+  "@helpAutoScrollS4P1": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — point 1"
+  },
+  "helpAutoScrollS4P2": "In Tempo mode the same double-taps add or remove bars instead.",
+  "@helpAutoScrollS4P2": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — point 2"
+  },
+  "helpAutoScrollS4P3": "The new value flashes big in the middle of the screen, so you can read it from a stand.",
+  "@helpAutoScrollS4P3": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — point 3"
+  },
+  "helpAutoScrollS4P4": "This speed is only used while auto-scroll is playing. It never changes how the sheet moves when you drag it with a finger.",
+  "@helpAutoScrollS4P4": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — point 4"
+  },
+  "helpAutoScrollS4P5": "One finger still scrolls and two fingers still pinch to change the text size.",
+  "@helpAutoScrollS4P5": {
+    "description": "Help › Auto-scroll › Changing the speed by tapping — point 5"
+  },
+  "helpAutoScrollS5Heading": "Start and stop",
+  "@helpAutoScrollS5Heading": {
+    "description": "Help › Auto-scroll › section heading"
+  },
+  "helpAutoScrollS5P1": "Tap the sheet with two fingers to start and stop the scroll. There is no play button on this screen any more.",
+  "@helpAutoScrollS5P1": {
+    "description": "Help › Auto-scroll › Start and stop — point 1"
+  },
+  "helpAutoScrollS5P2": "In full screen the control bar still has a play button as well.",
+  "@helpAutoScrollS5P2": {
+    "description": "Help › Auto-scroll › Start and stop — point 2"
+  },
+  "helpAutoScrollS5P3": "In Tempo mode the scroll stops on its own at the end of the song.",
+  "@helpAutoScrollS5P3": {
+    "description": "Help › Auto-scroll › Start and stop — point 3"
+  },
+  "helpAutoScrollS6Heading": "Moving the sheet by hand",
+  "@helpAutoScrollS6Heading": {
+    "description": "Help › Auto-scroll › section heading"
+  },
+  "helpAutoScrollS6P1": "You can drag the sheet with one finger at any time, even while auto-scroll is playing.",
+  "@helpAutoScrollS6P1": {
+    "description": "Help › Auto-scroll › Moving the sheet by hand — point 1"
+  },
+  "helpAutoScrollS6P2": "Auto-scroll waits while your finger is down and carries on from wherever you let go, so you never have to stop and start again to fix your place.",
+  "@helpAutoScrollS6P2": {
+    "description": "Help › Auto-scroll › Moving the sheet by hand — point 2"
+  },
+  "helpAutoScrollS6P3": "A fast flick stops where you lift your finger rather than coasting on, because auto-scroll takes over again straight away.",
+  "@helpAutoScrollS6P3": {
+    "description": "Help › Auto-scroll › Moving the sheet by hand — point 3"
+  },
+  "helpAutoScrollS7Heading": "The row above the song",
+  "@helpAutoScrollS7Heading": {
+    "description": "Help › Auto-scroll › section heading"
+  },
+  "helpAutoScrollS7P1": "M and T pick the mode; the arrows icon goes full screen.",
+  "@helpAutoScrollS7P1": {
+    "description": "Help › Auto-scroll › The row above the song — point 1"
+  },
+  "helpAutoScrollS7P2": "The speed, such as \"0.40x\", is shown on the right in Manual mode. It is a read-out — double-tap the sheet to change it.",
+  "@helpAutoScrollS7P2": {
+    "description": "Help › Auto-scroll › The row above the song — point 2"
+  },
+  "helpAutoScrollS7P3": "The music note icon hides and shows the chords.",
+  "@helpAutoScrollS7P3": {
+    "description": "Help › Auto-scroll › The row above the song — point 3"
+  },
+  "helpAutoScrollS7P4": "The piano icon hides and shows the melody rows. It is only there for a song that has a tune written in it.",
+  "@helpAutoScrollS7P4": {
+    "description": "Help › Auto-scroll › The row above the song — point 4"
+  },
+  "titleHelpFullScreen": "Full screen",
+  "@titleHelpFullScreen": {
+    "description": "Help › topic title (full-screen)"
+  },
+  "helpFullScreenSummary": "Just the words, controlled by taps",
+  "@helpFullScreenSummary": {
+    "description": "Help › Full screen › one-line summary on the hub card"
+  },
+  "helpFullScreenIntro": "Full screen hides the top bar and the phone''s own bars, so the song fills the whole screen. It is made for playing live, where you look at the screen from a stand and touch it as little as possible.",
+  "@helpFullScreenIntro": {
+    "description": "Help › Full screen › opening paragraph"
+  },
+  "helpFullScreenS1Heading": "Going full screen",
+  "@helpFullScreenS1Heading": {
+    "description": "Help › Full screen › section heading"
+  },
+  "helpFullScreenS1P1": "Tap the full screen button in the auto-scroll row.",
+  "@helpFullScreenS1P1": {
+    "description": "Help › Full screen › Going full screen — point 1"
+  },
+  "helpFullScreenS1P2": "The song, the key, the text size and the scroll position all stay as they were.",
+  "@helpFullScreenS1P2": {
+    "description": "Help › Full screen › Going full screen — point 2"
+  },
+  "helpFullScreenS1P3": "The screen still stays awake, as it does in the normal song view.",
+  "@helpFullScreenS1P3": {
+    "description": "Help › Full screen › Going full screen — point 3"
+  },
+  "helpFullScreenS2Heading": "The gestures",
+  "@helpFullScreenS2Heading": {
+    "description": "Help › Full screen › section heading"
+  },
+  "helpFullScreenS2G1Title": "Tap once",
+  "@helpFullScreenS2G1Title": {
+    "description": "Help › Full screen › The gestures — gesture 1 name"
+  },
+  "helpFullScreenS2G1Description": "Show or hide the controls",
+  "@helpFullScreenS2G1Description": {
+    "description": "Help › Full screen › The gestures — what gesture 1 does"
+  },
+  "helpFullScreenS2G2Title": "Double-tap up top",
+  "@helpFullScreenS2G2Title": {
+    "description": "Help › Full screen › The gestures — gesture 2 name"
+  },
+  "helpFullScreenS2G2Description": "Faster",
+  "@helpFullScreenS2G2Description": {
+    "description": "Help › Full screen › The gestures — what gesture 2 does"
+  },
+  "helpFullScreenS2G3Title": "Double-tap down low",
+  "@helpFullScreenS2G3Title": {
+    "description": "Help › Full screen › The gestures — gesture 3 name"
+  },
+  "helpFullScreenS2G3Description": "Slower",
+  "@helpFullScreenS2G3Description": {
+    "description": "Help › Full screen › The gestures — what gesture 3 does"
+  },
+  "helpFullScreenS2G4Title": "Tap with two fingers",
+  "@helpFullScreenS2G4Title": {
+    "description": "Help › Full screen › The gestures — gesture 4 name"
+  },
+  "helpFullScreenS2G4Description": "Play or pause",
+  "@helpFullScreenS2G4Description": {
+    "description": "Help › Full screen › The gestures — what gesture 4 does"
+  },
+  "helpFullScreenS2G5Title": "Pinch",
+  "@helpFullScreenS2G5Title": {
+    "description": "Help › Full screen › The gestures — gesture 5 name"
+  },
+  "helpFullScreenS2G5Description": "Change the text size",
+  "@helpFullScreenS2G5Description": {
+    "description": "Help › Full screen › The gestures — what gesture 5 does"
+  },
+  "helpFullScreenS2G6Title": "Back",
+  "@helpFullScreenS2G6Title": {
+    "description": "Help › Full screen › The gestures — gesture 6 name"
+  },
+  "helpFullScreenS2G6Description": "Leave full screen",
+  "@helpFullScreenS2G6Description": {
+    "description": "Help › Full screen › The gestures — what gesture 6 does"
+  },
+  "helpFullScreenS2P1": "Tap once to show or hide the control bar. It slides away again after a few seconds.",
+  "@helpFullScreenS2P1": {
+    "description": "Help › Full screen › The gestures — point 1"
+  },
+  "helpFullScreenS2P2": "Double-tap the upper half to go faster; double-tap the lower half to go slower. The new value flashes big on the screen.",
+  "@helpFullScreenS2P2": {
+    "description": "Help › Full screen › The gestures — point 2"
+  },
+  "helpFullScreenS2P3": "In Tempo mode those same double-taps add or remove bars, because bars are what set the speed there.",
+  "@helpFullScreenS2P3": {
+    "description": "Help › Full screen › The gestures — point 3"
+  },
+  "helpFullScreenS2P4": "Tap with two fingers to play or pause.",
+  "@helpFullScreenS2P4": {
+    "description": "Help › Full screen › The gestures — point 4"
+  },
+  "helpFullScreenS2P5": "Pinch to change the text size, the same as usual.",
+  "@helpFullScreenS2P5": {
+    "description": "Help › Full screen › The gestures — point 5"
+  },
+  "helpFullScreenS3Heading": "The buttons in the bar",
+  "@helpFullScreenS3Heading": {
+    "description": "Help › Full screen › section heading"
+  },
+  "helpFullScreenS3P1": "Exit (the shrink icon) leaves full screen.",
+  "@helpFullScreenS3P1": {
+    "description": "Help › Full screen › The buttons in the bar — point 1"
+  },
+  "helpFullScreenS3P2": "The padlock locks the screen — see below.",
+  "@helpFullScreenS3P2": {
+    "description": "Help › Full screen › The buttons in the bar — point 2"
+  },
+  "helpFullScreenS3P3": "The bell turns Stage Quiet Mode on and off — see below.",
+  "@helpFullScreenS3P3": {
+    "description": "Help › Full screen › The buttons in the bar — point 3"
+  },
+  "helpFullScreenS3P4": "M and T pick Manual or Tempo, and the round button plays or pauses.",
+  "@helpFullScreenS3P4": {
+    "description": "Help › Full screen › The buttons in the bar — point 4"
+  },
+  "helpFullScreenS3P5": "The bars icon opens the pitch pipe and shruti box.",
+  "@helpFullScreenS3P5": {
+    "description": "Help › Full screen › The buttons in the bar — point 5"
+  },
+  "helpFullScreenS3P6": "The - and + at the end change the speed in Manual mode and the bar count in Tempo mode, the same as the double-taps.",
+  "@helpFullScreenS3P6": {
+    "description": "Help › Full screen › The buttons in the bar — point 6"
+  },
+  "helpFullScreenS3P7": "The line under the buttons repeats the key, the BPM and, in Tempo mode, the length.",
+  "@helpFullScreenS3P7": {
+    "description": "Help › Full screen › The buttons in the bar — point 7"
+  },
+  "helpFullScreenS4Heading": "Lock the screen",
+  "@helpFullScreenS4Heading": {
+    "description": "Help › Full screen › section heading"
+  },
+  "helpFullScreenS4P1": "Tap the padlock to lock Stage View. The tap controls are then switched off, so a sleeve or a stray hand cannot change your speed or pause you mid-song.",
+  "@helpFullScreenS4P1": {
+    "description": "Help › Full screen › Lock the screen — point 1"
+  },
+  "helpFullScreenS4P2": "The control bar hides and a small \"Stage Locked\" chip appears in the top right.",
+  "@helpFullScreenS4P2": {
+    "description": "Help › Full screen › Lock the screen — point 2"
+  },
+  "helpFullScreenS4P3": "Tap that chip, or press Back, to unlock. It asks for your fingerprint, or the PIN, pattern or password the phone already uses.",
+  "@helpFullScreenS4P3": {
+    "description": "Help › Full screen › Lock the screen — point 3"
+  },
+  "helpFullScreenS4P4": "On a phone with no screen lock set up there is nothing to check against, so it simply unlocks.",
+  "@helpFullScreenS4P4": {
+    "description": "Help › Full screen › Lock the screen — point 4"
+  },
+  "helpFullScreenS4P5": "If the check cannot run at all, the stage unlocks anyway and says so. The lock is there to stop stray touches, so it will never shut you out.",
+  "@helpFullScreenS4P5": {
+    "description": "Help › Full screen › Lock the screen — point 5"
+  },
+  "helpFullScreenS5Heading": "Stage Quiet Mode",
+  "@helpFullScreenS5Heading": {
+    "description": "Help › Full screen › section heading"
+  },
+  "helpFullScreenS5P1": "Tap the bell to mute the ringer and notification alerts while you play, so a call cannot chime through the PA.",
+  "@helpFullScreenS5P1": {
+    "description": "Help › Full screen › Stage Quiet Mode — point 1"
+  },
+  "helpFullScreenS5P2": "The app''s own sound is left alone — the metronome click, the pitch cue and the drone all keep working.",
+  "@helpFullScreenS5P2": {
+    "description": "Help › Full screen › Stage Quiet Mode — point 2"
+  },
+  "helpFullScreenS5P3": "The icon turns red only once the phone has really gone silent. Tap it again, leave full screen, or leave the song, and your normal ringer setting comes back — even if the app was closed.",
+  "@helpFullScreenS5P3": {
+    "description": "Help › Full screen › Stage Quiet Mode — point 3"
+  },
+  "helpFullScreenS5P4": "The first time, Android may ask you to allow \"Do Not Disturb access\" for LyricChord. Tap Open settings in the message, turn it on, then tap the bell again.",
+  "@helpFullScreenS5P4": {
+    "description": "Help › Full screen › Stage Quiet Mode — point 4"
+  },
+  "helpFullScreenS5P5": "iPhones do not let apps change the ringer, so the bell is not shown there. Use the ring/silent switch instead.",
+  "@helpFullScreenS5P5": {
+    "description": "Help › Full screen › Stage Quiet Mode — point 5"
+  },
+  "helpFullScreenS6Heading": "Getting back",
+  "@helpFullScreenS6Heading": {
+    "description": "Help › Full screen › section heading"
+  },
+  "helpFullScreenS6P1": "Press Back, or tap once and use the exit button in the control bar.",
+  "@helpFullScreenS6P1": {
+    "description": "Help › Full screen › Getting back — point 1"
+  },
+  "helpFullScreenS6P2": "That leaves full screen only — you are still on the same song. Press Back again to return to your songbook.",
+  "@helpFullScreenS6P2": {
+    "description": "Help › Full screen › Getting back — point 2"
+  },
+  "helpFullScreenS6P3": "Swiping sideways does not change the song while you are full screen, so a stray touch cannot throw the wrong song up mid-song.",
+  "@helpFullScreenS6P3": {
+    "description": "Help › Full screen › Getting back — point 3"
+  },
+  "titleHelpMetronome": "Metronome",
+  "@titleHelpMetronome": {
+    "description": "Help › topic title (metronome)"
+  },
+  "helpMetronomeSummary": "Keep the beat at the song tempo",
+  "@helpMetronomeSummary": {
+    "description": "Help › Metronome › one-line summary on the hub card"
+  },
+  "helpMetronomeIntro": "The metronome keeps time while you perform. Its speed comes from each song''s BPM (beats per minute), which you set in the song editor.",
+  "@helpMetronomeIntro": {
+    "description": "Help › Metronome › opening paragraph"
+  },
+  "helpMetronomeS1Heading": "Turn it on",
+  "@helpMetronomeS1Heading": {
+    "description": "Help › Metronome › section heading"
+  },
+  "helpMetronomeS1P1": "Go to Settings > General > Metronome.",
+  "@helpMetronomeS1P1": {
+    "description": "Help › Metronome › Turn it on — point 1"
+  },
+  "helpMetronomeS1P2": "Switch on \"Enable metronome\".",
+  "@helpMetronomeS1P2": {
+    "description": "Help › Metronome › Turn it on — point 2"
+  },
+  "helpMetronomeS1P3": "The setting is saved and stays on after you restart the app.",
+  "@helpMetronomeS1P3": {
+    "description": "Help › Metronome › Turn it on — point 3"
+  },
+  "helpMetronomeS2Heading": "Flash and Click",
+  "@helpMetronomeS2Heading": {
+    "description": "Help › Metronome › section heading"
+  },
+  "helpMetronomeS2P1": "Flash blinks on every beat — handy when the sound is muted.",
+  "@helpMetronomeS2P1": {
+    "description": "Help › Metronome › Flash and Click — point 1"
+  },
+  "helpMetronomeS2P2": "Click plays a short tick on every beat.",
+  "@helpMetronomeS2P2": {
+    "description": "Help › Metronome › Flash and Click — point 2"
+  },
+  "helpMetronomeS2P3": "You can use either, both, or neither.",
+  "@helpMetronomeS2P3": {
+    "description": "Help › Metronome › Flash and Click — point 3"
+  },
+  "helpMetronomeS2P4": "Flash and Click stay greyed out until the metronome is enabled.",
+  "@helpMetronomeS2P4": {
+    "description": "Help › Metronome › Flash and Click — point 4"
+  },
+  "helpMetronomeS2P5": "Click volume sets how loud the tick is. The tick uses the media volume, so raise the volume buttons while a song is open if you cannot hear it.",
+  "@helpMetronomeS2P5": {
+    "description": "Help › Metronome › Flash and Click — point 5"
+  },
+  "helpMetronomeS2P6": "Tap \"Test the sound\" in Metronome settings to hear one bar without opening a song.",
+  "@helpMetronomeS2P6": {
+    "description": "Help › Metronome › Flash and Click — point 6"
+  },
+  "helpMetronomeS3Heading": "Beats in a bar",
+  "@helpMetronomeS3Heading": {
+    "description": "Help › Metronome › section heading"
+  },
+  "helpMetronomeS3P1": "Pick 2, 3, 4 or 6 beats in a bar in Metronome settings.",
+  "@helpMetronomeS3P1": {
+    "description": "Help › Metronome › Beats in a bar — point 1"
+  },
+  "helpMetronomeS3P2": "With \"Accent beat 1\" on, the first beat of every bar is louder and higher, so you can hear where the bar starts.",
+  "@helpMetronomeS3P2": {
+    "description": "Help › Metronome › Beats in a bar — point 2"
+  },
+  "helpMetronomeS3P3": "While the beat runs, the button counts the beat number — 1, 2, 3, 4 — so you can see your place even with the sound off.",
+  "@helpMetronomeS3P3": {
+    "description": "Help › Metronome › Beats in a bar — point 3"
+  },
+  "helpMetronomeS4Heading": "Set the tempo",
+  "@helpMetronomeS4Heading": {
+    "description": "Help › Metronome › section heading"
+  },
+  "helpMetronomeS4P1": "By default the beat speed follows the song''s BPM.",
+  "@helpMetronomeS4P1": {
+    "description": "Help › Metronome › Set the tempo — point 1"
+  },
+  "helpMetronomeS4P2": "Change a song''s BPM by editing the song.",
+  "@helpMetronomeS4P2": {
+    "description": "Help › Metronome › Set the tempo — point 2"
+  },
+  "helpMetronomeS4P3": "Long press the metronome button to set the speed by hand: use - and +, drag the slider, or tap \"Tap tempo\" along with the music.",
+  "@helpMetronomeS4P3": {
+    "description": "Help › Metronome › Set the tempo — point 3"
+  },
+  "helpMetronomeS4P4": "A tempo you set by hand lasts for this session only. Tap \"Use song tempo\" to go back to the song''s own speed.",
+  "@helpMetronomeS4P4": {
+    "description": "Help › Metronome › Set the tempo — point 4"
+  },
+  "helpMetronomeS4P5": "A song with no saved BPM still works — the metronome uses the last speed you used.",
+  "@helpMetronomeS4P5": {
+    "description": "Help › Metronome › Set the tempo — point 5"
+  },
+  "titleHelpPitchPipeDrone": "Pitch Pipe & Drone",
+  "@titleHelpPitchPipeDrone": {
+    "description": "Help › topic title (pitch-pipe-drone)"
+  },
+  "helpPitchPipeDroneSummary": "Reference pitch cues and a steady shruti box drone",
+  "@helpPitchPipeDroneSummary": {
+    "description": "Help › Pitch Pipe & Drone › one-line summary on the hub card"
+  },
+  "helpPitchPipeDroneIntro": "A fully offline sound generator: a short reference note to start on, and a steady shruti box drone to sing against. Nothing is downloaded and no sound files ship with the app — the tones are built as you press the button.",
+  "@helpPitchPipeDroneIntro": {
+    "description": "Help › Pitch Pipe & Drone › opening paragraph"
+  },
+  "helpPitchPipeDroneS1Heading": "What the drone does — and does not do",
+  "@helpPitchPipeDroneS1Heading": {
+    "description": "Help › Pitch Pipe & Drone › section heading"
+  },
+  "helpPitchPipeDroneS1P1": "The drone holds ONE steady pair of notes for as long as it is on.",
+  "@helpPitchPipeDroneS1P1": {
+    "description": "Help › Pitch Pipe & Drone › What the drone does — and does not do — point 1"
+  },
+  "helpPitchPipeDroneS1P2": "It does NOT follow the tune, the words, or the chords. It never changes until you change it.",
+  "@helpPitchPipeDroneS1P2": {
+    "description": "Help › Pitch Pipe & Drone › What the drone does — and does not do — point 2"
+  },
+  "helpPitchPipeDroneS1P3": "Think of it as a tuning fork that never stops, so your ear stays anchored while you sing.",
+  "@helpPitchPipeDroneS1P3": {
+    "description": "Help › Pitch Pipe & Drone › What the drone does — and does not do — point 3"
+  },
+  "helpPitchPipeDroneS2Heading": "Where to find it",
+  "@helpPitchPipeDroneS2Heading": {
+    "description": "Help › Pitch Pipe & Drone › section heading"
+  },
+  "helpPitchPipeDroneS2P1": "Open a song and tap the pitch button (the bars icon) next to the metronome.",
+  "@helpPitchPipeDroneS2P1": {
+    "description": "Help › Pitch Pipe & Drone › Where to find it — point 1"
+  },
+  "helpPitchPipeDroneS2P2": "It is in the Stage Mode bar too, next to the play button.",
+  "@helpPitchPipeDroneS2P2": {
+    "description": "Help › Pitch Pipe & Drone › Where to find it — point 2"
+  },
+  "helpPitchPipeDroneS2P3": "Settings → General → Pitch Pipe & Drone sets the defaults and has Test buttons.",
+  "@helpPitchPipeDroneS2P3": {
+    "description": "Help › Pitch Pipe & Drone › Where to find it — point 3"
+  },
+  "helpPitchPipeDroneS3Heading": "Pitch Cue (called Chord Cue in Western)",
+  "@helpPitchPipeDroneS3Heading": {
+    "description": "Help › Pitch Pipe & Drone › section heading"
+  },
+  "helpPitchPipeDroneS3P1": "Tap \"Pitch Cue\" to hear a 2-second reference note. It is a digital pitch pipe: it sounds your Sa (or the key you picked), then stops on its own.",
+  "@helpPitchPipeDroneS3P1": {
+    "description": "Help › Pitch Pipe & Drone › Pitch Cue (called Chord Cue in Western) — point 1"
+  },
+  "helpPitchPipeDroneS3P2": "Use it to find your starting note before you begin singing.",
+  "@helpPitchPipeDroneS3P2": {
+    "description": "Help › Pitch Pipe & Drone › Pitch Cue (called Chord Cue in Western) — point 2"
+  },
+  "helpPitchPipeDroneS3P3": "In Western mode the same button is named \"Chord Cue\" and plays the whole chord — bass, root, third and fifth — because Western players want the chord, not one note. Major or minor follows the quality you picked.",
+  "@helpPitchPipeDroneS3P3": {
+    "description": "Help › Pitch Pipe & Drone › Pitch Cue (called Chord Cue in Western) — point 3"
+  },
+  "helpPitchPipeDroneS3P4": "The length is fixed at 2 seconds and there is no setting for it. That is long enough to hear the pitch clearly and short enough not to get in the way. The button says \"(2s)\" so you know what you will get before you tap it.",
+  "@helpPitchPipeDroneS3P4": {
+    "description": "Help › Pitch Pipe & Drone › Pitch Cue (called Chord Cue in Western) — point 4"
+  },
+  "helpPitchPipeDroneS3P5": "If you want a tone that lasts longer, use the Shruti Drone instead. That is what it is for.",
+  "@helpPitchPipeDroneS3P5": {
+    "description": "Help › Pitch Pipe & Drone › Pitch Cue (called Chord Cue in Western) — point 5"
+  },
+  "helpPitchPipeDroneS4Heading": "Cue or drone — which one?",
+  "@helpPitchPipeDroneS4Heading": {
+    "description": "Help › Pitch Pipe & Drone › section heading"
+  },
+  "helpPitchPipeDroneS4P1": "Cue: one short sound that stops by itself. For finding the note before you start.",
+  "@helpPitchPipeDroneS4P1": {
+    "description": "Help › Pitch Pipe & Drone › Cue or drone — which one? — point 1"
+  },
+  "helpPitchPipeDroneS4P2": "Drone: keeps sounding until you stop it. For singing against while you practise or perform.",
+  "@helpPitchPipeDroneS4P2": {
+    "description": "Help › Pitch Pipe & Drone › Cue or drone — which one? — point 2"
+  },
+  "helpPitchPipeDroneS4P3": "Both are built inside the app the moment you press the button. Nothing is downloaded and no sound files ship with the app.",
+  "@helpPitchPipeDroneS4P3": {
+    "description": "Help › Pitch Pipe & Drone › Cue or drone — which one? — point 3"
+  },
+  "helpPitchPipeDroneS5Heading": "Shruti box drone",
+  "@helpPitchPipeDroneS5Heading": {
+    "description": "Help › Pitch Pipe & Drone › section heading"
+  },
+  "helpPitchPipeDroneS5P1": "Tap \"Shruti Drone\" to start a continuous background hum.",
+  "@helpPitchPipeDroneS5P1": {
+    "description": "Help › Pitch Pipe & Drone › Shruti box drone — point 1"
+  },
+  "helpPitchPipeDroneS5P2": "Choose Sa + Pa (the fifth) for most music, or Sa + Ma (the fourth) for ragas that leave out Pa, such as Malkauns or Marwa.",
+  "@helpPitchPipeDroneS5P2": {
+    "description": "Help › Pitch Pipe & Drone › Shruti box drone — point 2"
+  },
+  "helpPitchPipeDroneS5P3": "The two notes are tuned in pure ratios (3:2 and 4:3), the way a real drone instrument sounds — not in equal temperament.",
+  "@helpPitchPipeDroneS5P3": {
+    "description": "Help › Pitch Pipe & Drone › Shruti box drone — point 3"
+  },
+  "helpPitchPipeDroneS5P4": "The drone keeps playing until you stop it, so you can practise without it cutting out.",
+  "@helpPitchPipeDroneS5P4": {
+    "description": "Help › Pitch Pipe & Drone › Shruti box drone — point 4"
+  },
+  "helpPitchPipeDroneS6Heading": "Indian and Western naming",
+  "@helpPitchPipeDroneS6Heading": {
+    "description": "Help › Pitch Pipe & Drone › section heading"
+  },
+  "helpPitchPipeDroneS6P1": "Sa is movable, so the app must know which actual pitch your Sa is. Set it in Settings → \"Your Sa (Shruti)\".",
+  "@helpPitchPipeDroneS6P1": {
+    "description": "Help › Pitch Pipe & Drone › Indian and Western naming — point 1"
+  },
+  "helpPitchPipeDroneS6P2": "A song with a raga is named the Indian way: \"5 kattai\" for Carnatic, \"safed 5\" for Hindustani. The tala decides which. No Western letters appear on an Indian sheet.",
+  "@helpPitchPipeDroneS6P2": {
+    "description": "Help › Pitch Pipe & Drone › Indian and Western naming — point 2"
+  },
+  "helpPitchPipeDroneS6P3": "A song without a raga is named the Western way: just \"G\".",
+  "@helpPitchPipeDroneS6P3": {
+    "description": "Help › Pitch Pipe & Drone › Indian and Western naming — point 3"
+  },
+  "helpPitchPipeDroneS6P4": "A Western song opens on the song''s own key. An Indian song opens on your Sa, because the notation is written relative to Sa.",
+  "@helpPitchPipeDroneS6P4": {
+    "description": "Help › Pitch Pipe & Drone › Indian and Western naming — point 4"
+  },
+  "helpPitchPipeDroneS7Heading": "Text size for the stage",
+  "@helpPitchPipeDroneS7Heading": {
+    "description": "Help › Pitch Pipe & Drone › section heading"
+  },
+  "helpPitchPipeDroneS7P1": "The same sheet is read on a phone in your hand and on a stand two steps away, so the pitch sheet carries a text size setting.",
+  "@helpPitchPipeDroneS7P1": {
+    "description": "Help › Pitch Pipe & Drone › Text size for the stage — point 1"
+  },
+  "helpPitchPipeDroneS7P2": "Pick one of five sizes — 85%, 95%, 100%, 115% or 130% — from the chips at the bottom of the pitch sheet.",
+  "@helpPitchPipeDroneS7P2": {
+    "description": "Help › Pitch Pipe & Drone › Text size for the stage — point 2"
+  },
+  "helpPitchPipeDroneS7P3": "Settings → General → Pitch Pipe & Drone has the same chips, so you can set it before a gig.",
+  "@helpPitchPipeDroneS7P3": {
+    "description": "Help › Pitch Pipe & Drone › Text size for the stage — point 3"
+  },
+  "helpPitchPipeDroneS7P4": "It multiplies the sheet text size everywhere, not only in full screen.",
+  "@helpPitchPipeDroneS7P4": {
+    "description": "Help › Pitch Pipe & Drone › Text size for the stage — point 4"
+  },
+  "helpPitchPipeDroneS7P5": "Pinching the sheet with two fingers still works and is the quicker way to nudge one song.",
+  "@helpPitchPipeDroneS7P5": {
+    "description": "Help › Pitch Pipe & Drone › Text size for the stage — point 5"
+  },
+  "titleHelpMelody": "Melody Lines",
+  "@titleHelpMelody": {
+    "description": "Help › topic title (melody)"
+  },
+  "helpMelodySummary": "Write the tune under the words, then hear it.",
+  "@helpMelodySummary": {
+    "description": "Help › Melody Lines › one-line summary on the hub card"
+  },
+  "helpMelodyIntro": "A chord sheet tells you the words and tells the accompanist what to play. It does not tell you the tune. A melody line adds that. Write '{melody}' under a lyric line and the app draws the beats and hums them back, so you can learn a song you have never heard.",
+  "@helpMelodyIntro": {
+    "description": "Help › Melody Lines › opening paragraph"
+  },
+  "helpMelodyS1Heading": "Writing one",
+  "@helpMelodyS1Heading": {
+    "description": "Help › Melody Lines › section heading"
+  },
+  "helpMelodyS1P1": "Put a line starting with '{melody}' under the lyric line it belongs to.",
+  "@helpMelodyS1P1": {
+    "description": "Help › Melody Lines › Writing one — point 1"
+  },
+  "helpMelodyS1P2": "Example: '{melody}' P ,  M2 | M2!G3~ ,  | R2 S",
+  "@helpMelodyS1P2": {
+    "description": "Help › Melody Lines › Writing one — point 2"
+  },
+  "helpMelodyS1P3": "Beats are separated by spaces. One beat, one space.",
+  "@helpMelodyS1P3": {
+    "description": "Help › Melody Lines › Writing one — point 3"
+  },
+  "helpMelodyS1P4": "The words and chords above it do not change at all.",
+  "@helpMelodyS1P4": {
+    "description": "Help › Melody Lines › Writing one — point 4"
+  },
+  "helpMelodyS1P5": "You do not have to type it. In the editor, More options → \"Melody keypad\" gives you a pad of all sixteen swaras and every mark, draws the beats as you tap, and counts \"6 of 8 beats\" until the line fills the tala.",
+  "@helpMelodyS1P5": {
+    "description": "Help › Melody Lines › Writing one — point 5"
+  },
+  "helpMelodyS1P6": "With the cursor already on a '{melody}' line, the keypad loads that line so you can fix it instead of deleting it first.",
+  "@helpMelodyS1P6": {
+    "description": "Help › Melody Lines › Writing one — point 6"
+  },
+  "helpMelodyS1P7": "A block of published Carnatic notation can be turned into melody lines in one go — see the Indian songs topic.",
+  "@helpMelodyS1P7": {
+    "description": "Help › Melody Lines › Writing one — point 7"
+  },
+  "helpMelodyS2Heading": "The five marks",
+  "@helpMelodyS2Heading": {
+    "description": "Help › Melody Lines › section heading"
+  },
+  "helpMelodyS2P1": "A comma ( , ) holds the note before it for one more beat.",
+  "@helpMelodyS2P1": {
+    "description": "Help › Melody Lines › The five marks — point 1"
+  },
+  "helpMelodyS2P2": "A bar ( | ) shows where a new tala group starts. It takes no time.",
+  "@helpMelodyS2P2": {
+    "description": "Help › Melody Lines › The five marks — point 2"
+  },
+  "helpMelodyS2P3": "A hyphen ( - ) joins notes that share one beat: G3-R2 is half a beat each.",
+  "@helpMelodyS2P3": {
+    "description": "Help › Melody Lines › The five marks — point 3"
+  },
+  "helpMelodyS2P4": "A bang ( ! ) slides into a note. M2!G3 starts the slide at Ma. A bare !G3 is a short slide in from just under Ga.",
+  "@helpMelodyS2P4": {
+    "description": "Help › Melody Lines › The five marks — point 4"
+  },
+  "helpMelodyS2P5": "A tilde ( ~ ) shakes the note.",
+  "@helpMelodyS2P5": {
+    "description": "Help › Melody Lines › The five marks — point 5"
+  },
+  "helpMelodyS3Heading": "Naming the notes",
+  "@helpMelodyS3Heading": {
+    "description": "Help › Melody Lines › section heading"
+  },
+  "helpMelodyS3P1": "A bare name is the note from the plain Sa Re Ga Ma Pa Dha Ni row, so Ma on its own is Ma1.",
+  "@helpMelodyS3P1": {
+    "description": "Help › Melody Lines › Naming the notes — point 1"
+  },
+  "helpMelodyS3P2": "A digit names the exact one: Ma2 is the raised Ma, R1 R2 R3 are the three Ris.",
+  "@helpMelodyS3P2": {
+    "description": "Help › Melody Lines › Naming the notes — point 2"
+  },
+  "helpMelodyS3P3": "Ma2 and M2 mean the same note. Use full names in chords and short letters in melody lines, or whichever reads better.",
+  "@helpMelodyS3P3": {
+    "description": "Help › Melody Lines › Naming the notes — point 3"
+  },
+  "helpMelodyS3P4": "The raga never changes what a name means, so nothing is guessed.",
+  "@helpMelodyS3P4": {
+    "description": "Help › Melody Lines › Naming the notes — point 4"
+  },
+  "helpMelodyS3P5": "A dot in front drops a note an octave (.N3). An apostrophe after raises it (S'').",
+  "@helpMelodyS3P5": {
+    "description": "Help › Melody Lines › Naming the notes — point 5"
+  },
+  "helpMelodyS4Heading": "Hearing it",
+  "@helpMelodyS4Heading": {
+    "description": "Help › Melody Lines › section heading"
+  },
+  "helpMelodyS4P1": "Add '{tonic: 1 kattai}' so the app knows where your Sa really is. Without it the beats still draw, but nothing can play.",
+  "@helpMelodyS4P1": {
+    "description": "Help › Melody Lines › Hearing it — point 1"
+  },
+  "helpMelodyS4P2": "Add '{tala: misra chapu}' so the beats are grouped correctly.",
+  "@helpMelodyS4P2": {
+    "description": "Help › Melody Lines › Hearing it — point 2"
+  },
+  "helpMelodyS4P3": "The song tempo sets the speed.",
+  "@helpMelodyS4P3": {
+    "description": "Help › Melody Lines › Hearing it — point 3"
+  },
+  "helpMelodyS4P4": "Tap the play button beside a melody line to hum it.",
+  "@helpMelodyS4P4": {
+    "description": "Help › Melody Lines › Hearing it — point 4"
+  },
+  "helpMelodyS4P5": "To read the words without the tune rows, open the overflow menu → Performance controls and turn Show melody off. Full screen never draws the melody rows.",
+  "@helpMelodyS4P5": {
+    "description": "Help › Melody Lines › Hearing it — point 5"
+  },
+  "helpMelodyS4P6": "Turn on Loop to repeat the line, or Half speed to learn it slowly.",
+  "@helpMelodyS4P6": {
+    "description": "Help › Melody Lines › Hearing it — point 6"
+  },
+  "helpMelodyS4P7": "Start the shruti drone first — a tune is much easier to hear against a drone than on its own.",
+  "@helpMelodyS4P7": {
+    "description": "Help › Melody Lines › Hearing it — point 7"
+  },
+  "helpMelodyS5Heading": "What it can and cannot do",
+  "@helpMelodyS5Heading": {
+    "description": "Help › Melody Lines › section heading"
+  },
+  "helpMelodyS5P1": "It shows you where the notes go and how long each one lasts.",
+  "@helpMelodyS5P1": {
+    "description": "Help › Melody Lines › What it can and cannot do — point 1"
+  },
+  "helpMelodyS5P2": "It does not shape them the way a singer does. Listen to a recording for that.",
+  "@helpMelodyS5P2": {
+    "description": "Help › Melody Lines › What it can and cannot do — point 2"
+  },
+  "helpMelodyS5P3": "Every song needs a person who knows the tune to type it in. There is no shortcut.",
+  "@helpMelodyS5P3": {
+    "description": "Help › Melody Lines › What it can and cannot do — point 3"
+  },
+  "titleHelpIndianSongs": "Indian songs",
+  "@titleHelpIndianSongs": {
+    "description": "Help › topic title (indian-songs)"
+  },
+  "helpIndianSongsSummary": "Swaras, raga, tala, and where your Sa is",
+  "@helpIndianSongsSummary": {
+    "description": "Help › Indian songs › one-line summary on the hub card"
+  },
+  "helpIndianSongsIntro": "An Indian song is written in swaras — Sa Re Ga Ma Pa Dha Ni — not in chords, and those names are relative to Sa rather than to a fixed pitch. The app treats such a song differently all the way through.",
+  "@helpIndianSongsIntro": {
+    "description": "Help › Indian songs › opening paragraph"
+  },
+  "helpIndianSongsS1Heading": "Mark the song as Indian",
+  "@helpIndianSongsS1Heading": {
+    "description": "Help › Indian songs › section heading"
+  },
+  "helpIndianSongsS1P1": "In the editor, set \"Notation\" to Carnatic or Hindustani.",
+  "@helpIndianSongsS1P1": {
+    "description": "Help › Indian songs › Mark the song as Indian — point 1"
+  },
+  "helpIndianSongsS1P2": "The \"Original key\" box is replaced by Raga and Tala, because an Indian sheet has no key to transpose.",
+  "@helpIndianSongsS1P2": {
+    "description": "Help › Indian songs › Mark the song as Indian — point 2"
+  },
+  "helpIndianSongsS1P3": "Switching back to Western clears the raga and tala, so an old value can never make the song look Indian again.",
+  "@helpIndianSongsS1P3": {
+    "description": "Help › Indian songs › Mark the song as Indian — point 3"
+  },
+  "helpIndianSongsS2Heading": "The note under the Tala box",
+  "@helpIndianSongsS2Heading": {
+    "description": "Help › Indian songs › section heading"
+  },
+  "helpIndianSongsS2P1": "Typing a tala that belongs to the other tradition — Keherwa on a Carnatic song, say — shows a short note under the box.",
+  "@helpIndianSongsS2P1": {
+    "description": "Help › Indian songs › The note under the Tala box — point 1"
+  },
+  "helpIndianSongsS2P2": "It is advice only. It never stops you saving. The app knows a fixed list of tala names and yours may simply not be on it.",
+  "@helpIndianSongsS2P2": {
+    "description": "Help › Indian songs › The note under the Tala box — point 2"
+  },
+  "helpIndianSongsS2P3": "The tala also decides how many beats are in a bar for Tempo auto-scroll and for the beat grid under a melody line.",
+  "@helpIndianSongsS2P3": {
+    "description": "Help › Indian songs › The note under the Tala box — point 3"
+  },
+  "helpIndianSongsS3Heading": "What changes on the song screen",
+  "@helpIndianSongsS3Heading": {
+    "description": "Help › Indian songs › section heading"
+  },
+  "helpIndianSongsS3P1": "No Western letter is shown. The status line reads \"Auto-scroll · 120 BPM\", with the raga and tala on the line below it.",
+  "@helpIndianSongsS3P1": {
+    "description": "Help › Indian songs › What changes on the song screen — point 1"
+  },
+  "helpIndianSongsS3P2": "There is no transpose control, because a swara does not move.",
+  "@helpIndianSongsS3P2": {
+    "description": "Help › Indian songs › What changes on the song screen — point 2"
+  },
+  "helpIndianSongsS3P3": "The menu offers \"Swara Reference\" in place of Chord Reference.",
+  "@helpIndianSongsS3P3": {
+    "description": "Help › Indian songs › What changes on the song screen — point 3"
+  },
+  "helpIndianSongsS3P4": "The pitch sheet opens on your saved Sa instead of a song key, and names it the Indian way — \"5 kattai\" for Carnatic, \"safed 5\" for Hindustani.",
+  "@helpIndianSongsS3P4": {
+    "description": "Help › Indian songs › What changes on the song screen — point 4"
+  },
+  "helpIndianSongsS4Heading": "Lines you can put in the words",
+  "@helpIndianSongsS4Heading": {
+    "description": "Help › Indian songs › section heading"
+  },
+  "helpIndianSongsS4P1": "'{tonic: 1 kattai}' says where your Sa really is. A melody line cannot be played without it.",
+  "@helpIndianSongsS4P1": {
+    "description": "Help › Indian songs › Lines you can put in the words — point 1"
+  },
+  "helpIndianSongsS4P2": "'{tala: misra chapu}' groups the beats.",
+  "@helpIndianSongsS4P2": {
+    "description": "Help › Indian songs › Lines you can put in the words — point 2"
+  },
+  "helpIndianSongsS4P3": "'{sruti: madhyama}' marks a song sung with the drone''s Pa string dropped to shuddha madhyamam, as Yamunakalyani usually is. The written Sa then sounds a fourth higher.",
+  "@helpIndianSongsS4P3": {
+    "description": "Help › Indian songs › Lines you can put in the words — point 3"
+  },
+  "helpIndianSongsS4P4": "'{melody}' lines hold the tune — see the Melody Lines topic.",
+  "@helpIndianSongsS4P4": {
+    "description": "Help › Indian songs › Lines you can put in the words — point 4"
+  },
+  "helpIndianSongsS4P5": "All of these live in the song text, so import and export carry them through unchanged.",
+  "@helpIndianSongsS4P5": {
+    "description": "Help › Indian songs › Lines you can put in the words — point 5"
+  },
+  "helpIndianSongsS5Heading": "Paste published notation",
+  "@helpIndianSongsS5Heading": {
+    "description": "Help › Indian songs › section heading"
+  },
+  "helpIndianSongsS5P1": "In the editor, More options → \"Paste Carnatic\" takes a block copied from a book or a page and turns it into '{melody}' lines.",
+  "@helpIndianSongsS5P1": {
+    "description": "Help › Indian songs › Paste published notation — point 1"
+  },
+  "helpIndianSongsS5P2": "Published notation has no single standard: on some pages a capital letter means a longer note, on others it means a higher octave.",
+  "@helpIndianSongsS5P2": {
+    "description": "Help › Indian songs › Paste published notation — point 2"
+  },
+  "helpIndianSongsS5P3": "So the app reads the block both ways, checks each against the song''s tala, and tells you which one fitted and by how much — like \"1 of 1 cycles fit, read with case means note length\".",
+  "@helpIndianSongsS5P3": {
+    "description": "Help › Indian songs › Paste published notation — point 3"
+  },
+  "helpIndianSongsS5P4": "Where the two ways tie it says so instead of guessing.",
+  "@helpIndianSongsS5P4": {
+    "description": "Help › Indian songs › Paste published notation — point 4"
+  },
+  "helpIndianSongsS5P5": "It will not choose between the two Ma-s on its own. That is raga grammar, not arithmetic — but it points out the phrase that decides it.",
+  "@helpIndianSongsS5P5": {
+    "description": "Help › Indian songs › Paste published notation — point 5"
+  },
+  "titleHelpSelectSongs": "Select Songs",
+  "@titleHelpSelectSongs": {
+    "description": "Help › topic title (select-songs)"
+  },
+  "helpSelectSongsSummary": "Act on several songs at once",
+  "@helpSelectSongsSummary": {
+    "description": "Help › Select Songs › one-line summary on the hub card"
+  },
+  "helpSelectSongsIntro": "Selection mode lets you choose many songs together and then export or delete them in one step.",
+  "@helpSelectSongsIntro": {
+    "description": "Help › Select Songs › opening paragraph"
+  },
+  "helpSelectSongsS1Heading": "Start selecting",
+  "@helpSelectSongsS1Heading": {
+    "description": "Help › Select Songs › section heading"
+  },
+  "helpSelectSongsS1P1": "On the Songs list, long-press any song to start selection mode.",
+  "@helpSelectSongsS1P1": {
+    "description": "Help › Select Songs › Start selecting — point 1"
+  },
+  "helpSelectSongsS1P2": "Tap more songs to add them to the selection.",
+  "@helpSelectSongsS1P2": {
+    "description": "Help › Select Songs › Start selecting — point 2"
+  },
+  "helpSelectSongsS1P3": "The top bar shows how many songs are selected.",
+  "@helpSelectSongsS1P3": {
+    "description": "Help › Select Songs › Start selecting — point 3"
+  },
+  "helpSelectSongsS2Heading": "Select all",
+  "@helpSelectSongsS2Heading": {
+    "description": "Help › Select Songs › section heading"
+  },
+  "helpSelectSongsS2P1": "Use the \"Select all\" icon in the top bar to pick every visible song.",
+  "@helpSelectSongsS2P1": {
+    "description": "Help › Select Songs › Select all — point 1"
+  },
+  "helpSelectSongsS2P2": "Tap it again (\"Deselect all\") to clear the selection.",
+  "@helpSelectSongsS2P2": {
+    "description": "Help › Select Songs › Select all — point 2"
+  },
+  "helpSelectSongsS3Heading": "What you can do",
+  "@helpSelectSongsS3Heading": {
+    "description": "Help › Select Songs › section heading"
+  },
+  "helpSelectSongsS3P1": "Export the selected songs as one ChordPro file.",
+  "@helpSelectSongsS3P1": {
+    "description": "Help › Select Songs › What you can do — point 1"
+  },
+  "helpSelectSongsS3P2": "Delete the selected songs from your library.",
+  "@helpSelectSongsS3P2": {
+    "description": "Help › Select Songs › What you can do — point 2"
+  },
+  "helpSelectSongsS3P3": "Tap the X on the top-left to leave selection mode without changes.",
+  "@helpSelectSongsS3P3": {
+    "description": "Help › Select Songs › What you can do — point 3"
+  },
+  "titleHelpImport": "Import",
+  "@titleHelpImport": {
+    "description": "Help › topic title (import)"
+  },
+  "helpImportSummary": "Bring songs into the app",
+  "@helpImportSummary": {
+    "description": "Help › Import › one-line summary on the hub card"
+  },
+  "helpImportIntro": "Import adds songs from ChordPro or plain text files into your library. Reading is defensive — broken or unreadable files are skipped safely and never break the app.",
+  "@helpImportIntro": {
+    "description": "Help › Import › opening paragraph"
+  },
+  "helpImportS1Heading": "Supported file types",
+  "@helpImportS1Heading": {
+    "description": "Help › Import › section heading"
+  },
+  "helpImportS1P1": "You can pick files ending in .cho, .pro, .chordpro, or .txt.",
+  "@helpImportS1P1": {
+    "description": "Help › Import › Supported file types — point 1"
+  },
+  "helpImportS1P2": "ChordPro files are plain text files that use simple tags for chords and headers.",
+  "@helpImportS1P2": {
+    "description": "Help › Import › Supported file types — point 2"
+  },
+  "helpImportS1P3": "You can pick one file or multiple files at the same time.",
+  "@helpImportS1P3": {
+    "description": "Help › Import › Supported file types — point 3"
+  },
+  "helpImportS2Heading": "Multiple songs in one file",
+  "@helpImportS2Heading": {
+    "description": "Help › Import › section heading"
+  },
+  "helpImportS2P1": "A single file can contain many songs.",
+  "@helpImportS2P1": {
+    "description": "Help › Import › Multiple songs in one file — point 1"
+  },
+  "helpImportS2P2": "Put '{new_song}' or '{ns}' on its own line between songs to separate them. This is the same separator used when you export your whole songbook.",
+  "@helpImportS2P2": {
+    "description": "Help › Import › Multiple songs in one file — point 2"
+  },
+  "helpImportS2P3": "You can also separate songs by starting a new '{title: ...}' or '{t: ...}' tag. The app automatically detects where the new song begins.",
+  "@helpImportS2P3": {
+    "description": "Help › Import › Multiple songs in one file — point 3"
+  },
+  "helpImportS3Heading": "Text files without tags",
+  "@helpImportS3Heading": {
+    "description": "Help › Import › section heading"
+  },
+  "helpImportS3P1": "A plain text file with no tags is imported safely as one song.",
+  "@helpImportS3P1": {
+    "description": "Help › Import › Text files without tags — point 1"
+  },
+  "helpImportS3P2": "The app gives it the name \"Untitled Song\" and key C.",
+  "@helpImportS3P2": {
+    "description": "Help › Import › Text files without tags — point 2"
+  },
+  "helpImportS3P3": "You can open and edit its title, chords, key, and tempo at any time.",
+  "@helpImportS3P3": {
+    "description": "Help › Import › Text files without tags — point 3"
+  },
+  "helpImportS4Heading": "Duplicate songs",
+  "@helpImportS4Heading": {
+    "description": "Help › Import › section heading"
+  },
+  "helpImportS4P1": "If a song has the same title as one in your library, the app follows your duplicate setting.",
+  "@helpImportS4P1": {
+    "description": "Help › Import › Duplicate songs — point 1"
+  },
+  "helpImportS4P2": "You can choose to overwrite the existing song, rename the new one, rename the old one, or ask for a title each time.",
+  "@helpImportS4P2": {
+    "description": "Help › Import › Duplicate songs — point 2"
+  },
+  "helpImportS4P3": "Set this in Settings → General → Import Settings.",
+  "@helpImportS4P3": {
+    "description": "Help › Import › Duplicate songs — point 3"
+  },
+  "helpImportS5Heading": "Check before it is saved",
+  "@helpImportS5Heading": {
+    "description": "Help › Import › section heading"
+  },
+  "helpImportS5P1": "Every import stops at a preview screen first.",
+  "@helpImportS5P1": {
+    "description": "Help › Import › Check before it is saved — point 1"
+  },
+  "helpImportS5P2": "You can read the titles, artists, keys and words that were found, and fix a title before anything is written.",
+  "@helpImportS5P2": {
+    "description": "Help › Import › Check before it is saved — point 2"
+  },
+  "helpImportS5P3": "Nothing reaches your library until you confirm.",
+  "@helpImportS5P3": {
+    "description": "Help › Import › Check before it is saved — point 3"
+  },
+  "helpImportS6Heading": "Other ways songs come in",
+  "@helpImportS6Heading": {
+    "description": "Help › Import › section heading"
+  },
+  "helpImportS6P1": "Opening a ChordPro file from a file manager, an email or a chat app hands it to LyricChord and opens the same preview.",
+  "@helpImportS6P1": {
+    "description": "Help › Import › Other ways songs come in — point 1"
+  },
+  "helpImportS6P2": "A bandmate standing next to you can send songs with no file at all — see the AirQR topic.",
+  "@helpImportS6P2": {
+    "description": "Help › Import › Other ways songs come in — point 2"
+  },
+  "titleHelpExport": "Export",
+  "@titleHelpExport": {
+    "description": "Help › topic title (export)"
+  },
+  "helpExportSummary": "Save your songs out of the app",
+  "@helpExportSummary": {
+    "description": "Help › Export › one-line summary on the hub card"
+  },
+  "helpExportIntro": "Export saves songs as a file you choose the place for. Share hands the same file straight to another app. Everything stays offline — nothing is uploaded, and the system file picker or share sheet does the work.",
+  "@helpExportIntro": {
+    "description": "Help › Export › opening paragraph"
+  },
+  "helpExportS1Heading": "Export all songs",
+  "@helpExportS1Heading": {
+    "description": "Help › Export › section heading"
+  },
+  "helpExportS1P1": "Go to Settings > General > Import.",
+  "@helpExportS1P1": {
+    "description": "Help › Export › Export all songs — point 1"
+  },
+  "helpExportS1P2": "Tap \"Export all songs\".",
+  "@helpExportS1P2": {
+    "description": "Help › Export › Export all songs — point 2"
+  },
+  "helpExportS1P3": "Your whole songbook is saved as one ChordPro file.",
+  "@helpExportS1P3": {
+    "description": "Help › Export › Export all songs — point 3"
+  },
+  "helpExportS2Heading": "Export some songs (ChordPro)",
+  "@helpExportS2Heading": {
+    "description": "Help › Export › section heading"
+  },
+  "helpExportS2P1": "On the Songs list, long-press to select the songs you want.",
+  "@helpExportS2P1": {
+    "description": "Help › Export › Export some songs (ChordPro) — point 1"
+  },
+  "helpExportS2P2": "Tap the export icon in the top bar.",
+  "@helpExportS2P2": {
+    "description": "Help › Export › Export some songs (ChordPro) — point 2"
+  },
+  "helpExportS2P3": "The selected songs are saved as one ChordPro file.",
+  "@helpExportS2P3": {
+    "description": "Help › Export › Export some songs (ChordPro) — point 3"
+  },
+  "helpExportS3Heading": "Export one song",
+  "@helpExportS3Heading": {
+    "description": "Help › Export › section heading"
+  },
+  "helpExportS3P1": "Open the song, then the top-bar menu (More options) → \"Export\".",
+  "@helpExportS3P1": {
+    "description": "Help › Export › Export one song — point 1"
+  },
+  "helpExportS3P2": "Choose ChordPro (.chordpro) or PDF (.pdf), then tap Export.",
+  "@helpExportS3P2": {
+    "description": "Help › Export › Export one song — point 2"
+  },
+  "helpExportS3P3": "The system file saver opens so you can pick where it goes.",
+  "@helpExportS3P3": {
+    "description": "Help › Export › Export one song — point 3"
+  },
+  "helpExportS3P4": "Whatever you export uses the key you are looking at, so a song you have transposed is saved in that key.",
+  "@helpExportS3P4": {
+    "description": "Help › Export › Export one song — point 4"
+  },
+  "helpExportS4Heading": "What a PDF looks like",
+  "@helpExportS4Heading": {
+    "description": "Help › Export › section heading"
+  },
+  "helpExportS4P1": "Title, artist, key and BPM at the top, guitar chord diagrams under that, then the words with the chords above them.",
+  "@helpExportS4P1": {
+    "description": "Help › Export › What a PDF looks like — point 1"
+  },
+  "helpExportS4P2": "The words use the lyric font you picked in Settings → Fonts, so Malayalam is shaped correctly and the text stays selectable.",
+  "@helpExportS4P2": {
+    "description": "Help › Export › What a PDF looks like — point 2"
+  },
+  "helpExportS4P3": "The page is only as wide as the song needs — a song with short lines gets a narrow, tall page that fills a phone screen better — up to A4 width at the most.",
+  "@helpExportS4P3": {
+    "description": "Help › Export › What a PDF looks like — point 3"
+  },
+  "helpExportS4P4": "If a line is still too long, the font is stepped down (never below 9 pt) so it does not wrap in the middle.",
+  "@helpExportS4P4": {
+    "description": "Help › Export › What a PDF looks like — point 4"
+  },
+  "helpExportS5Heading": "Share instead of save",
+  "@helpExportS5Heading": {
+    "description": "Help › Export › section heading"
+  },
+  "helpExportS5P1": "The top-bar menu also has \"Share\", which opens the system share sheet instead of the file saver.",
+  "@helpExportS5P1": {
+    "description": "Help › Export › Share instead of save — point 1"
+  },
+  "helpExportS5P2": "You can share as ChordPro, as PDF, or as an AirQR stream — see the AirQR topic.",
+  "@helpExportS5P2": {
+    "description": "Help › Export › Share instead of save — point 2"
+  },
+  "helpExportS5P3": "Selecting several songs on the Songs list gives you the same share choice for the whole set.",
+  "@helpExportS5P3": {
+    "description": "Help › Export › Share instead of save — point 3"
+  },
+  "titleHelpAirqr": "AirQR sharing",
+  "@titleHelpAirqr": {
+    "description": "Help › topic title (airqr)"
+  },
+  "helpAirqrSummary": "Pass songs to another phone with the camera",
+  "@helpAirqrSummary": {
+    "description": "Help › AirQR sharing › one-line summary on the hub card"
+  },
+  "helpAirqrIntro": "AirQR moves songs from one phone to another by flashing a run of QR codes on one screen while the other phone watches with its camera. No internet, no Bluetooth, no Wi-Fi, no cable and no account — just two screens facing each other.",
+  "@helpAirqrIntro": {
+    "description": "Help › AirQR sharing › opening paragraph"
+  },
+  "helpAirqrS1Heading": "Send one song",
+  "@helpAirqrS1Heading": {
+    "description": "Help › AirQR sharing › section heading"
+  },
+  "helpAirqrS1P1": "Open the song, then the top-bar menu → \"Share\".",
+  "@helpAirqrS1P1": {
+    "description": "Help › AirQR sharing › Send one song — point 1"
+  },
+  "helpAirqrS1P2": "Pick \"AirQR stream\" and tap Share.",
+  "@helpAirqrS1P2": {
+    "description": "Help › AirQR sharing › Send one song — point 2"
+  },
+  "helpAirqrS1P3": "The codes start flashing straight away. Hold the phone still and let the other one read it.",
+  "@helpAirqrS1P3": {
+    "description": "Help › AirQR sharing › Send one song — point 3"
+  },
+  "helpAirqrS1P4": "What goes across is the song as you are looking at it, so a key you have transposed to travels with it.",
+  "@helpAirqrS1P4": {
+    "description": "Help › AirQR sharing › Send one song — point 4"
+  },
+  "helpAirqrS2Heading": "Send several songs",
+  "@helpAirqrS2Heading": {
+    "description": "Help › AirQR sharing › section heading"
+  },
+  "helpAirqrS2P1": "Settings → General → Import → \"Send all via AirQR\" sends the whole songbook.",
+  "@helpAirqrS2P1": {
+    "description": "Help › AirQR sharing › Send several songs — point 1"
+  },
+  "helpAirqrS2P2": "Or long-press on the Songs list to select some songs and tap the QR icon in the top bar.",
+  "@helpAirqrS2P2": {
+    "description": "Help › AirQR sharing › Send several songs — point 2"
+  },
+  "helpAirqrS3Heading": "Receive",
+  "@helpAirqrS3Heading": {
+    "description": "Help › AirQR sharing › section heading"
+  },
+  "helpAirqrS3P1": "On the receiving phone, tap the scan icon in the songbook top bar, or go to Settings → General → Import → \"Import via AirQR\".",
+  "@helpAirqrS3P1": {
+    "description": "Help › AirQR sharing › Receive — point 1"
+  },
+  "helpAirqrS3P2": "Point the camera at the sending screen and wait. The panel counts the pieces as they arrive.",
+  "@helpAirqrS3P2": {
+    "description": "Help › AirQR sharing › Receive — point 2"
+  },
+  "helpAirqrS3P3": "When it has everything the phone buzzes and the import preview opens, so you can check the songs before they are saved.",
+  "@helpAirqrS3P3": {
+    "description": "Help › AirQR sharing › Receive — point 3"
+  },
+  "helpAirqrS3P4": "The gallery icon reads a photo of a code instead of the live camera, for a code someone sent you as a picture.",
+  "@helpAirqrS3P4": {
+    "description": "Help › AirQR sharing › Receive — point 4"
+  },
+  "helpAirqrS4Heading": "Getting a clean read",
+  "@helpAirqrS4Heading": {
+    "description": "Help › AirQR sharing › section heading"
+  },
+  "helpAirqrS4P1": "The song is cut into small pieces shown one after another, with spare repair pieces mixed in, so a frame the camera misses is filled in instead of starting again.",
+  "@helpAirqrS4P1": {
+    "description": "Help › AirQR sharing › Getting a clean read — point 1"
+  },
+  "helpAirqrS4P2": "The \"Stream Speed\" slider on the sending phone runs from 5 to 25 frames a second and starts at 10.",
+  "@helpAirqrS4P2": {
+    "description": "Help › AirQR sharing › Getting a clean read — point 2"
+  },
+  "helpAirqrS4P3": "An older phone or a dim screen reads better slower. Turn the speed down if the count stops moving.",
+  "@helpAirqrS4P3": {
+    "description": "Help › AirQR sharing › Getting a clean read — point 3"
+  },
+  "helpAirqrS4P4": "Keep both screens still and bright, roughly a hand-span apart.",
+  "@helpAirqrS4P4": {
+    "description": "Help › AirQR sharing › Getting a clean read — point 4"
+  },
+  "titleHelpAppearance": "Themes & fonts",
+  "@titleHelpAppearance": {
+    "description": "Help › topic title (appearance)"
+  },
+  "helpAppearanceSummary": "Make the sheet easy to read",
+  "@helpAppearanceSummary": {
+    "description": "Help › Themes & fonts › one-line summary on the hub card"
+  },
+  "helpAppearanceIntro": "A sheet read on a dark stage and a sheet read at a desk are not the same job. Three settings cover it: the theme, the lyric font, and how big the text is.",
+  "@helpAppearanceIntro": {
+    "description": "Help › Themes & fonts › opening paragraph"
+  },
+  "helpAppearanceS1Heading": "Theme",
+  "@helpAppearanceS1Heading": {
+    "description": "Help › Themes & fonts › section heading"
+  },
+  "helpAppearanceS1P1": "Settings → Themes offers System theme, Light theme and Dark theme.",
+  "@helpAppearanceS1P1": {
+    "description": "Help › Themes & fonts › Theme — point 1"
+  },
+  "helpAppearanceS1P2": "System follows whatever the phone is set to.",
+  "@helpAppearanceS1P2": {
+    "description": "Help › Themes & fonts › Theme — point 2"
+  },
+  "helpAppearanceS1P3": "Dark is easier on the eyes on a stage and easier on the battery.",
+  "@helpAppearanceS1P3": {
+    "description": "Help › Themes & fonts › Theme — point 3"
+  },
+  "helpAppearanceS1P4": "The choice is saved and takes effect at once.",
+  "@helpAppearanceS1P4": {
+    "description": "Help › Themes & fonts › Theme — point 4"
+  },
+  "helpAppearanceS2Heading": "Lyric font",
+  "@helpAppearanceS2Heading": {
+    "description": "Help › Themes & fonts › section heading"
+  },
+  "helpAppearanceS2P1": "Settings → Fonts picks the font the words are drawn in: System default, Noto Sans Malayalam, Noto Serif Malayalam, Manjari or Gayathri.",
+  "@helpAppearanceS2P1": {
+    "description": "Help › Themes & fonts › Lyric font — point 1"
+  },
+  "helpAppearanceS2P2": "Each choice shows a live sample in English and in Malayalam, so you can see the letter shapes before you pick.",
+  "@helpAppearanceS2P2": {
+    "description": "Help › Themes & fonts › Lyric font — point 2"
+  },
+  "helpAppearanceS2P3": "The Malayalam fonts shape chillu, conjuncts and vowel signs properly. The system font often does not.",
+  "@helpAppearanceS2P3": {
+    "description": "Help › Themes & fonts › Lyric font — point 3"
+  },
+  "helpAppearanceS2P4": "One choice covers the whole app, and the exported PDF uses the same font.",
+  "@helpAppearanceS2P4": {
+    "description": "Help › Themes & fonts › Lyric font — point 4"
+  },
+  "helpAppearanceS2P5": "The fonts are bundled with the app under an open licence and are listed on the licences page in About.",
+  "@helpAppearanceS2P5": {
+    "description": "Help › Themes & fonts › Lyric font — point 5"
+  },
+  "helpAppearanceS3Heading": "Text size",
+  "@helpAppearanceS3Heading": {
+    "description": "Help › Themes & fonts › section heading"
+  },
+  "helpAppearanceS3P1": "Pinch the words with two fingers to make the text bigger or smaller, from 10 up to 32.",
+  "@helpAppearanceS3P1": {
+    "description": "Help › Themes & fonts › Text size — point 1"
+  },
+  "helpAppearanceS3P2": "It works on the ordinary song screen and in full screen, and it does not disturb the scrolling.",
+  "@helpAppearanceS3P2": {
+    "description": "Help › Themes & fonts › Text size — point 2"
+  },
+  "helpAppearanceS3P3": "The pitch sheet also has five fixed sizes — 85%, 95%, 100%, 115% and 130% — which multiply whatever the pinch has set. Use those to set a stage size once and keep it.",
+  "@helpAppearanceS3P3": {
+    "description": "Help › Themes & fonts › Text size — point 3"
+  },
+  "helpTopicNotFound": "Help topic not found.",
+  "@helpTopicNotFound": {
+    "description": "Shown when a help link points to a topic that does not exist"
+  },
+  "labelAirQrFps": "{fps} FPS",
+  "@labelAirQrFps": {
+    "description": "AirQR frame rate, in frames per second",
+    "placeholders": {
+      "fps": {
+        "type": "String"
+      }
+    }
+  },
+  "errorStorageLoadSongs": "Could not load songs.",
+  "@errorStorageLoadSongs": {
+    "description": "Error: the song list could not be read"
+  },
+  "errorStorageOpenSong": "Could not open the song.",
+  "@errorStorageOpenSong": {
+    "description": "Error: one song could not be read"
+  },
+  "errorStorageFindSongByTitle": "Could not search for song by title.",
+  "@errorStorageFindSongByTitle": {
+    "description": "Error: looking up a song by title failed"
+  },
+  "errorStorageSaveSong": "Could not save the song.",
+  "@errorStorageSaveSong": {
+    "description": "Error: a new song could not be saved"
+  },
+  "errorStorageUpdateSong": "Could not update the song.",
+  "@errorStorageUpdateSong": {
+    "description": "Error: changes to a song could not be saved"
+  },
+  "errorStorageSaveScrollSpeed": "Could not save the scroll speed.",
+  "@errorStorageSaveScrollSpeed": {
+    "description": "Error: the song scroll speed could not be saved"
+  },
+  "errorStorageDeleteSong": "Could not delete the song.",
+  "@errorStorageDeleteSong": {
+    "description": "Error: a song could not be deleted"
+  },
+  "errorStorageCreateSetlist": "Could not create setlist.",
+  "@errorStorageCreateSetlist": {
+    "description": "Error: a new setlist could not be saved"
+  },
+  "errorStorageUpdateSetlist": "Could not update setlist.",
+  "@errorStorageUpdateSetlist": {
+    "description": "Error: setlist name or description could not be saved"
+  },
+  "errorStorageUpdateSetlistSongs": "Could not update setlist songs.",
+  "@errorStorageUpdateSetlistSongs": {
+    "description": "Error: the songs in a setlist could not be saved"
+  },
+  "errorStorageAddSongToSetlist": "Could not add song to setlist.",
+  "@errorStorageAddSongToSetlist": {
+    "description": "Error: a song could not be added to a setlist"
+  },
+  "errorStorageDeleteSetlist": "Could not delete setlist.",
+  "@errorStorageDeleteSetlist": {
+    "description": "Error: a setlist could not be deleted"
+  },
+  "errorDroneErrorChordCue": "Could not play the chord cue.",
+  "@errorDroneErrorChordCue": {
+    "description": "Error: the two-second chord sound did not play"
+  },
+  "errorDroneErrorPitchCue": "Could not play the pitch cue.",
+  "@errorDroneErrorPitchCue": {
+    "description": "Error: the two-second pitch sound did not play"
+  },
+  "errorDroneErrorStartDrone": "Could not start the drone.",
+  "@errorDroneErrorStartDrone": {
+    "description": "Error: the continuous drone did not start"
+  },
+  "errorMelodyProblemUnreadable": "Could not read \"{piece}\" in \"{token}\".",
+  "@errorMelodyProblemUnreadable": {
+    "description": "Melody line problem: part of a beat is not a swara or mark",
+    "placeholders": {
+      "piece": {
+        "type": "String"
+      },
+      "token": {
+        "type": "String"
+      }
+    }
+  },
+  "errorMelodyProblemNothingToPlay": "Nothing to play in \"{token}\".",
+  "@errorMelodyProblemNothingToPlay": {
+    "description": "Melody line problem: a beat holds nothing to sound",
+    "placeholders": {
+      "token": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCarnaticProblemUnknownTala": "Could not work out how many beats \"{tala}\" has.",
+  "@errorCarnaticProblemUnknownTala": {
+    "description": "Carnatic import problem: the tala name is unknown",
+    "placeholders": {
+      "tala": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCarnaticProblemNoNotation": "No notation found to read.",
+  "@errorCarnaticProblemNoNotation": {
+    "description": "Carnatic import problem: nothing was pasted"
+  },
+  "errorCarnaticProblemCyclesOff": "{fitting} of {total} cycles land on {tala}. The rest are the wrong length, so some beats will be off.",
+  "@errorCarnaticProblemCyclesOff": {
+    "description": "Carnatic import problem: some cycles do not match the tala",
+    "placeholders": {
+      "fitting": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "tala": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCarnaticProblemReadingsTie": "Both readings of upper/lower case score the same, so the choice between them is a guess. Check it against the source page.",
+  "@errorCarnaticProblemReadingsTie": {
+    "description": "Carnatic import problem: both case readings fit equally"
+  },
+  "errorCarnaticProblemNothingReadable": "nothing readable",
+  "@errorCarnaticProblemNothingReadable": {
+    "description": "Carnatic import problem for one cycle (shown after \"Cycle N: \"): nothing could be read"
+  },
+  "errorCarnaticProblemWrongLength": "reads as {got} aksharakalas, but this tala wants {wanted}",
+  "@errorCarnaticProblemWrongLength": {
+    "description": "Carnatic import problem for one cycle (shown after \"Cycle N: \"): wrong length",
+    "placeholders": {
+      "got": {
+        "type": "String"
+      },
+      "wanted": {
+        "type": "int"
+      }
+    }
+  },
+  "errorCarnaticProblemUnreadableCharacter": "could not read \"{character}\" in \"{token}\"",
+  "@errorCarnaticProblemUnreadableCharacter": {
+    "description": "Carnatic import problem for one cycle (shown after \"Cycle N: \"): unknown character",
+    "placeholders": {
+      "character": {
+        "type": "String"
+      },
+      "token": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCarnaticProblemInCycle": "Cycle {cycle}: {problem}",
+  "@errorCarnaticProblemInCycle": {
+    "description": "Puts the cycle (avarta) number in front of a Carnatic import problem",
+    "placeholders": {
+      "cycle": {
+        "type": "int"
+      },
+      "problem": {
+        "type": "String"
+      }
+    }
+  },
+  "errorWidgetFailed": "This part of the screen could not be shown.",
+  "@errorWidgetFailed": {
+    "description": "Shown in release builds in place of a widget that failed to build. Keep it calm and short; no technical detail."
+  },
+  "titleStartupFailed": "Could not start",
+  "@titleStartupFailed": {
+    "description": "Title of the screen shown when the app fails to start. Short label."
+  },
+  "descStartupFailed": "LyricChord could not open its saved data. Your songs have not been changed. Try again, or copy the details to report the problem.",
+  "@descStartupFailed": {
+    "description": "Body text of the start-up failure screen. Descriptive text."
+  },
+  "actionCopyDetails": "Copy details",
+  "@actionCopyDetails": {
+    "description": "Button on the start-up failure screen that copies technical details for a bug report. Keep to one or two words."
+  },
+  "bodyDetailsCopied": "Details copied",
+  "@bodyDetailsCopied": {
+    "description": "SnackBar after the start-up failure details were copied."
+  },
+  "tooltipBack": "Back",
+  "@tooltipBack": {
+    "description": "Tooltip on a custom back button in a screen's top bar. One word."
+  },
+  "tooltipAirQrReceiverTorchOn": "Turn on flashlight",
+  "@tooltipAirQrReceiverTorchOn": {
+    "description": "Tooltip on the AirQR scanner's flashlight button while the light is off. Keep it short."
+  },
+  "tooltipAirQrReceiverTorchOff": "Turn off flashlight",
+  "@tooltipAirQrReceiverTorchOff": {
+    "description": "Tooltip on the AirQR scanner's flashlight button while the light is on. Keep it short."
+  },
+  "tooltipAirQrReceiverSwitchCamera": "Switch camera",
+  "@tooltipAirQrReceiverSwitchCamera": {
+    "description": "Tooltip on the AirQR scanner button that swaps front and back cameras. Keep it short."
+  },
+  "aboutDetailAuthor": "Author",
+  "@aboutDetailAuthor": {
+    "description": "About-screen row label for the author detail (details key 'author')."
+  },
+  "aboutDetailEmail": "Email",
+  "@aboutDetailEmail": {
+    "description": "About-screen row label for the support email (details key 'email')."
+  },
+  "aboutDetailLicense": "License",
+  "@aboutDetailLicense": {
+    "description": "About-screen row label for the license note (details key 'license')."
+  },
+  "aboutDetailWebsite": "Website",
+  "@aboutDetailWebsite": {
+    "description": "About-screen row label for the website (details key 'website')."
+  },
+  "aboutDetailPrivacyPolicy": "Privacy policy",
+  "@aboutDetailPrivacyPolicy": {
+    "description": "About-screen row label for the privacy policy link (details key 'privacyPolicy')."
+  },
+  "aboutDetailAiUsed": "AI used",
+  "@aboutDetailAiUsed": {
+    "description": "About-screen row label: the AI tool used to build the app (details key 'aiUsed')."
+  },
+  "aboutDetailIdeUsed": "IDE used",
+  "@aboutDetailIdeUsed": {
+    "description": "About-screen row label: the code editor used to build the app (details key 'ideUsed')."
+  },
+  "titleSettingsDeleteAllData": "Delete all data",
+  "@titleSettingsDeleteAllData": {
+    "description": "Settings card title: delete every song, setlist and setting. Short label."
+  },
+  "descSettingsDeleteAllDataSubtitle": "Remove every song, setlist and setting",
+  "@descSettingsDeleteAllDataSubtitle": {
+    "description": "Settings card subtitle for Delete all data."
+  },
+  "titleDeleteAllData": "Delete all data?",
+  "@titleDeleteAllData": {
+    "description": "Title of the dialog that confirms deleting all app data. Short title."
+  },
+  "descDeleteAllData": "Every song, setlist, note and setting on this phone will be deleted. This cannot be undone. LyricChord then starts fresh, with its sample songs.",
+  "@descDeleteAllData": {
+    "description": "Body of the dialog that confirms deleting all app data."
+  },
+  "actionDeleteEverything": "Delete everything",
+  "@actionDeleteEverything": {
+    "description": "Destructive confirm button in the Delete all data dialog. Keep to one or two words."
+  },
+  "bodyAllDataDeleted": "All data deleted",
+  "@bodyAllDataDeleted": {
+    "description": "SnackBar after all app data was deleted and the app started fresh."
+  },
+  "errorStorageDeleteAllData": "Could not delete all data. Some of it may still be there.",
+  "@errorStorageDeleteAllData": {
+    "description": "Error: deleting all app data did not fully work."
+  },
+  "helpSongbookS6Heading": "Start fresh",
+  "@helpSongbookS6Heading": {
+    "description": "Help › Your songbook › section heading"
+  },
+  "helpSongbookS6P1": "Settings → Delete all data removes every song, setlist, note and setting from this phone. It cannot be undone.",
+  "@helpSongbookS6P1": {
+    "description": "Help › Your songbook › Start fresh — point 1"
+  },
+  "helpSongbookS6P2": "LyricChord then starts as it did when first installed, with its sample songs.",
+  "@helpSongbookS6P2": {
+    "description": "Help › Your songbook › Start fresh — point 2"
+  },
+  "helpSongbookS6P3": "Export your songs first if you may want them back (see the Export topic).",
+  "@helpSongbookS6P3": {
+    "description": "Help › Your songbook › Start fresh — point 3"
+  },
+  "titleSettingsLanguage": "Language",
+  "@titleSettingsLanguage": {
+    "description": "Settings card and screen title: the app language. Short title."
+  },
+  "labelLanguageSystem": "System default",
+  "@labelLanguageSystem": {
+    "description": "Language choice: follow the phone's language. Short label."
   }
 }

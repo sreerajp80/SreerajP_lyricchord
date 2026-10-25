@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// The one-time guide shown the first time Stage Mode is opened.
 ///
@@ -11,18 +12,39 @@ class StageHelpOverlay extends StatelessWidget {
   /// Called when the user taps to close the guide.
   final VoidCallback onDismiss;
 
-  static const List<(IconData, String, String)> _gestures = [
-    (Icons.touch_app_outlined, 'Tap once', 'Show or hide the controls'),
-    (Icons.keyboard_double_arrow_up, 'Double-tap up top', 'Faster'),
-    (Icons.keyboard_double_arrow_down, 'Double-tap down low', 'Slower'),
-    (Icons.pan_tool_outlined, 'Tap with two fingers', 'Play or pause'),
-    (Icons.zoom_out_map, 'Pinch', 'Change the text size'),
-    (Icons.arrow_back, 'Back', 'Leave full screen'),
+  static List<(IconData, String, String)> _gestures(AppLocalizations l10n) => [
+    (
+      Icons.touch_app_outlined,
+      l10n.labelStageHelpTapOnce,
+      l10n.descStageHelpTapOnceMeaning,
+    ),
+    (
+      Icons.keyboard_double_arrow_up,
+      l10n.labelStageHelpDoubleTapTop,
+      l10n.tooltipStageFaster,
+    ),
+    (
+      Icons.keyboard_double_arrow_down,
+      l10n.labelStageHelpDoubleTapBottom,
+      l10n.tooltipStageSlower,
+    ),
+    (
+      Icons.pan_tool_outlined,
+      l10n.labelStageHelpTwoFingers,
+      l10n.descStageHelpTwoFingersMeaning,
+    ),
+    (
+      Icons.zoom_out_map,
+      l10n.labelStageHelpPinch,
+      l10n.descStageHelpPinchMeaning,
+    ),
+    (Icons.arrow_back, l10n.labelStageHelpBack, l10n.descStageHelpBackMeaning),
   ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return GestureDetector(
       onTap: onDismiss,
@@ -38,7 +60,7 @@ class StageHelpOverlay extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Full screen',
+                    l10n.tooltipAutoScrollFullScreen,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -46,13 +68,13 @@ class StageHelpOverlay extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Only the words, and these gestures.',
+                    l10n.descStageHelpSubtitle,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.white70,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  for (final (icon, gesture, meaning) in _gestures)
+                  for (final (icon, gesture, meaning) in _gestures(l10n))
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Row(
@@ -84,7 +106,7 @@ class StageHelpOverlay extends StatelessWidget {
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
-                      'Tap anywhere to start',
+                      l10n.descStageHelpStart,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: theme.colorScheme.primary,
                       ),

@@ -108,6 +108,14 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 11;
 
+  /// Copies everything committed in the write-ahead log into the main database
+  /// file. Called when the app is being shut down, so the file on disk is
+  /// complete even if the process is then killed. `PASSIVE` never waits for or
+  /// blocks another reader or writer. Every write is already committed, so
+  /// skipping this loses nothing; it only tidies the files.
+  Future<void> checkpointWal() =>
+      customSelect('PRAGMA wal_checkpoint(PASSIVE);').get();
+
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
@@ -120,27 +128,20 @@ class AppDatabase extends _$AppDatabase {
       await _backfillSongTraditions();
     },
     onUpgrade: (m, from, to) async {
-      // Column first, before any step that reads a song row. Drift maps every
-      // column of `song_notes` on a read, so a step such as the version 10
-      // sample rewrite would throw "Null check operator used on a null value"
-      // while this column was still missing.
-      if (from < 11) {
-        // Adding a column twice is a hard SQLite error, so ask the table what
-        // it already has — the same guard the version 9 step uses.
-        final existing = await _songColumnNames();
-        if (!existing.contains(songNotes.scrollSpeedSet.name)) {
-          await m.addColumn(songNotes, songNotes.scrollSpeedSet);
-        }
-      }
+      // Every column first, before any step that reads a song row. Drift maps
+      // every column of `song_notes` on a read, so the version 4 seed and the
+      // version 8 rewrite would throw "Null check operator used on a null
+      // value" on a version 1–7 database while `raga`, `tala` and `tradition`
+      // (added by version 9) were still missing — and the app could not open.
+      // Existing songs take the column defaults (1.0x, 32 measures, not yet
+      // classified), so an upgrade never changes how a song already behaves.
+      await _addMissingSongColumns(m);
+      // Older builds may have left NULLs in columns drift reads as non-null;
+      // heal them before the first read below.
+      await _healNullSongColumns();
       if (from < 2) {
         await m.createTable(setlists);
         await m.createTable(setlistItems);
-      }
-      if (from < 3) {
-        // Existing songs take the column defaults (1.0x, 32 measures), so an
-        // upgrade never changes how a song already scrolls.
-        await m.addColumn(songNotes, songNotes.scrollSpeed);
-        await m.addColumn(songNotes, songNotes.scrollMeasures);
       }
       if (from < 4) {
         await _seedMissingClassicSongs();
@@ -152,26 +153,8 @@ class AppDatabase extends _$AppDatabase {
         await _rewriteClassicalSongsInSwaraNotation();
       }
       if (from < 9) {
-        // Adding a column that is already there is a hard SQLite error, which
-        // would leave the upgrade half-applied and the app unable to open. Ask
-        // the table what it has first, so re-running this step is harmless.
-        final existing = await _songColumnNames();
-        for (final column in [
-          songNotes.raga,
-          songNotes.tala,
-          songNotes.tradition,
-        ]) {
-          if (!existing.contains(column.name)) {
-            await m.addColumn(songNotes, column);
-          }
-        }
-        // Older builds added some columns without a NOT NULL default, so on
-        // those devices the rows hold NULL. Drift declares them non-null, and
-        // its row mapper ends every non-null column with `!` — so one NULL
-        // makes reading any song throw "Null check operator used on a null
-        // value", which fails the upgrade and stops the whole app from opening.
-        // Heal the data before anything reads it back.
-        await _healNullSongColumns();
+        // The `raga`, `tala` and `tradition` columns were added at the top of
+        // this upgrade; now classify the songs that predate them.
         await _backfillSongTraditions();
       }
       if (from < 10) {
@@ -530,6 +513,28 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+  /// Adds every `song_notes` column a newer schema version introduced that the
+  /// table on disk does not have yet.
+  ///
+  /// Adding a column that is already there is a hard SQLite error, which would
+  /// leave the upgrade half-applied and the app unable to open. So the table is
+  /// asked what it has first, and running this again is harmless.
+  Future<void> _addMissingSongColumns(Migrator m) async {
+    final existing = await _songColumnNames();
+    for (final column in [
+      songNotes.scrollSpeed, // version 3
+      songNotes.scrollMeasures, // version 3
+      songNotes.raga, // version 9
+      songNotes.tala, // version 9
+      songNotes.tradition, // version 9
+      songNotes.scrollSpeedSet, // version 11
+    ]) {
+      if (!existing.contains(column.name)) {
+        await m.addColumn(songNotes, column);
+      }
+    }
+  }
+
   /// The column names the `song_notes` table currently has on disk.
   Future<Set<String>> _songColumnNames() async {
     final rows = await customSelect("PRAGMA table_info('song_notes')").get();
@@ -588,11 +593,7 @@ class AppDatabase extends _$AppDatabase {
           );
           raga = sheet.raga ?? '';
           tala = sheet.tala ?? '';
-          tradition = naming.detect(
-            raga: sheet.raga,
-            tala: sheet.tala,
-            fallback: PitchTradition.carnatic,
-          );
+          tradition = naming.detect(raga: sheet.raga, tala: sheet.tala);
         } catch (_) {
           // Unreadable or malformed lyrics: fall back to the Western default
           // rather than failing the whole upgrade. The user can still open the

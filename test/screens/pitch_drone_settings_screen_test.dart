@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/models/pitch_drone_settings.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
@@ -29,7 +31,11 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           pitchDroneAudioProvider.overrideWithValue(audio),
         ],
-        child: const MaterialApp(home: PitchDroneSettingsScreen()),
+        child: const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: PitchDroneSettingsScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -66,9 +72,9 @@ void main() {
 
     for (final heading in [
       'Pitch naming',
-      'Indian songs (Carnatic / Hindustani)',
+      'Indian songs',
       'Western songs',
-      'Applies to everything',
+      'All songs',
       'Try it out',
     ]) {
       await scrollTo(tester, find.text(heading));
@@ -79,7 +85,7 @@ void main() {
   testWidgets('Carnatic naming points at the Indian songs section', (
     tester,
   ) async {
-    await pumpScreen(tester, prefsFor(naming: PitchTradition.carnatic));
+    await pumpScreen(tester, prefsFor());
 
     expect(
       find.text(
@@ -107,10 +113,8 @@ void main() {
     await pumpScreen(
       tester,
       prefsFor(
-        naming: PitchTradition.carnatic,
         // A Western drone mode must not leak into an Indian song.
         mode: DroneMode.western,
-        saKey: 'G',
       ),
     );
 
@@ -121,15 +125,7 @@ void main() {
 
   testWidgets('the test buttons play the Sa in Classical mode when naming is '
       'Carnatic', (tester) async {
-    await pumpScreen(
-      tester,
-      prefsFor(
-        naming: PitchTradition.carnatic,
-        mode: DroneMode.western,
-        saKey: 'G',
-        selectedKey: 'C',
-      ),
-    );
+    await pumpScreen(tester, prefsFor(mode: DroneMode.western));
 
     final button = find.text('Test Pitch Cue');
     await scrollTo(tester, button);
@@ -148,7 +144,6 @@ void main() {
       prefsFor(
         naming: PitchTradition.western,
         mode: DroneMode.western,
-        saKey: 'G',
         selectedKey: 'D',
       ),
     );
@@ -165,7 +160,7 @@ void main() {
   testWidgets('Drone Interval stays visible in both drone modes', (
     tester,
   ) async {
-    await pumpScreen(tester, prefsFor(mode: DroneMode.classical));
+    await pumpScreen(tester, prefsFor());
     expect(find.text('Drone Interval'), findsOneWidget);
 
     await pumpScreen(tester, prefsFor(mode: DroneMode.western));
@@ -174,13 +169,13 @@ void main() {
 
   testWidgets('chord quality is shown but disabled while the drone mode is '
       'Classical', (tester) async {
-    await pumpScreen(tester, prefsFor(mode: DroneMode.classical));
+    await pumpScreen(tester, prefsFor());
 
-    final row = find.text('Default chord quality');
+    final row = find.text('Chord quality');
     await scrollTo(tester, row);
 
     expect(row, findsOneWidget);
-    expect(tileFor(tester, 'Default chord quality').enabled, isFalse);
+    expect(tileFor(tester, 'Chord quality').enabled, isFalse);
     expect(
       find.text('Used only when the drone mode above is Western'),
       findsOneWidget,
@@ -192,9 +187,9 @@ void main() {
   ) async {
     await pumpScreen(tester, prefsFor(mode: DroneMode.western));
 
-    final row = find.text('Default chord quality');
+    final row = find.text('Chord quality');
     await scrollTo(tester, row);
 
-    expect(tileFor(tester, 'Default chord quality').enabled, isTrue);
+    expect(tileFor(tester, 'Chord quality').enabled, isTrue);
   });
 }

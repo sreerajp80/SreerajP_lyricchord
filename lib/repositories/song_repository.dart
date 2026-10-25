@@ -5,6 +5,7 @@ import 'package:lyricchord/core/utils/song_copy.dart';
 import 'package:lyricchord/data/app_database.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/models/song_title_words.dart';
 
 /// Data access for songs. Wraps the drift [AppDatabase] and exposes only pure
 /// [SongNote] models and streams, so callers never see drift row types.
@@ -29,7 +30,11 @@ class SongRepository {
       final rows = await _db.getAllSongs();
       return rows.map(_toModel).toList(growable: false);
     } catch (e) {
-      throw StorageException('Could not load songs.', cause: e);
+      throw StorageException(
+        'Could not load songs.',
+        kind: StorageFailure.loadSongs,
+        cause: e,
+      );
     }
   }
 
@@ -49,7 +54,11 @@ class SongRepository {
       final row = await _db.findSongById(id);
       return row == null ? null : _toModel(row);
     } catch (e) {
-      throw StorageException('Could not open the song.', cause: e);
+      throw StorageException(
+        'Could not open the song.',
+        kind: StorageFailure.openSong,
+        cause: e,
+      );
     }
   }
 
@@ -59,7 +68,11 @@ class SongRepository {
       final row = await _db.findSongByTitle(title);
       return row == null ? null : _toModel(row);
     } catch (e) {
-      throw StorageException('Could not search for song by title.', cause: e);
+      throw StorageException(
+        'Could not search for song by title.',
+        kind: StorageFailure.findSongByTitle,
+        cause: e,
+      );
     }
   }
 
@@ -68,7 +81,11 @@ class SongRepository {
     try {
       return await _db.insertSong(_toInsertCompanion(song));
     } catch (e) {
-      throw StorageException('Could not save the song.', cause: e);
+      throw StorageException(
+        'Could not save the song.',
+        kind: StorageFailure.saveSong,
+        cause: e,
+      );
     }
   }
 
@@ -77,7 +94,11 @@ class SongRepository {
     try {
       await _db.updateSong(_toRowCompanion(song));
     } catch (e) {
-      throw StorageException('Could not update the song.', cause: e);
+      throw StorageException(
+        'Could not update the song.',
+        kind: StorageFailure.updateSong,
+        cause: e,
+      );
     }
   }
 
@@ -93,7 +114,11 @@ class SongRepository {
     try {
       await _db.updateScrollSettings(songId, speed, measures);
     } catch (e) {
-      throw StorageException('Could not save the scroll speed.', cause: e);
+      throw StorageException(
+        'Could not save the scroll speed.',
+        kind: StorageFailure.saveScrollSpeed,
+        cause: e,
+      );
     }
   }
 
@@ -109,11 +134,16 @@ class SongRepository {
   /// The copy is a new row (id `0` so the database assigns one), titled
   /// `"<title> (Copy)"`, unstarred, and stamped with the current time so it
   /// lands at the top of the songbook. The original is left untouched.
-  Future<int> duplicate(SongNote song) {
+  ///
+  /// [words] gives the copy name in the user's language.
+  Future<int> duplicate(
+    SongNote song, {
+    SongTitleWords words = SongTitleWords.english,
+  }) {
     return insert(
       song.copyWith(
         id: 0,
-        title: copiedTitle(song.title),
+        title: copiedTitle(song.title, words),
         favorite: false,
         timestamp: DateTime.now().millisecondsSinceEpoch,
       ),
@@ -125,7 +155,11 @@ class SongRepository {
     try {
       await _db.deleteSongById(id);
     } catch (e) {
-      throw StorageException('Could not delete the song.', cause: e);
+      throw StorageException(
+        'Could not delete the song.',
+        kind: StorageFailure.deleteSong,
+        cause: e,
+      );
     }
   }
 

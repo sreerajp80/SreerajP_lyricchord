@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:lyricchord/theme/app_colors.dart';
 
@@ -11,11 +11,20 @@ class AppTheme {
 
   static ThemeData dark() => _themeFrom(_darkScheme);
 
+  /// Bundled fonts that cover the scripts of the declared languages, tried in
+  /// order when the main UI font has no glyph (engineering standard §8.3.3):
+  /// Malayalam, then Devanagari for Sanskrit. Material 3 is the default, so
+  /// `useMaterial3` is not set.
+  static const List<String> uiFontFallback = [
+    'Noto Sans Malayalam',
+    'Noto Sans Devanagari',
+  ];
+
   static ThemeData _themeFrom(ColorScheme scheme) {
     return ThemeData(
-      useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
+      fontFamilyFallback: uiFontFallback,
     );
   }
 

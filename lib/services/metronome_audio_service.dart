@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:lyricchord/core/logging/app_logger.dart';
 import 'package:lyricchord/services/pcm_synth_service.dart';
 
 /// What the metronome needs from its sound source.
@@ -74,9 +74,7 @@ class MetronomeAudioService implements MetronomeAudio {
       final tempDir = await getTemporaryDirectory();
 
       final normalFile = File('${tempDir.path}/metronome_click.wav');
-      await normalFile.writeAsBytes(
-        _synth.generateClickWav(frequency: normalFrequency, amplitude: 0.7),
-      );
+      await normalFile.writeAsBytes(_synth.generateClickWav(amplitude: 0.7));
 
       final accentFile = File('${tempDir.path}/metronome_accent.wav');
       await accentFile.writeAsBytes(
@@ -89,9 +87,11 @@ class MetronomeAudioService implements MetronomeAudio {
     } catch (error, stack) {
       // Leave _ready false; playNormal/playAccent then do nothing.
       _ready = false;
-      if (kDebugMode) {
-        debugPrint('MetronomeAudioService.prepare failed: $error\n$stack');
-      }
+      AppLogger.error(
+        'MetronomeAudioService.prepare failed',
+        error: error,
+        stackTrace: stack,
+      );
     }
   }
 
@@ -121,7 +121,7 @@ class MetronomeAudioService implements MetronomeAudio {
   void _fire(AudioPlayer? player) {
     if (!_ready || player == null) return;
     player.stop().then((_) => player.resume()).catchError((Object error) {
-      if (kDebugMode) debugPrint('Metronome click failed: $error');
+      AppLogger.warning('Metronome click failed', error: error);
     });
   }
 
@@ -132,7 +132,7 @@ class MetronomeAudioService implements MetronomeAudio {
       await _normalPlayer?.setVolume(_volume);
       await _accentPlayer?.setVolume(_volume);
     } catch (error) {
-      if (kDebugMode) debugPrint('Metronome setVolume failed: $error');
+      AppLogger.warning('Metronome setVolume failed', error: error);
     }
   }
 

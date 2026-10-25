@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:lyricchord/core/utils/song_copy.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/models/song_title_words.dart';
 import 'package:lyricchord/repositories/song_repository.dart';
 
 /// An in-memory stand-in for [SongRepository], used by widget tests.
@@ -62,7 +63,6 @@ class FakeSongRepository implements SongRepository {
       title: 'Vathapi Ganapathim (Raga Hamsadhvani)',
       artist: 'Muthuswami Dikshitar',
       lyrics: '{raga: Hamsadhvani}\n[Sa]Vathapi Gana[Pa]pathim Bha[Sa]jeham',
-      key: 'C',
       bpm: 72,
       favorite: true,
       timestamp: 4,
@@ -76,7 +76,6 @@ class FakeSongRepository implements SongRepository {
       artist: 'James Lord Pierpont',
       lyrics: '[G]Dashing through the snow',
       key: 'G',
-      bpm: 120,
       timestamp: 3,
     ),
     const SongNote(
@@ -181,11 +180,14 @@ class FakeSongRepository implements SongRepository {
   }
 
   @override
-  Future<int> duplicate(SongNote song) {
+  Future<int> duplicate(
+    SongNote song, {
+    SongTitleWords words = SongTitleWords.english,
+  }) {
     return insert(
       song.copyWith(
         id: 0,
-        title: copiedTitle(song.title),
+        title: copiedTitle(song.title, words),
         favorite: false,
         timestamp: DateTime.now().millisecondsSinceEpoch,
       ),

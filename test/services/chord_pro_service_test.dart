@@ -75,6 +75,16 @@ void main() {
       expect(song.lyrics, '');
     });
 
+    test('a song with no title takes the localized untitled name', () {
+      const name = 'പേരില്ലാത്ത പാട്ട്';
+      expect(service.parse('[C]hi', untitledTitle: name).title, name);
+      final songs = service.parseMultiple(
+        '[C]one\n{new_song}\n{title: Two}\n[G]two',
+        untitledTitle: name,
+      );
+      expect(songs.map((s) => s.title), [name, 'Two']);
+    });
+
     test('leaves the chords in lyric lines untouched', () {
       final song = service.parse('{t: X}\n[C]word [G/B]bass [Am]end');
 
@@ -115,13 +125,7 @@ void main() {
     });
 
     test('omits the artist directive when the artist is empty', () {
-      const song = SongNote(
-        title: 'X',
-        lyrics: '[C]hi',
-        key: 'C',
-        bpm: 120,
-        timestamp: 0,
-      );
+      const song = SongNote(title: 'X', lyrics: '[C]hi', timestamp: 0);
 
       final text = service.format(song);
 
@@ -133,7 +137,6 @@ void main() {
         title: 'X',
         lyrics: '[G]hi [C]there',
         key: 'G',
-        bpm: 120,
         timestamp: 0,
       );
 
@@ -171,7 +174,6 @@ void main() {
       const song = SongNote(
         title: 'X',
         lyrics: '{raga: Kalyani}\n{tala: Adi}\n[Sa]la la',
-        key: 'C',
         bpm: 90,
         timestamp: 0,
         raga: 'Kalyani',
@@ -219,7 +221,6 @@ void main() {
       const song = SongNote(
         title: 'X',
         lyrics: '[Sa]la la',
-        key: 'C',
         bpm: 72,
         timestamp: 0,
         raga: 'Hamsadhvani',
@@ -277,9 +278,7 @@ void main() {
       expectRoundTrip(
         const SongNote(
           title: 'Test Song',
-          artist: '',
           lyrics: '[C]line one [G/B]here\n\n[Am]line two',
-          key: 'C',
           bpm: 96,
           timestamp: 0,
         ),
@@ -342,8 +341,6 @@ void main() {
             title: 'Song 1',
             artist: 'Artist 1',
             lyrics: '[C]First',
-            key: 'C',
-            bpm: 120,
             timestamp: 0,
           ),
           SongNote(

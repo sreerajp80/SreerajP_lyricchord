@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 
 import 'package:lyricchord/models/lyric_font.dart';
 import 'package:lyricchord/providers/lyric_font_provider.dart';
@@ -17,9 +19,10 @@ class FontSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(lyricFontProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Fonts')),
+      appBar: AppBar(title: Text(l10n.titleSettingsFonts)),
       body: SafeArea(
         child: RadioGroup<LyricFont>(
           groupValue: current,
@@ -31,18 +34,15 @@ class FontSettingsScreen extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Text(
-                  'Used for song lyrics on screen and in exported PDFs. '
-                  'Malayalam always prints in PDFs, even with an English font.',
-                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text(l10n.descFontSettingsNote),
               ),
               for (final font in LyricFont.values)
                 RadioListTile<LyricFont>(
                   value: font,
                   isThreeLine: true,
-                  title: Text(font.label),
+                  title: Text(font.displayLabel(l10n)),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(

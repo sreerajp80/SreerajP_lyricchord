@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:lyricchord/core/config/app_config.dart';
+import 'package:lyricchord/core/logging/app_logger.dart';
 
 /// Loads the About-screen [AppConfig] from the bundled JSON asset.
 /// Always degrades to [AppConfig.fallback] on any error.
@@ -31,8 +31,8 @@ class ConfigService {
       final info = packageInfo ?? await PackageInfo.fromPlatform();
       final mismatch =
           info.version != config.version || info.buildNumber != config.build;
-      if (mismatch && kDebugMode) {
-        debugPrint(
+      if (mismatch) {
+        AppLogger.debug(
           'ConfigService: version/build in app_config.json '
           '(${config.version}+${config.build}) does not match the build '
           '(${info.version}+${info.buildNumber}).',

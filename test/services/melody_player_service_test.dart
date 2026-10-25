@@ -66,7 +66,7 @@ void main() {
       // Ga3 is the widest gap: just 5/4 is about 14 cents flat of the equal
       // tempered major third, which is what makes a held third sound settled.
       final just = player.frequencyOf(4, tonic);
-      final equal = tonic * 1.259921; // 2^(4/12)
+      const equal = tonic * 1.259921; // 2^(4/12)
       expect(just, lessThan(equal));
       expect(equal - just, greaterThan(2.0));
     });

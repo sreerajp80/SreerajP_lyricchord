@@ -1,14 +1,17 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/providers/pitch_drone_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/services/pitch_drone_audio_service.dart';
 import 'package:lyricchord/widgets/pitch_drone_controls.dart';
 
 import '../helpers/fake_pitch_drone_audio.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   late FakePitchDroneAudio audio;
@@ -30,6 +33,8 @@ void main() {
         pitchDroneAudioProvider.overrideWithValue(audio),
       ],
       child: MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: PitchDroneControlsSheet(
             songKey: songKey,
@@ -50,6 +55,7 @@ void main() {
         await wrap(songKey: 'G', prefs: {'pitch_drone_key': 'C'}),
       );
       await tester.pumpAndSettle();
+      expectAllIconButtonsHaveTooltips(tester);
 
       expect(find.text('Song key:  G'), findsOneWidget);
 

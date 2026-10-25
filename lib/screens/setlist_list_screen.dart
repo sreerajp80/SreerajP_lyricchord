@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:lyricchord/core/errors/app_exception.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
 import 'package:lyricchord/widgets/setlist_editor_dialog.dart';
@@ -15,11 +17,12 @@ class SetlistListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final setlistsAsync = ref.watch(setlistsStreamProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: setlistsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error loading setlists: $err')),
+        error: (err, _) => Center(child: Text(l10n.errorSetlistLoad('$err'))),
         data: (setlists) {
           if (setlists.isEmpty) {
             return Center(
@@ -34,10 +37,13 @@ class SetlistListScreen extends ConsumerWidget {
                       color: theme.colorScheme.outline,
                     ),
                     const SizedBox(height: 16),
-                    Text('No setlists yet', style: theme.textTheme.titleMedium),
+                    Text(
+                      l10n.emptySetlistEmptyTitle,
+                      style: theme.textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 8),
                     Text(
-                      'Create setlists to group and arrange your songs for gigs and rehearsals.',
+                      l10n.emptySetlistEmptyMessage,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
@@ -47,7 +53,7 @@ class SetlistListScreen extends ConsumerWidget {
                     FilledButton.icon(
                       onPressed: () => _createSetlist(context, ref),
                       icon: const Icon(Icons.add),
-                      label: const Text('Create Setlist'),
+                      label: Text(l10n.actionSetlistCreate),
                     ),
                   ],
                 ),
@@ -96,7 +102,7 @@ class SetlistListScreen extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                '${setlist.songCount} ${setlist.songCount == 1 ? 'song' : 'songs'}',
+                                l10n.labelSetlistSongCount(setlist.songCount),
                                 style: theme.textTheme.labelMedium?.copyWith(
                                   color: theme.colorScheme.onPrimaryContainer,
                                   fontWeight: FontWeight.bold,
@@ -132,13 +138,13 @@ class SetlistListScreen extends ConsumerWidget {
                                   );
                                 },
                                 icon: const Icon(Icons.play_arrow, size: 18),
-                                label: const Text('Perform'),
+                                label: Text(l10n.actionSetlistPerform),
                               ),
                             const SizedBox(width: 8),
                             OutlinedButton(
                               onPressed: () =>
                                   context.push('/setlists/${setlist.id}'),
-                              child: const Text('Edit Songs'),
+                              child: Text(l10n.actionSetlistEditSongs),
                             ),
                           ],
                         ),
@@ -154,7 +160,7 @@ class SetlistListScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _createSetlist(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('New Setlist'),
+        label: Text(l10n.actionSetlistNew),
       ),
     );
   }
@@ -175,9 +181,9 @@ class SetlistListScreen extends ConsumerWidget {
       }
     } on AppException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.text(AppLocalizations.of(context)))),
+        );
       }
     }
   }

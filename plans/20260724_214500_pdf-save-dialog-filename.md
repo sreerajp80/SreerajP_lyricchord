@@ -1,6 +1,12 @@
 # Plan: PDF export should keep the Malayalam file name (use the Save dialog)
 
-**Status:** approval_pending
+**Status:** completed
+
+> Status updated on 2026-10-25 during the gap review: `_exportPdf` in
+> `lib/screens/song_performance_screen.dart` already saves through the system Save
+> dialog (`FilePicker.saveFile`), so this plan was carried out; only its status
+> had been left behind. See
+> `change_log/20261025_110157_gap-review-fixes.md`.
 
 ## The issue
 

@@ -1,13 +1,16 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/core/errors/app_exception.dart';
+import 'package:lyricchord/core/utils/text_decoding.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 import 'package:lyricchord/models/import_preview_args.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/database_provider.dart';
@@ -20,16 +23,17 @@ class ImportExportScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Import & Export')),
+      appBar: AppBar(title: Text(l10n.titleImportExport)),
       body: SafeArea(
         child: ListView(
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Import',
-                style: TextStyle(
+                l10n.titleGeneralImport,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.purple,
                 ),
@@ -37,10 +41,8 @@ class ImportExportScreen extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.file_open_outlined),
-              title: const Text('Import ChordPro file(s)'),
-              subtitle: const Text(
-                'Pick one or more .cho, .pro, or text files to add songs.',
-              ),
+              title: Text(l10n.labelImportExportPickFiles),
+              subtitle: Text(l10n.descImportExportPickFilesSubtitle),
               onTap: () => _importChordPro(context, ref),
             ),
             ListTile(
@@ -48,18 +50,16 @@ class ImportExportScreen extends ConsumerWidget {
                 Icons.qr_code_scanner_rounded,
                 color: Colors.cyan,
               ),
-              title: const Text('AirQR Scan Import (Camera / Photo)'),
-              subtitle: const Text(
-                'Scan an animated QR song stream from a bandmate\'s screen.',
-              ),
+              title: Text(l10n.labelImportExportScan),
+              subtitle: Text(l10n.descImportExportScanSubtitle),
               onTap: () => context.push('/air-qr-receive'),
             ),
             const Divider(),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Export',
-                style: TextStyle(
+                l10n.actionExport,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.purple,
                 ),
@@ -67,10 +67,8 @@ class ImportExportScreen extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.output_rounded),
-              title: const Text('Export all songs (ChordPro)'),
-              subtitle: const Text(
-                'Save your entire songbook as a single ChordPro file.',
-              ),
+              title: Text(l10n.labelImportExportAllChordPro),
+              subtitle: Text(l10n.descImportExportAllChordProSubtitle),
               onTap: () => _exportAllChordPro(context, ref),
             ),
             ListTile(
@@ -78,10 +76,8 @@ class ImportExportScreen extends ConsumerWidget {
                 Icons.qr_code_2_rounded,
                 color: Colors.purple,
               ),
-              title: const Text('Export all songs via AirQR Stream'),
-              subtitle: const Text(
-                'Broadcast entire songbook as an animated QR stream.',
-              ),
+              title: Text(l10n.labelImportExportAllAirQr),
+              subtitle: Text(l10n.descImportExportAllAirQrSubtitle),
               onTap: () => _exportAllAirQr(context, ref),
             ),
           ],
@@ -92,16 +88,16 @@ class ImportExportScreen extends ConsumerWidget {
 
   /// Picks ChordPro/text files, parses into songs, and launches import preview.
   Future<void> _importChordPro(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     try {
-      final result = await FilePicker.platform.pickFiles(
+      // Picks several files by default; an empty list means the user cancelled.
+      final picked = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['cho', 'pro', 'chordpro', 'txt'],
-        allowMultiple: true,
-        withData: true,
       );
-      if (result == null || result.files.isEmpty) return;
+      if (picked.isEmpty) return;
 
-      final validFiles = result.files.where((file) {
+      final validFiles = picked.where((file) {
         final ext = file.extension?.toLowerCase() ?? '';
         final name = file.name.toLowerCase();
         return ext == 'cho' ||
@@ -115,34 +111,68 @@ class ImportExportScreen extends ConsumerWidget {
       }).toList();
 
       if (validFiles.isEmpty) {
-        throw const ImportException(
-          'Only .cho, .pro, .chordpro, and .txt files can be imported.',
-        );
+        throw ImportException(l10n.errorImportExportWrongType);
       }
 
       final allParsedSongs = <SongNote>[];
       final combinedContent = StringBuffer();
       String firstFileName = 'imported.chordpro';
+      final tooLarge = <String>[];
+      final unreadable = <String>[];
 
       for (var i = 0; i < validFiles.length; i++) {
         final file = validFiles[i];
         if (i == 0) firstFileName = file.name;
-        var bytes = file.bytes;
-        if (bytes == null && file.path != null) {
-          try {
-            bytes = File(file.path!).readAsBytesSync();
-          } catch (_) {}
+        Uint8List? bytes;
+        try {
+          // The size the picker reported, or the real size read from the file
+          // when the picker did not report one. Null means it is unknown.
+          final size = file.lengthSync() ?? await file.length();
+          if (size != null && size > AppConstants.maxImportFileBytes) {
+            tooLarge.add(file.name);
+            continue;
+          }
+          bytes = await file.readAsBytes();
+        } catch (_) {
+          bytes = null;
         }
-        if (bytes == null) continue;
+        // A photo or other binary file is not a song sheet.
+        if (bytes == null || looksLikeBinary(bytes)) {
+          unreadable.add(file.name);
+          continue;
+        }
         final content = decodeImportedBytes(bytes);
         combinedContent.writeln(content);
         combinedContent.writeln('\n{new_song}\n');
-        final parsed = const ChordProService().parseMultiple(content);
+        final parsed = const ChordProService().parseMultiple(
+          content,
+          untitledTitle: l10n.labelUntitledSong,
+        );
         allParsedSongs.addAll(parsed);
       }
 
+      if (tooLarge.isNotEmpty && context.mounted) {
+        _showSnack(
+          context,
+          AppLocalizations.of(context).errorImportFilesSkippedTooLarge(
+            AppConstants.maxImportFileBytes ~/ (1024 * 1024),
+            tooLarge.join(', '),
+          ),
+        );
+      }
+
+      if (unreadable.isNotEmpty && context.mounted) {
+        _showSnack(
+          context,
+          AppLocalizations.of(
+            context,
+          ).errorImportFilesSkippedUnreadable(unreadable.join(', ')),
+        );
+      }
+
       if (allParsedSongs.isEmpty) {
-        throw const ImportException('Could not read any chosen files.');
+        if (tooLarge.isNotEmpty || unreadable.isNotEmpty) return;
+        throw ImportException(l10n.errorImportExportNothingRead);
       }
 
       if (!context.mounted) return;
@@ -152,51 +182,59 @@ class ImportExportScreen extends ConsumerWidget {
         extra: ImportPreviewArgs(
           fileName: validFiles.length == 1
               ? firstFileName
-              : '${validFiles.length} files selected',
+              : l10n.descImportExportFilesSelected(validFiles.length),
           rawContent: combinedContent.toString(),
           parsedSongs: allParsedSongs,
         ),
       );
     } on AppException catch (e) {
-      if (context.mounted) _showSnack(context, e.message);
+      if (context.mounted) {
+        _showSnack(context, e.text(AppLocalizations.of(context)));
+      }
     } catch (_) {
-      if (context.mounted) _showSnack(context, 'Could not import the files.');
+      if (context.mounted) {
+        _showSnack(context, l10n.errorImportExportImportFailed);
+      }
     }
   }
 
   /// Exports all songs into a single ChordPro file.
   Future<void> _exportAllChordPro(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final songs = await ref.read(songRepositoryProvider).getAllSongs();
       if (songs.isEmpty) {
-        if (context.mounted) _showSnack(context, 'No songs to export.');
+        if (context.mounted) {
+          _showSnack(context, l10n.bodyImportExportNoSongsToExport);
+        }
         return;
       }
 
       const service = ChordProService();
       final text = service.formatMultiple(songs);
-      final path = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export all songs as ChordPro',
+      final savedUri = await FilePicker.saveFile(
+        dialogTitle: l10n.titleImportExportAllDialog,
         fileName: 'lyricchord_all_songs.chordpro',
-        type: FileType.custom,
-        allowedExtensions: const ['chordpro'],
         bytes: Uint8List.fromList(utf8.encode(text)),
       );
-      if (context.mounted && path != null) {
-        _showSnack(context, 'Exported ${songs.length} song(s).');
+      if (context.mounted && savedUri != null) {
+        _showSnack(context, l10n.bodyImportExportExported(songs.length));
       }
     } catch (_) {
       if (context.mounted) {
-        _showSnack(context, 'Could not export songs.');
+        _showSnack(context, l10n.errorImportExportExportFailed);
       }
     }
   }
 
   Future<void> _exportAllAirQr(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final songs = await ref.read(songRepositoryProvider).getAllSongs();
       if (songs.isEmpty) {
-        if (context.mounted) _showSnack(context, 'No songs to share.');
+        if (context.mounted) {
+          _showSnack(context, l10n.bodyImportExportNoSongsToShare);
+        }
         return;
       }
       const service = ChordProService();
@@ -205,14 +243,14 @@ class ImportExportScreen extends ConsumerWidget {
         context.push(
           '/air-qr-transmit',
           extra: AirQrTransmitterArgs(
-            title: 'Full Songbook (${songs.length} songs)',
+            title: l10n.titleImportExportFullSongbook(songs.length),
             chordProPayload: text,
           ),
         );
       }
     } catch (_) {
       if (context.mounted) {
-        _showSnack(context, 'Could not prepare AirQR export.');
+        _showSnack(context, l10n.errorImportExportAirQrFailed);
       }
     }
   }
@@ -222,35 +260,4 @@ class ImportExportScreen extends ConsumerWidget {
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
-}
-
-/// Decodes file bytes into a string, supporting UTF-8 (with BOM stripping)
-/// and UTF-16 (little-endian and big-endian).
-String decodeImportedBytes(Uint8List bytes) {
-  // UTF-16 LE BOM (FF FE)
-  if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
-    return String.fromCharCodes(
-      Uint16List.view(
-        bytes.buffer,
-        bytes.offsetInBytes + 2,
-        (bytes.length - 2) ~/ 2,
-      ),
-    );
-  }
-  // UTF-16 BE BOM (FE FF)
-  if (bytes.length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF) {
-    final length = (bytes.length - 2) ~/ 2;
-    final u16 = Uint16List(length);
-    for (var i = 0; i < length; i++) {
-      final offset = 2 + (i * 2);
-      u16[i] = (bytes[offset] << 8) | bytes[offset + 1];
-    }
-    return String.fromCharCodes(u16);
-  }
-  // UTF-8 with optional BOM stripping
-  var decoded = utf8.decode(bytes, allowMalformed: true);
-  if (decoded.startsWith('\uFEFF')) {
-    decoded = decoded.substring(1);
-  }
-  return decoded;
 }

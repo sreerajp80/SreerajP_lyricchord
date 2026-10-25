@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/services/chord_shape_service.dart';
 
@@ -40,8 +41,8 @@ class GuitarChordDiagram extends StatelessWidget {
         Semantics(
           image: true,
           label: shape == null
-              ? 'No guitar chord diagram for $name'
-              : 'Guitar chord diagram for $name',
+              ? AppLocalizations.of(context).descDiagramNoGuitar(name)
+              : AppLocalizations.of(context).descDiagramGuitar(name),
           child: SizedBox(
             width: width,
             height: width * 1.25,
@@ -85,7 +86,7 @@ class _NoShape extends StatelessWidget {
             Icon(Icons.help_outline, color: color),
             const SizedBox(height: 4),
             Text(
-              'No diagram',
+              AppLocalizations.of(context).labelDiagramNone,
               textAlign: TextAlign.center,
               style: TextStyle(color: color, fontSize: 11),
             ),

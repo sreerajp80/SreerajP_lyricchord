@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:lyricchord/models/song_note.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// One song in the songbook list: title, artist, a key badge, a BPM badge, a
 /// star toggle and a delete button.
@@ -52,6 +53,7 @@ class SongCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasArtist = song.artist.trim().isNotEmpty;
+    final l10n = AppLocalizations.of(context);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -65,7 +67,6 @@ class SongCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (isSelectionMode) ...[
                 Checkbox(value: isChecked, onChanged: (_) => onTap()),
@@ -99,11 +100,15 @@ class SongCard extends StatelessWidget {
                       children: [
                         _Badge(
                           label: song.key,
-                          semanticLabel: 'Key ${song.key}',
+                          semanticLabel: l10n.labelSongCardKeySemantics(
+                            song.key,
+                          ),
                         ),
                         _Badge(
-                          label: '${song.bpm} BPM',
-                          semanticLabel: '${song.bpm} beats per minute',
+                          label: l10n.labelSongCardBpm(song.bpm),
+                          semanticLabel: l10n.descSongCardBpmSemantics(
+                            song.bpm,
+                          ),
                         ),
                       ],
                     ),
@@ -115,18 +120,18 @@ class SongCard extends StatelessWidget {
                   icon: Icon(song.favorite ? Icons.star : Icons.star_border),
                   color: song.favorite ? theme.colorScheme.primary : null,
                   tooltip: song.favorite
-                      ? 'Remove from starred'
-                      : 'Add to starred',
+                      ? l10n.tooltipSongCardRemoveStar
+                      : l10n.tooltipSongCardAddStar,
                   onPressed: onToggleFavorite,
                 ),
                 IconButton(
                   icon: const Icon(Icons.content_copy_outlined),
-                  tooltip: 'Duplicate song',
+                  tooltip: l10n.tooltipSongCardDuplicate,
                   onPressed: onDuplicate,
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Delete song',
+                  tooltip: l10n.tooltipSongCardDelete,
                   onPressed: onDelete,
                 ),
               ],

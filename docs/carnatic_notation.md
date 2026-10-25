@@ -517,7 +517,7 @@ case for the octave, the middle two rows do not apply):
 
 * **Reading published notation.** `CarnaticNotationImporter` converts a pasted
   block into `{melody}` lines, applying every rule in §4. Reach it from the song
-  editor: **More options -> Paste Carnatic notation**.
+  editor: **More options -> Paste Carnatic**.
 * **Both gamaka marks reach the sound.** The slide `!` glides into the note over
   the first 30% of it, capped at 120 ms, interpolating in semitones — a bare `!`
   scoops in from one semitone below, `Ma2!Ga3` glides from the written note. The
@@ -676,7 +676,7 @@ raga classification, and *South Indian Music, Book IV* (P. Sambamoorthy).
 
 From the notation of *Krishna Nee Begane Baaro* (shivkumar.org, lyrics courtesy
 karnatik.com), fitted against misra chapu. See
-[change_log/20260822_krishna-authentic-carnatic-transcription.md](../change_log/20260822_krishna-authentic-carnatic-transcription.md)
+[change_log/20260822_000000_krishna-authentic-carnatic-transcription.md](../change_log/20260822_000000_krishna-authentic-carnatic-transcription.md)
 for the full working.
 
 ## Related

@@ -80,14 +80,12 @@ class CarnaticNotationImporter {
   }) {
     final beats = _swara.talaBeats(tala);
     if (beats == null || beats <= 0) {
-      return CarnaticImportResult.failure(
-        'Could not work out how many beats "$tala" has.',
-      );
+      return CarnaticImportResult.failure(CarnaticUnknownTala(tala));
     }
 
     final avartas = _splitAvartas(notation);
     if (avartas.isEmpty) {
-      return CarnaticImportResult.failure('No notation found to read.');
+      return CarnaticImportResult.failure(const CarnaticNoNotation());
     }
 
     final byDuration = _readAll(
@@ -112,19 +110,19 @@ class CarnaticNotationImporter {
     final chosen = durationWins ? byDuration : byOctave;
     final other = durationWins ? byOctave : byDuration;
 
-    final problems = <String>[...chosen.problems];
+    final problems = <CarnaticProblem>[...chosen.problems];
     if (!chosen.fit.isPerfect) {
       problems.insert(
         0,
-        '${chosen.fit.fitting} of ${chosen.fit.total} cycles land on $tala. '
-        'The rest are the wrong length, so some beats will be off.',
+        CarnaticCyclesOffTala(
+          fitting: chosen.fit.fitting,
+          total: chosen.fit.total,
+          tala: tala,
+        ),
       );
     }
     if (other.fit.fitting == chosen.fit.fitting) {
-      problems.add(
-        'Both readings of upper/lower case score the same, so the choice '
-        'between them is a guess. Check it against the source page.',
-      );
+      problems.add(const CarnaticReadingsTie());
     }
 
     return CarnaticImportResult(
@@ -159,7 +157,7 @@ class CarnaticNotationImporter {
     bool applyAnyaSvaraRule,
   ) {
     final lines = <String>[];
-    final problems = <String>[];
+    final problems = <CarnaticProblem>[];
     final hints = <int>[];
     var fitting = 0;
 
@@ -172,7 +170,7 @@ class CarnaticNotationImporter {
         applyAnyaSvaraRule,
       );
       lines.add(one.line);
-      problems.addAll(one.problems.map((p) => 'Cycle ${i + 1}: $p'));
+      problems.addAll(one.problems.map((p) => p.inCycle(i + 1)));
       if (one.fits) fitting++;
       if (one.sawAnyaSvaraPhrase) hints.add(i);
     }
@@ -197,7 +195,7 @@ class CarnaticNotationImporter {
     int defaultMadhyamam,
     bool applyAnyaSvaraRule,
   ) {
-    final problems = <String>[];
+    final problems = <CarnaticProblem>[];
     final events = <_Event>[];
 
     for (final group in avarta.split('|')) {
@@ -210,7 +208,7 @@ class CarnaticNotationImporter {
     if (events.isEmpty) {
       return const _Avarta(
         line: '',
-        problems: ['nothing readable'],
+        problems: [CarnaticNothingReadable()],
         fits: false,
       );
     }
@@ -221,11 +219,8 @@ class CarnaticNotationImporter {
     final total = events.fold<int>(0, (sum, e) => sum + e.units);
     final fits = total == wanted;
     if (!fits) {
-      final got = (total / _akshara).toStringAsFixed(
-        total % _akshara == 0 ? 0 : 1,
-      );
       problems.add(
-        'reads as $got aksharakalas, but this tala wants ${beats * 2}',
+        CarnaticWrongLength(got: total / _akshara, wanted: beats * 2),
       );
     }
 
@@ -243,7 +238,7 @@ class CarnaticNotationImporter {
     CarnaticCaseReading reading,
     int defaultMadhyamam,
     List<_Event> out,
-    List<String> problems,
+    List<CarnaticProblem> problems,
   ) {
     // An underlined run is written _like this_ when pasted as plain text; it
     // means the notes are packed faster still into their beat.
@@ -295,7 +290,7 @@ class CarnaticNotationImporter {
 
       final lower = ch.toLowerCase();
       if (!_letters.contains(lower)) {
-        problems.add('could not read "$ch" in "$token"');
+        problems.add(CarnaticUnreadableCharacter(character: ch, token: token));
         continue;
       }
 
@@ -337,7 +332,7 @@ class CarnaticNotationImporter {
       // An underline means "sung together and faster within a particular beat"
       // — one kalam quicker, so everything this token added takes half as long.
       for (var i = startedAt; i < out.length; i++) {
-        out[i].units = (out[i].units / 2).round().clamp(1, 1 << 20).toInt();
+        out[i].units = (out[i].units / 2).round().clamp(1, 1 << 20);
       }
     }
   }
@@ -552,7 +547,7 @@ class _Run {
 
 class _Avarta {
   final String line;
-  final List<String> problems;
+  final List<CarnaticProblem> problems;
   final bool fits;
   final bool sawAnyaSvaraPhrase;
 
@@ -566,7 +561,7 @@ class _Avarta {
 
 class _Reading {
   final List<String> lines;
-  final List<String> problems;
+  final List<CarnaticProblem> problems;
   final List<int> anyaSvaraHints;
   final CarnaticFit fit;
 

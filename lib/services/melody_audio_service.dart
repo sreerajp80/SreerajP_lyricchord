@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:lyricchord/core/logging/app_logger.dart';
 import 'package:lyricchord/services/melody_player_service.dart';
 import 'package:lyricchord/services/pcm_synth_service.dart';
 
@@ -149,11 +149,13 @@ class MelodyAudioService implements MelodyAudio {
     return file;
   }
 
-  /// Debug-only failure note. Never logs song content, only the audio call.
+  /// Logs a failed audio call. Never song content, only which call failed.
   void _report(String where, Object error, StackTrace stack) {
-    if (kDebugMode) {
-      debugPrint('MelodyAudioService.$where failed: $error\n$stack');
-    }
+    AppLogger.error(
+      'MelodyAudioService.$where failed',
+      error: error,
+      stackTrace: stack,
+    );
   }
 }
 

@@ -2,7 +2,7 @@
 
 Date: 2026-08-22
 
-Implements [plans/20260822_carnatic_notation_import.md](../plans/20260822_carnatic_notation_import.md).
+Implements [plans/20260822_000000_carnatic_notation_import.md](../plans/20260822_000000_carnatic_notation_import.md).
 
 ---
 

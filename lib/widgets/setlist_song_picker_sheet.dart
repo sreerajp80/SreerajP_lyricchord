@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
 
 /// Modal bottom sheet to pick songs from the songbook to add to a setlist.
@@ -45,6 +46,7 @@ class _SetlistSongPickerSheetState
   Widget build(BuildContext context) {
     final songsAsync = ref.watch(songsStreamProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.8,
@@ -60,7 +62,7 @@ class _SetlistSongPickerSheetState
                 children: [
                   Expanded(
                     child: Text(
-                      'Add Songs to Setlist',
+                      l10n.titleSetlistPicker,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -69,7 +71,9 @@ class _SetlistSongPickerSheetState
                   TextButton(
                     onPressed: () =>
                         Navigator.of(context).pop(_selectedIds.toList()),
-                    child: Text('Done (${_selectedIds.length})'),
+                    child: Text(
+                      l10n.actionSetlistPickerDone(_selectedIds.length),
+                    ),
                   ),
                 ],
               ),
@@ -78,15 +82,12 @@ class _SetlistSongPickerSheetState
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Search songs...',
+                  hintText: l10n.descSetlistPickerSearchHint,
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 12,
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 onChanged: (val) =>
                     setState(() => _searchQuery = val.trim().toLowerCase()),
@@ -97,7 +98,7 @@ class _SetlistSongPickerSheetState
               child: songsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, _) =>
-                    Center(child: Text('Error loading songs: $err')),
+                    Center(child: Text(l10n.errorSetlistPickerLoad('$err'))),
                 data: (allSongs) {
                   final filtered = _searchQuery.isEmpty
                       ? allSongs
@@ -107,7 +108,7 @@ class _SetlistSongPickerSheetState
                         }).toList();
 
                   if (filtered.isEmpty) {
-                    return const Center(child: Text('No songs found'));
+                    return Center(child: Text(l10n.emptySetlistPickerNoSongs));
                   }
 
                   return ListView.builder(

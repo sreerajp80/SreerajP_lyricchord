@@ -1,11 +1,14 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/services/melody_audio_service.dart';
 import 'package:lyricchord/services/melody_parser_service.dart';
 import 'package:lyricchord/services/melody_player_service.dart';
 import 'package:lyricchord/widgets/melody_line_row.dart';
+import '../helpers/tooltip_expectations.dart';
 
 /// Records what the row asked for, without any real audio device.
 class _FakeMelodyAudio implements MelodyAudio {
@@ -49,6 +52,8 @@ void main() {
       ProviderScope(
         overrides: [melodyAudioProvider.overrideWithValue(audio)],
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: MelodyLineRow(
               melody: parser.parse(melody),
@@ -72,6 +77,7 @@ void main() {
     await pumpRow(tester);
     await tester.tap(find.byIcon(Icons.play_circle));
     await tester.pump();
+    expectAllIconButtonsHaveTooltips(tester);
 
     expect(audio.lastPlayed, isNotNull);
     expect(audio.lastPlayed!.spans, isNotEmpty);

@@ -54,7 +54,11 @@ class SetlistRepository {
       }
       return id;
     } catch (e) {
-      throw StorageException('Could not create setlist.', cause: e);
+      throw StorageException(
+        'Could not create setlist.',
+        kind: StorageFailure.createSetlist,
+        cause: e,
+      );
     }
   }
 
@@ -78,7 +82,11 @@ class SetlistRepository {
         await _db.setSetlistSongs(id, songIds);
       }
     } catch (e) {
-      throw StorageException('Could not update setlist.', cause: e);
+      throw StorageException(
+        'Could not update setlist.',
+        kind: StorageFailure.updateSetlist,
+        cause: e,
+      );
     }
   }
 
@@ -87,7 +95,11 @@ class SetlistRepository {
     try {
       await _db.setSetlistSongs(setlistId, songIds);
     } catch (e) {
-      throw StorageException('Could not update setlist songs.', cause: e);
+      throw StorageException(
+        'Could not update setlist songs.',
+        kind: StorageFailure.updateSetlistSongs,
+        cause: e,
+      );
     }
   }
 
@@ -101,7 +113,11 @@ class SetlistRepository {
         await _db.setSetlistSongs(setlistId, currentIds);
       }
     } catch (e) {
-      throw StorageException('Could not add song to setlist.', cause: e);
+      throw StorageException(
+        'Could not add song to setlist.',
+        kind: StorageFailure.addSongToSetlist,
+        cause: e,
+      );
     }
   }
 
@@ -110,7 +126,11 @@ class SetlistRepository {
     try {
       await _db.deleteSetlistById(id);
     } catch (e) {
-      throw StorageException('Could not delete setlist.', cause: e);
+      throw StorageException(
+        'Could not delete setlist.',
+        kind: StorageFailure.deleteSetlist,
+        cause: e,
+      );
     }
   }
 

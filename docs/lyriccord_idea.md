@@ -158,9 +158,13 @@ tablet the list and the detail/editor sit side by side.
 ## 4. Design system
 
 - **Framework look:** Material 3.
-- **Palette:** a violet "High Density" theme.
-  - Primary (light): `#6750A4`; primary (dark): `#D0BCFF`.
+- **Palette:** the "High Density" theme (source of truth:
+  `lib/theme/app_colors.dart`).
+  - Primary (light): blue `#0052CC`; primary (dark): amber `#FFD54F`.
+  - Floating action button: `#D0BCFF` with `#381E72` text, in both modes.
   - Light background `#FDF8FD`, dark background `#141218`.
+  - The first plan used a violet primary (`#6750A4` / `#D0BCFF`); it was
+    changed to blue/amber for stronger contrast on stage.
   - Chord badges use the theme **secondary** colour so they stand out over
     lyric text.
 - **Light and dark** are both first-class; the choice follows the theme-mode

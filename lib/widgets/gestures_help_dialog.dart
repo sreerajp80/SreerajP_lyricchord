@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 /// One gesture and what it does on the song sheet.
 class _GestureInfo {
@@ -10,36 +11,36 @@ class _GestureInfo {
   final String description;
 }
 
-const List<_GestureInfo> _sheetGestures = [
+List<_GestureInfo> _sheetGestures(AppLocalizations l10n) => [
   _GestureInfo(
     Icons.keyboard_double_arrow_up,
-    'Double-tap top half',
-    'Faster in Manual mode, or adds 4 bars in Tempo mode.',
+    l10n.labelGesturesDoubleTapTop,
+    l10n.descGesturesDoubleTapTopMeaning,
   ),
   _GestureInfo(
     Icons.keyboard_double_arrow_down,
-    'Double-tap bottom half',
-    'Slower in Manual mode, or removes 4 bars in Tempo mode.',
+    l10n.labelGesturesDoubleTapBottom,
+    l10n.descGesturesDoubleTapBottomMeaning,
   ),
   _GestureInfo(
     Icons.pan_tool_outlined,
-    'Tap with two fingers',
-    'Play or pause auto-scroll without touching any button.',
+    l10n.labelStageHelpTwoFingers,
+    l10n.descGesturesTwoFingersMeaning,
   ),
   _GestureInfo(
     Icons.swipe_vertical,
-    'Drag with one finger',
-    'Move the sheet by hand; auto-scroll waits and resumes when you lift.',
+    l10n.labelGesturesDrag,
+    l10n.descGesturesDragMeaning,
   ),
   _GestureInfo(
     Icons.zoom_out_map,
-    'Pinch with two fingers',
-    'Zoom in or out to make the chord and lyric text larger or smaller.',
+    l10n.labelGesturesPinch,
+    l10n.descGesturesPinchMeaning,
   ),
   _GestureInfo(
     Icons.fullscreen,
-    'Full screen (Stage Mode)',
-    'Single tap toggles HUD controls; back gesture leaves full screen.',
+    l10n.labelGesturesFullScreen,
+    l10n.descGesturesFullScreenMeaning,
   ),
 ];
 
@@ -58,6 +59,7 @@ class GesturesHelpDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -81,13 +83,13 @@ class GesturesHelpDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Gestures & Shortcuts',
+                          l10n.titleGestures,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          'Control the sheet hands-free while playing',
+                          l10n.descGesturesSubtitle,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -96,7 +98,7 @@ class GesturesHelpDialog extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close',
+                    tooltip: l10n.actionClose,
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close),
                   ),
@@ -110,7 +112,7 @@ class GesturesHelpDialog extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      for (final item in _sheetGestures)
+                      for (final item in _sheetGestures(l10n))
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Row(
@@ -169,7 +171,7 @@ class GesturesHelpDialog extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     icon: const Icon(Icons.help_outline, size: 18),
-                    label: const Text('Help Center'),
+                    label: Text(l10n.actionGesturesHelpCenter),
                     onPressed: () {
                       Navigator.of(context).pop();
                       context.push('/settings/help/auto-scroll');
@@ -177,7 +179,7 @@ class GesturesHelpDialog extends StatelessWidget {
                   ),
                   FilledButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Got it'),
+                    child: Text(l10n.actionGesturesGotIt),
                   ),
                 ],
               ),

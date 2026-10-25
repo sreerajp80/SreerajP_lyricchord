@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/services/chord_shape_service.dart';
 import 'package:lyricchord/widgets/guitar_chord_diagram.dart';
 import 'package:lyricchord/widgets/harmonium_chord_diagram.dart';
@@ -14,6 +16,8 @@ void main() {
   Future<void> pump(WidgetTester tester, Widget child) {
     return tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: Center(child: child)),
       ),
     );

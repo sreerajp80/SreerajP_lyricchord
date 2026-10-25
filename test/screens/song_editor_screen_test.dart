@@ -1,12 +1,14 @@
 @Timeout(Duration(seconds: 30))
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
 import 'package:lyricchord/providers/database_provider.dart';
@@ -15,6 +17,7 @@ import 'package:lyricchord/screens/song_editor_screen.dart';
 import 'package:lyricchord/widgets/chord_inserter_bar.dart';
 
 import '../helpers/fake_song_repository.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   late FakeSongRepository repo;
@@ -61,7 +64,11 @@ void main() {
           songRepositoryProvider.overrideWithValue(repo),
           sharedPreferencesProvider.overrideWithValue(prefs),
         ],
-        child: MaterialApp(home: SongEditorScreen(songId: songId)),
+        child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SongEditorScreen(songId: songId),
+        ),
       ),
     );
     await settle(tester);
@@ -74,6 +81,7 @@ void main() {
 
   testWidgets('a new song opens an empty editor in C', (tester) async {
     await pumpEditor(tester);
+    expectAllIconButtonsHaveTooltips(tester);
 
     expect(find.text('New Song Note'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'C'), findsOneWidget);
@@ -212,14 +220,14 @@ void main() {
   testWidgets('Save as copy is not offered for a new song', (tester) async {
     await pumpEditor(tester);
 
-    // The menu itself is there — it carries "Paste Carnatic notation", which is
+    // The menu itself is there — it carries "Paste Carnatic", which is
     // useful while writing a new song. Only the copy item is withheld, because
     // plain Save already creates a new song.
     await tester.tap(find.byIcon(Icons.more_vert));
     await settle(tester);
 
     expect(find.text('Save as copy'), findsNothing);
-    expect(find.text('Paste Carnatic notation'), findsOneWidget);
+    expect(find.text('Paste Carnatic'), findsOneWidget);
   });
 
   testWidgets('pasting notation needs a tala to check against', (tester) async {
@@ -227,7 +235,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.more_vert));
     await settle(tester);
-    await tester.tap(find.text('Paste Carnatic notation'));
+    await tester.tap(find.text('Paste Carnatic'));
     await settle(tester);
 
     // Without a {tala: ...} line there is nothing to check the cycles against,

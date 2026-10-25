@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/metronome_provider.dart';
 import 'package:lyricchord/providers/metronome_runtime_provider.dart';
@@ -257,8 +258,8 @@ class _MetronomeBeatState extends ConsumerState<MetronomeBeat>
 
     return Tooltip(
       message: _running
-          ? 'Stop metronome ($bpm BPM) · long press for tempo'
-          : 'Start metronome ($bpm BPM) · long press for tempo',
+          ? AppLocalizations.of(context).tooltipMetronomeStop
+          : AppLocalizations.of(context).tooltipMetronomeStart,
       child: SizedBox(
         width: 40,
         height: 40,

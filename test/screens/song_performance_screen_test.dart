@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/core/constants/app_constants.dart';
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
@@ -18,6 +20,7 @@ import 'package:lyricchord/widgets/performance_controls.dart';
 import 'package:lyricchord/widgets/scroll_gesture_layer.dart';
 
 import '../helpers/fake_song_repository.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   late FakeSongRepository repo;
@@ -56,7 +59,11 @@ void main() {
           // of the test.
           melodyAudioProvider.overrideWithValue(_SilentMelodyAudio()),
         ],
-        child: MaterialApp(home: SongPerformanceScreen(songId: songId)),
+        child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SongPerformanceScreen(songId: songId),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -130,8 +137,9 @@ void main() {
 
       await tester.tap(find.byTooltip('More options'));
       await tester.pumpAndSettle();
+      expectAllIconButtonsHaveTooltips(tester);
 
-      expect(find.text('Chord Reference Guide'), findsOneWidget);
+      expect(find.text('Chord Reference'), findsOneWidget);
       expect(find.text('Swara Reference'), findsNothing);
     });
 
@@ -145,7 +153,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Swara Reference'), findsOneWidget);
-      expect(find.text('Chord Reference Guide'), findsNothing);
+      expect(find.text('Chord Reference'), findsNothing);
     });
 
     testWidgets('the Swara Reference draws a keyboard per swara, in pitch '
@@ -304,10 +312,7 @@ void main() {
       const SongNote(
         id: 1,
         title: 'Untitled Song',
-        artist: '',
         lyrics: 'Hi[C] there',
-        key: 'C',
-        bpm: 120,
         timestamp: 1,
       ),
     ]);
@@ -322,7 +327,11 @@ void main() {
           songRepositoryProvider.overrideWithValue(shortRepo),
           sharedPreferencesProvider.overrideWithValue(prefs),
         ],
-        child: const MaterialApp(home: SongPerformanceScreen(songId: 1)),
+        child: const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SongPerformanceScreen(songId: 1),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -338,7 +347,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [songRepositoryProvider.overrideWithValue(repo)],
-        child: const MaterialApp(home: SongPerformanceScreen(songId: 9999)),
+        child: const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SongPerformanceScreen(songId: 9999),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -385,7 +398,11 @@ void main() {
           // of the test.
           melodyAudioProvider.overrideWithValue(_SilentMelodyAudio()),
         ],
-        child: const MaterialApp(home: SongPerformanceScreen(songId: 1)),
+        child: const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SongPerformanceScreen(songId: 1),
+        ),
       ),
     );
     await tester.pumpAndSettle();

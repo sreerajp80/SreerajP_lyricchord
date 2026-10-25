@@ -1,11 +1,13 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/auto_scroll_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
 import 'package:lyricchord/widgets/auto_scroll_controls.dart';
+import 'package:lyricchord/widgets/stage_feedback.dart';
 
 /// The scroll gesture layer: the taps that control the sheet with no buttons on
 /// screen, plus the big flash that says what just changed.
@@ -177,7 +179,12 @@ class _ScrollGestureLayerState extends ConsumerState<ScrollGestureLayer> {
 
     final controls = ref.read(autoScrollProvider.notifier);
     controls.togglePlay();
-    _flash(ref.read(autoScrollProvider).isPlaying ? 'Playing' : 'Paused');
+    final l10n = AppLocalizations.of(context);
+    _flash(
+      ref.read(autoScrollProvider).isPlaying
+          ? l10n.labelStagePlaying
+          : l10n.labelStagePaused,
+    );
   }
 
   /// One finger. Either the second half of a double-tap, or a single tap once
@@ -216,10 +223,19 @@ class _ScrollGestureLayerState extends ConsumerState<ScrollGestureLayer> {
 
     if (isTempo) {
       isUpperHalf ? controls.increaseMeasures() : controls.decreaseMeasures();
-      _flash('${ref.read(autoScrollProvider).measures} bars');
+      _flash(
+        AppLocalizations.of(
+          context,
+        ).labelInfoBars(ref.read(autoScrollProvider).measures),
+      );
     } else {
       isUpperHalf ? controls.increaseSpeed() : controls.decreaseSpeed();
-      _flash(formatSpeedLabel(ref.read(autoScrollProvider).speed));
+      _flash(
+        formatSpeedLabel(
+          ref.read(autoScrollProvider).speed,
+          AppLocalizations.of(context).localeName,
+        ),
+      );
     }
   }
 
@@ -264,11 +280,7 @@ class _ScrollGestureLayerState extends ConsumerState<ScrollGestureLayer> {
                   elevation: 4,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(20),
-                    onTap: () {
-                      ref
-                          .read(stageModeProvider.notifier)
-                          .unlockStageWithAuth();
-                    },
+                    onTap: () => unlockStageWithFeedback(context, ref),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
@@ -284,7 +296,7 @@ class _ScrollGestureLayerState extends ConsumerState<ScrollGestureLayer> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Stage Locked',
+                            AppLocalizations.of(context).labelStageLocked,
                             style: Theme.of(context).textTheme.labelMedium
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,

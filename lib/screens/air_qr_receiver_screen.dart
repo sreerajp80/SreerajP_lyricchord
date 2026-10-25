@@ -1,14 +1,17 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import 'package:lyricchord/core/utils/formatting_locale.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/models/air_qr_progress.dart';
 import 'package:lyricchord/models/import_preview_args.dart';
 import 'package:lyricchord/providers/air_qr_provider.dart';
 import 'package:lyricchord/services/chord_pro_service.dart';
+import 'package:lyricchord/widgets/air_qr_receiver_hud.dart';
 
 class AirQrReceiverScreen extends ConsumerStatefulWidget {
   const AirQrReceiverScreen({super.key});
@@ -88,13 +91,16 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
       HapticFeedback.heavyImpact();
 
       final rawContent = progress.reassembledContent ?? '';
-      final parsedSongs = const ChordProService().parseMultiple(rawContent);
+      final parsedSongs = const ChordProService().parseMultiple(
+        rawContent,
+        untitledTitle: AppLocalizations.of(context).labelUntitledSong,
+      );
 
       if (mounted) {
         context.pushReplacement(
           '/import-preview',
           extra: ImportPreviewArgs(
-            fileName: 'AirQR Stream Share',
+            fileName: AppLocalizations.of(context).labelAirQrReceiverFileName,
             rawContent: rawContent,
             parsedSongs: parsedSongs,
           ),
@@ -115,17 +121,23 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No AirQR code detected in chosen photo.'),
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).errorAirQrReceiverNoCode,
+              ),
             ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Could not scan photo.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).errorAirQrReceiverPhotoFailed,
+            ),
+          ),
+        );
       }
     }
   }
@@ -143,9 +155,34 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
     }
   }
 
+  /// Clears the received blocks so a new transfer can start.
+  void _resetStream() {
+    // The SnackBar action can fire after this screen has closed.
+    if (!mounted) return;
+    setState(() => _hasProcessedCompletion = false);
+    ref.read(airQrProvider.notifier).resetStream();
+  }
+
   @override
   Widget build(BuildContext context) {
     final progress = ref.watch(airQrProvider);
+    final l10n = AppLocalizations.of(context);
+    ref.listen<AirQrProgress>(airQrProvider, (previous, next) {
+      if (next.status != AirQrStatus.error ||
+          previous?.status == AirQrStatus.error) {
+        return;
+      }
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.errorAirQrTransferFailed),
+          action: SnackBarAction(
+            label: l10n.actionAirQrReset,
+            onPressed: _resetStream,
+          ),
+        ),
+      );
+    });
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
@@ -163,25 +200,21 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _handleBack,
+            tooltip: l10n.tooltipBack,
           ),
-          title: const Text('AirQR Song Receiver'),
+          title: Text(l10n.titleAirQrReceiver),
           elevation: 0,
           backgroundColor: Colors.black87,
           actions: [
             IconButton(
               icon: const Icon(Icons.photo_library_outlined),
               onPressed: _scanFromGallery,
-              tooltip: 'Scan Photo from Gallery',
+              tooltip: l10n.tooltipAirQrReceiverGallery,
             ),
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () {
-                setState(() {
-                  _hasProcessedCompletion = false;
-                });
-                ref.read(airQrProvider.notifier).resetStream();
-              },
-              tooltip: 'Reset Stream',
+              onPressed: _resetStream,
+              tooltip: l10n.tooltipAirQrReceiverResetStream,
             ),
           ],
         ),
@@ -192,19 +225,19 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
                 controller: _controller!,
                 onDetect: _onDetect,
                 errorBuilder: (context, error, child) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.sensors_outlined,
                           size: 48,
                           color: Colors.cyanAccent,
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         Text(
-                          'Initializing AirQR Camera Receiver...',
-                          style: TextStyle(color: Colors.white70),
+                          l10n.descAirQrReceiverStarting,
+                          style: const TextStyle(color: Colors.white70),
                         ),
                       ],
                     ),
@@ -240,7 +273,9 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '${progress.fps.toStringAsFixed(1)} FPS',
+                          l10n.labelAirQrFps(
+                            formatFixed(progress.fps, 1, l10n.localeName),
+                          ),
                           style: const TextStyle(
                             color: Colors.cyanAccent,
                             fontWeight: FontWeight.bold,
@@ -260,6 +295,9 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
                             await _controller?.toggleTorch();
                             setState(() => _isTorchOn = !_isTorchOn);
                           },
+                          tooltip: _isTorchOn
+                              ? l10n.tooltipAirQrReceiverTorchOff
+                              : l10n.tooltipAirQrReceiverTorchOn,
                         ),
                         IconButton(
                           icon: Icon(
@@ -272,6 +310,7 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
                             await _controller?.switchCamera();
                             setState(() => _isFrontCamera = !_isFrontCamera);
                           },
+                          tooltip: l10n.tooltipAirQrReceiverSwitchCamera,
                         ),
                       ],
                     ),
@@ -288,106 +327,12 @@ class _AirQrReceiverScreenState extends ConsumerState<AirQrReceiverScreen>
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 24),
-                  child: _buildHudPanel(progress),
+                  child: AirQrReceiverHud(progress: progress),
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHudPanel(AirQrProgress progress) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black87,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                progress.status == AirQrStatus.completed
-                    ? 'STREAM REASSEMBLED - OPENING PREVIEW...'
-                    : progress.status == AirQrStatus.receiving
-                    ? 'RECEIVING AIRQR SONG STREAM...'
-                    : 'POINT AT ANIMATED QR CODE STREAM',
-                style: TextStyle(
-                  color: progress.status == AirQrStatus.completed
-                      ? Colors.greenAccent
-                      : Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              Text(
-                '${(progress.progressPercentage * 100).toInt()}%',
-                style: const TextStyle(
-                  color: Colors.cyanAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: progress.progressPercentage,
-              minHeight: 10,
-              backgroundColor: Colors.white10,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Colors.cyanAccent,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Captured: ${progress.receivedBlockCount} / ${progress.totalBlocks} Blocks',
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-              ),
-              Text(
-                'Missing: ${progress.missingBlockCount}',
-                style: const TextStyle(color: Colors.amberAccent, fontSize: 13),
-              ),
-            ],
-          ),
-          if (progress.totalBlocks > 0) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 36,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(progress.totalBlocks, (index) {
-                    final isCaptured = progress.capturedIndices.contains(index);
-                    return Container(
-                      width: 14,
-                      height: 28,
-                      margin: const EdgeInsets.only(right: 4),
-                      decoration: BoxDecoration(
-                        color: isCaptured ? Colors.cyanAccent : Colors.white10,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }

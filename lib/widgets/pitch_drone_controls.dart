@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 
 import 'package:lyricchord/models/pitch_drone_settings.dart';
 import 'package:lyricchord/models/pitch_tradition.dart';
@@ -216,7 +218,12 @@ class _PitchDroneControlsSheetState
     final message = ref.read(pitchDroneProvider).lastError;
     ref.read(pitchDroneProvider.notifier).clearError();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message ?? 'Could not play the sound.')),
+      SnackBar(
+        content: Text(
+          message?.text(AppLocalizations.of(context)) ??
+              AppLocalizations.of(context).errorDroneCouldNotPlay,
+        ),
+      ),
     );
   }
 
@@ -226,6 +233,7 @@ class _PitchDroneControlsSheetState
     final notifier = ref.read(pitchDroneProvider.notifier);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     final tradition = _tradition;
     final activeKey = _activeKey;
@@ -261,13 +269,14 @@ class _PitchDroneControlsSheetState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Pitch Pipe & Shruti Box',
+                    l10n.titleDrone,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
+                    tooltip: l10n.actionClose,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -279,14 +288,14 @@ class _PitchDroneControlsSheetState
                 children: [
                   Expanded(
                     child: SegmentedButton<DroneMode>(
-                      segments: const [
+                      segments: [
                         ButtonSegment(
                           value: DroneMode.classical,
-                          label: Text('Classical (Shruti)'),
+                          label: Text(l10n.labelDroneModeClassical),
                         ),
                         ButtonSegment(
                           value: DroneMode.western,
-                          label: Text('Western (Chords)'),
+                          label: Text(l10n.labelDroneModeWestern),
                         ),
                       ],
                       selected: {_droneMode},
@@ -301,7 +310,7 @@ class _PitchDroneControlsSheetState
 
               // Where the opening pitch came from, so it is never a mystery.
               Text(
-                _sourceLine(tradition, activeKey),
+                _sourceLine(tradition, activeKey, l10n),
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -331,14 +340,14 @@ class _PitchDroneControlsSheetState
                   Expanded(
                     child: _droneMode == DroneMode.classical
                         ? SegmentedButton<String>(
-                            segments: const [
+                            segments: [
                               ButtonSegment(
                                 value: 'Pa',
-                                label: Text('Sa + Pa (5th)'),
+                                label: Text(l10n.labelDroneSaPa),
                               ),
                               ButtonSegment(
                                 value: 'Ma',
-                                label: Text('Sa + Ma (4th)'),
+                                label: Text(l10n.labelDroneSaMa),
                               ),
                             ],
                             selected: {settings.droneInterval},
@@ -349,14 +358,14 @@ class _PitchDroneControlsSheetState
                             },
                           )
                         : SegmentedButton<ChordQuality>(
-                            segments: const [
+                            segments: [
                               ButtonSegment(
                                 value: ChordQuality.major,
-                                label: Text('Major (maj)'),
+                                label: Text(l10n.labelDroneMajor),
                               ),
                               ButtonSegment(
                                 value: ChordQuality.minor,
-                                label: Text('Minor (min)'),
+                                label: Text(l10n.labelDroneMinor),
                               ),
                             ],
                             selected: {_chordQuality},
@@ -379,8 +388,8 @@ class _PitchDroneControlsSheetState
                       icon: const Icon(Icons.music_note),
                       label: Text(
                         _droneMode == DroneMode.western
-                            ? 'Chord Cue (2s)'
-                            : 'Pitch Cue (2s)',
+                            ? l10n.actionDroneChordCue
+                            : l10n.actionDronePitchCue,
                       ),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -407,10 +416,10 @@ class _PitchDroneControlsSheetState
                       ),
                       label: Text(
                         settings.dronePlaying
-                            ? 'Stop Drone'
+                            ? l10n.actionDroneStop
                             : (_droneMode == DroneMode.western
-                                  ? 'Chord Drone'
-                                  : 'Shruti Drone'),
+                                  ? l10n.actionDroneChord
+                                  : l10n.actionDroneShruti),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -455,7 +464,7 @@ class _PitchDroneControlsSheetState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Stage Text Scale',
+                    l10n.labelDroneTextScale,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -500,12 +509,16 @@ class _PitchDroneControlsSheetState
   }
 
   /// `Song key: G`, `Your Sa: 5 kattai` or a plain prompt.
-  String _sourceLine(PitchTradition tradition, String activeKey) {
+  String _sourceLine(
+    PitchTradition tradition,
+    String activeKey,
+    AppLocalizations l10n,
+  ) {
     if (_droneMode == DroneMode.classical &&
         tradition != PitchTradition.western) {
-      return 'Your Sa:  ${_naming.shortLabel(activeKey, tradition)}';
+      return l10n.labelDroneYourSa(_naming.shortLabel(activeKey, tradition));
     }
-    if (_fromSongKey) return 'Song key:  $activeKey';
-    return 'Root Pitch Key';
+    if (_fromSongKey) return l10n.labelDroneSongKey(activeKey);
+    return l10n.labelDroneRootKey;
   }
 }

@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:lyricchord/core/logging/app_logger.dart';
 import 'package:lyricchord/services/pcm_synth_service.dart';
 
 /// What the pitch pipe and shruti drone need from their sound source.
@@ -228,11 +228,13 @@ class PitchDroneAudioService implements PitchDroneAudio {
   String _slug(String value) =>
       value.replaceAll('#', 'sharp').replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
 
-  /// Debug-only failure note. Never logs song content, only the audio call.
+  /// Logs a failed audio call. Never song content, only which call failed.
   void _report(String where, Object error, StackTrace stack) {
-    if (kDebugMode) {
-      debugPrint('PitchDroneAudioService.$where failed: $error\n$stack');
-    }
+    AppLogger.error(
+      'PitchDroneAudioService.$where failed',
+      error: error,
+      stackTrace: stack,
+    );
   }
 }
 

@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/screens/help/help_content.dart';
 
 /// Settings → Help: a hub of help topics, one card each.
@@ -12,13 +13,14 @@ class HelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Help')),
+      appBar: AppBar(title: Text(l10n.titleSettingsHelp)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
-            for (final topic in helpTopics)
+            for (final topic in helpTopics(l10n))
               _HelpCard(
                 icon: topic.icon,
                 title: topic.title,

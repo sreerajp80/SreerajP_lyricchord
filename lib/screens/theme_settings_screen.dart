@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 
@@ -13,6 +14,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(themeModeProvider);
+    final l10n = AppLocalizations.of(context);
 
     RadioListTile<ThemeMode> option(
       String label,
@@ -27,7 +29,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Themes')),
+      appBar: AppBar(title: Text(l10n.titleSettingsThemes)),
       body: SafeArea(
         child: RadioGroup<ThemeMode>(
           groupValue: current,
@@ -38,9 +40,13 @@ class ThemeSettingsScreen extends ConsumerWidget {
           },
           child: ListView(
             children: [
-              option('System theme', Icons.brightness_auto, ThemeMode.system),
-              option('Light theme', Icons.light_mode, ThemeMode.light),
-              option('Dark theme', Icons.dark_mode, ThemeMode.dark),
+              option(
+                l10n.labelThemeSystem,
+                Icons.brightness_auto,
+                ThemeMode.system,
+              ),
+              option(l10n.labelThemeLight, Icons.light_mode, ThemeMode.light),
+              option(l10n.labelThemeDark, Icons.dark_mode, ThemeMode.dark),
             ],
           ),
         ),

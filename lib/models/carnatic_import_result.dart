@@ -20,13 +20,10 @@ enum CarnaticCaseReading {
   /// Uppercase is the upper octave, lowercase the middle — case carries pitch.
   ///
   /// The convention karnatik.com documents and the beginner exercise pages use.
-  octave;
+  octave,
 
-  /// A short label for the screen.
-  String get label => switch (this) {
-    CarnaticCaseReading.duration => 'case means note length',
-    CarnaticCaseReading.octave => 'case means octave',
-  };
+  // The screen label lives in `lib/l10n/l10n_labels.dart` (no UI text in
+  // models).
 }
 
 /// How well one reading of the notation lands on the tala.
@@ -60,6 +57,94 @@ class CarnaticFit {
   String toString() => '${reading.name}: $fitting/$total';
 }
 
+/// One thing the caller should see before trusting an import.
+///
+/// The importer only says *what* went wrong; the screen turns it into words
+/// (`lib/l10n/l10n_labels.dart`), so no English is built in the service.
+/// [cycle] is set (1-based) for a problem found inside one avarta.
+sealed class CarnaticProblem {
+  const CarnaticProblem({this.cycle});
+
+  final int? cycle;
+
+  /// The same problem, tagged with the avarta it was found in.
+  CarnaticProblem inCycle(int cycle) => this;
+}
+
+/// The tala name gave no beat count.
+class CarnaticUnknownTala extends CarnaticProblem {
+  const CarnaticUnknownTala(this.tala);
+
+  final String tala;
+}
+
+/// The pasted text held no notation at all.
+class CarnaticNoNotation extends CarnaticProblem {
+  const CarnaticNoNotation();
+}
+
+/// Only [fitting] of [total] cycles came out the length of [tala].
+class CarnaticCyclesOffTala extends CarnaticProblem {
+  const CarnaticCyclesOffTala({
+    required this.fitting,
+    required this.total,
+    required this.tala,
+  });
+
+  final int fitting;
+  final int total;
+  final String tala;
+}
+
+/// Both readings of letter case scored the same, so the choice is a guess.
+class CarnaticReadingsTie extends CarnaticProblem {
+  const CarnaticReadingsTie();
+}
+
+/// A cycle held nothing that could be read.
+class CarnaticNothingReadable extends CarnaticProblem {
+  const CarnaticNothingReadable({super.cycle});
+
+  @override
+  CarnaticProblem inCycle(int cycle) => CarnaticNothingReadable(cycle: cycle);
+}
+
+/// A cycle came out [got] aksharakalas long instead of [wanted].
+class CarnaticWrongLength extends CarnaticProblem {
+  const CarnaticWrongLength({
+    required this.got,
+    required this.wanted,
+    super.cycle,
+  });
+
+  /// Aksharakalas the cycle actually holds; may be a half (3.5).
+  final double got;
+  final int wanted;
+
+  @override
+  CarnaticProblem inCycle(int cycle) =>
+      CarnaticWrongLength(got: got, wanted: wanted, cycle: cycle);
+}
+
+/// [character] in [token] is not a swara letter or a mark.
+class CarnaticUnreadableCharacter extends CarnaticProblem {
+  const CarnaticUnreadableCharacter({
+    required this.character,
+    required this.token,
+    super.cycle,
+  });
+
+  final String character;
+  final String token;
+
+  @override
+  CarnaticProblem inCycle(int cycle) => CarnaticUnreadableCharacter(
+    character: character,
+    token: token,
+    cycle: cycle,
+  );
+}
+
 /// Converted melody lines plus everything needed to judge the conversion.
 class CarnaticImportResult {
   /// One `{melody}` line per avarta, in source order.
@@ -75,7 +160,7 @@ class CarnaticImportResult {
   /// Anything the caller should see before trusting the result: cycles that did
   /// not land on the tala, tokens that could not be read, a tie between the two
   /// readings.
-  final List<String> problems;
+  final List<CarnaticProblem> problems;
 
   /// Places where a `Ga → Ma → Ri` descent was seen.
   ///
@@ -94,15 +179,16 @@ class CarnaticImportResult {
   });
 
   /// An empty result carrying a single problem, for input that cannot be read.
-  factory CarnaticImportResult.failure(String problem) => CarnaticImportResult(
-    melodyLines: const [],
-    chosen: const CarnaticFit(
-      reading: CarnaticCaseReading.duration,
-      fitting: 0,
-      total: 0,
-    ),
-    problems: [problem],
-  );
+  factory CarnaticImportResult.failure(CarnaticProblem problem) =>
+      CarnaticImportResult(
+        melodyLines: const [],
+        chosen: const CarnaticFit(
+          reading: CarnaticCaseReading.duration,
+          fitting: 0,
+          total: 0,
+        ),
+        problems: [problem],
+      );
 
   /// True when there is something usable to insert.
   bool get hasLines => melodyLines.isNotEmpty;

@@ -1,6 +1,6 @@
 # Fix Missing Line Breaks When Importing Text Files
 
-**Status:** complete
+**Status:** completed
 
 ## Issue
 

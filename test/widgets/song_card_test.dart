@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lyricchord/models/song_note.dart';
 import 'package:lyricchord/widgets/song_card.dart';
+
+import '../helpers/localized_app.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   Future<void> pumpCard(
@@ -14,8 +17,8 @@ void main() {
     VoidCallback? onDelete,
   }) {
     return tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      localizedApp(
+        Scaffold(
           body: SongCard(
             song: song,
             onTap: onTap ?? () {},
@@ -48,7 +51,7 @@ void main() {
     await pumpCard(tester, song: _song(favorite: false));
     expect(find.byIcon(Icons.star_border), findsOneWidget);
 
-    await pumpCard(tester, song: _song(favorite: true));
+    await pumpCard(tester, song: _song());
     expect(find.byIcon(Icons.star), findsOneWidget);
   });
 
@@ -90,6 +93,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.content_copy_outlined));
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.pump();
+    expectAllIconButtonsHaveTooltips(tester);
 
     expect(tapped, 1);
     expect(starred, 1);

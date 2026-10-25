@@ -84,9 +84,11 @@ Follows the baseline layout from [guidelines/guideline.md](guidelines/guideline.
 lib/
 |-- main.dart
 |-- core/
-|   |-- config/         # AppConfig + ConfigService (About screen). Fixed path.
+|   |-- config/         # AppConfig + ConfigService (About screen, fixed path); AppFlavorConfig
 |   |-- constants/      # app_constants.dart — db name, pref keys, thresholds
-|   |-- errors/         # AppException hierarchy
+|   |-- errors/         # AppException hierarchy; global error handlers
+|   |-- logging/        # AppLogger
+|   |-- startup/        # AppStartup: start-up steps 5–8 and the restart after Delete all data
 |   `-- utils/          # small helpers/extensions
 |-- models/             # SongNote and value types, MelodyNote/MelodyBeat/MelodyLine
 |-- services/           # ChordTransposer, ChordProService, PdfExportService, ScrollController logic,
@@ -112,7 +114,9 @@ lib/
 | `lib/services/` | Pure logic: transpose, ChordPro parse/format, PDF export, beat math, audio synthesis/playback |
 | `lib/repositories/` | Data access; abstracts the drift database |
 | `lib/data/` | drift database, tables, DAOs |
-| `lib/core/config/` | About-screen `AppConfig` + `ConfigService` (fixed) |
+| `lib/core/config/` | About-screen `AppConfig` + `ConfigService` (fixed); `AppFlavorConfig` |
+| `lib/core/logging/` | `AppLogger`, the only logger |
+| `lib/core/startup/` | `AppStartup`: opens the data, runs the app, restarts it fresh after Delete all data |
 
 ---
 
@@ -120,18 +124,26 @@ lib/
 
 Order of steps in `main()` before `runApp`.
 
+The numbers follow engineering standard §4.5. Steps 1–2 are in `lib/main.dart`;
+steps 5–8 are in `AppStartup.start` (`lib/core/startup/app_startup.dart`), so
+`main.dart` stays thin.
+
 | Step | Code / Call | Notes |
 |------|-------------|-------|
 | 1 | `WidgetsFlutterBinding.ensureInitialized()` | Always first |
-| 2 | Open drift database | Applies schema/migrations; seeds classic songs on first run |
-| 3 | Load `AppConfig` via `ConfigService` | About-screen values |
-| 4 | Read theme-mode from `shared_preferences` | So first frame uses the right theme |
-| 5 | Build `ProviderScope` overrides (db, prefs, config) | Inject singletons into Riverpod |
-| 6 | `runApp(ProviderScope(...))` | |
+| 2 | `AppLogger.init()`, `installGlobalErrorHandlers()` | Every later step can log its failure. Then the font licences are registered (read lazily) |
+| 3 | — | No desktop FFI set-up: the app is mobile-only |
+| 4 | — | No secure storage: the app keeps no secrets |
+| 5 | `AppDatabase()` | Opens on first use; applies migrations and seeds the classic songs on first run |
+| 6 | `SharedPreferences.getInstance()` | Saved settings (theme), so the first frame uses the right theme. The About `AppConfig` is loaded lazily by `appConfigProvider` when the About screen opens |
+| 7 | `AppLifecycleService(...).init()` | App-wide lifecycle handling (§6) |
+| 8 | `runApp(ProviderScope(...))` | Overrides inject the database and preferences into Riverpod |
 
-- No secure storage or FFI bootstrap is needed on mobile.
-- First-run seeding of the three sample songs happens as part of database open
-  (step 2), matching the Android app's seeded content.
+- Steps 5–8 run inside one `try`. If any of them fails, the failure is logged as
+  `fatal` and the app shows `StartupErrorApp` (`lib/screens/startup_error_screen.dart`):
+  a plain explanation, **Try again** (runs steps 5–8 again) and **Copy details**.
+- First-run seeding of the sample songs happens as part of database open (step 5),
+  matching the Android app's seeded content.
 
 ---
 
@@ -142,8 +154,12 @@ Order of steps in `main()` before `runApp`.
 | `resumed` | Nothing special; providers already hold current state |
 | `inactive` | N/A — no sensitive content to obscure |
 | `paused` | Auto-scroll stops; any in-flight DB write completes normally |
-| `detached` | Database closed by the framework; no manual work needed |
-| Memory pressure | N/A — no large image cache; diagrams are drawn, not loaded |
+| `detached` | `AppLifecycleService` runs a write-ahead-log checkpoint (`AppDatabase.checkpointWal`). The database is **not** closed — see §20 |
+| Memory pressure | `AppLifecycleService` clears the image cache |
+
+`AppLifecycleService` (`lib/services/app_lifecycle_service.dart`) is the app-wide
+observer. The performance view (wake lock, scroll-speed flush on `paused`) and the
+AirQR receiver (camera) keep their own observers for screen-specific behaviour.
 
 ---
 
@@ -204,8 +220,12 @@ Widget -> Provider (state) -> Service / Repository -> drift DAO -> SQLite
 
 ## 10. Error Handling Architecture
 
-- **Global error handler:** `FlutterError.onError` and
-  `PlatformDispatcher.instance.onError` set in `main()`.
+- **Global error handlers:** `installGlobalErrorHandlers()`
+  (`lib/core/errors/global_error_handlers.dart`), called in `main()` step 2.
+  `FlutterError.onError` and `PlatformDispatcher.instance.onError` log through
+  `AppLogger`; in release builds `ErrorWidget.builder` shows `SafeErrorFallback`
+  (`lib/widgets/safe_error_fallback.dart`) — a calm message and an icon, no error
+  detail — instead of the grey error box. Debug builds keep Flutter's red box.
 - **Domain exceptions:** a small sealed hierarchy in
   `lib/core/errors/app_exception.dart`.
 
@@ -217,8 +237,8 @@ Widget -> Provider (state) -> Service / Repository -> drift DAO -> SQLite
 
 - **Escalation policy:** import/export failures surface as a `SnackBar` (the
   Android app used a `Toast`); they never crash the app.
-- **Fatal error screen:** a simple error widget shown by the global handler for
-  unrecoverable startup errors (e.g. database open failure).
+- **Fatal error screen:** `StartupErrorApp`, shown when start-up fails (§5). It has
+  **Try again** and **Copy details** (standard §11.4).
 
 ---
 
@@ -226,7 +246,7 @@ Widget -> Provider (state) -> Service / Repository -> drift DAO -> SQLite
 
 ### Current Schema Version
 
-SQLite schema version: `9` (increment when a migration is added).
+SQLite schema version: `11` (`AppDatabase.schemaVersion`; increment when a migration is added).
 
 Migration history:
 
@@ -238,6 +258,8 @@ Migration history:
 | 4 | Seeds any missing classical songs |
 | 5–8 | Rewrote the seeded classical songs in swara notation |
 | 9 | `song_notes.raga`, `song_notes.tala`, `song_notes.tradition` |
+| 10 | Rewrote the sample song with its real words and `{melody}` lines |
+| 11 | `song_notes.scrollSpeedSet` (marks songs whose scroll speed was set by hand) |
 
 ### Core Models Or Entities
 
@@ -361,6 +383,13 @@ Hindustani on another.
   later, follow [guidelines/flutter_build_flavors_guide.md](guidelines/flutter_build_flavors_guide.md).
 - **Runtime config mechanism:** `assets/config/app_config.json` for About-screen
   values; technical constants in `lib/core/constants/app_constants.dart`.
+  Every text a user reads in the JSON (`appName`, `description`, display rows in
+  `details`) is a per-language map with `en`, `ml` and `sa`; addresses and links
+  (`email`, `website`, `privacyPolicy`) may be plain strings. `details` keys are
+  `lowerCamelCase` ids; the About screen shows each row under the ARB label
+  `aboutDetail<Key>` (`aboutDetailLabel` in `lib/l10n/l10n_labels.dart`).
+  `test/l10n/app_config_test.dart` checks all of this, and that `version`/`build`
+  match `pubspec.yaml`.
 - **Generated build metadata:** `tool/generate_app_version.dart` writes
   `lib/core/constants/app_version.g.dart` (`kAppVersion`, read from the
   `version:` line in `pubspec.yaml`) and `tool/generate_build_date.dart` writes
@@ -386,6 +415,27 @@ Hindustani on another.
 - **Theme source of truth:** `lib/theme/` — a Material 3 `ColorScheme` built from
   the violet "High Density" palette (primary `#6750A4` light / `#D0BCFF` dark).
 - **Design tokens location:** `lib/theme/` (colors, text styles).
+- **Material library:** `material_ui` (not the SDK's `package:flutter/material.dart`).
+  No `MaterialUiCompatibilityBridge` is used: the runtime packages that still import the
+  SDK Material library (`printing`, `qr_flutter`, `mobile_scanner`, `flutter_riverpod`) only
+  use its colour and icon constants, never `Theme.of` or Material localizations, and
+  `go_router` 18 is built on `material_ui`. Re-check this when adding a package that renders
+  Material widgets.
+- **Languages (engineering standard §8):** English, Malayalam, Sanskrit are declared.
+  - `localeProvider` (`lib/providers/locale_provider.dart`) is the only place that holds the
+    app language; `MaterialApp.locale` follows it. It is read from `shared_preferences`
+    (`app_language`) before the first frame; `null` follows the phone, resolved by
+    `resolveAppLocale` (phone language if the app has it, else English).
+  - Settings → Language (`language_settings_screen.dart`) lists System default and each
+    language with strings, by its own name (`lib/l10n/language_names.dart`).
+  - Sanskrit has no Flutter framework strings: `lib/l10n/fallback_localizations.dart` serves
+    English ones (never Hindi); they come first in `appLocalizationsDelegates`.
+  - Numbers shown to the user go through `formatFixed` / `formattingLocale`
+    (`lib/core/utils/formatting_locale.dart`), which use English patterns for Sanskrit.
+  - UI text falls back to the bundled Noto Sans Malayalam, then Noto Sans Devanagari
+    (`AppTheme.uiFontFallback`).
+  - Checks: `test/l10n/translation_parity_test.dart`, `test/l10n/label_length_test.dart`,
+    `test/l10n/app_config_test.dart`, and `tool/check_sanskrit_hindi_markers.sh` (CI).
 - **Shared widget strategy:** reusable rendering (chord-over-lyric view, guitar
   and harmonium diagrams, performance controls) lives in `lib/widgets/`.
 - **Accessibility expectations:**
@@ -400,11 +450,17 @@ Hindustani on another.
 
 ## 17. Logging
 
-- **Logger implementation:** `logger` package (or `dart:developer` `log`) — no
-  network sinks.
-- **Log file location:** N/A — console/debug logging only; no persisted logs.
-- **Log rotation policy:** N/A.
-- **Verbose logging gate:** `kDebugMode`.
+- **Logger implementation:** `AppLogger` (`lib/core/logging/app_logger.dart`) over the
+  `logger` package. `print` and `debugPrint` are not used.
+- **Levels:** dev flavor — every level (`trace` and up), with error detail and stack
+  traces. prod flavor — `info` and up; `trace` and `debug` print nothing.
+- **Release redaction:** in prod release builds an error is logged by its type only,
+  never its message or stack trace, because a message can carry song text or a file
+  name.
+- **Output:** console only (logcat on Android). **No log file** is written, so there is
+  no rotation (standard §14.4 does not apply) and no logs to purge.
+- **Verbose logging gate:** the flavor (`AppFlavorConfig.enableVerboseLogging`), not
+  `kDebugMode`.
 - **Sensitive data policy:** nothing sensitive exists to log; song content is not
   logged in release builds.
 
@@ -467,6 +523,8 @@ test/
 | Navigation | go_router | Declarative routes; handles dual-pane selection | Slight overhead for a small route set |
 | PDF export | `pdf` + `printing` | Cross-platform; replaces Android `PdfDocument` | Chord-diagram drawing must be re-implemented |
 | Structure tier | Tier 1 layered | One feature area; simplest that fits | Would need refactor if the app grows many features |
+| Shutdown handling | Checkpoint the WAL on `detached`; do not close the database | On Android a detached engine can be shown again, and a closed drift database cannot be reopened. Every write is already committed, so nothing is lost | The database file stays open until the process ends |
+| Log output | Console only, no log file | No user data ends up on disk; nothing to rotate or purge | No in-app log export for support (standard §14.4 is only for apps that write logs to disk) |
 
 ---
 
@@ -482,6 +540,20 @@ test/
 - **Risk:** drift schema drift over time.
   **Mitigation:** bump schema version and add a migration for every table change;
   record it in §11.
+- **Risk:** Flutter warns that apps and plugins applying the Kotlin Gradle Plugin will
+  fail to build in a future Flutter. The app still uses `kotlin-android`
+  (`android.builtInKotlin=false`, as the Flutter template writes), and `mobile_scanner`
+  6.x applies the plugin itself.
+  **Mitigation:** move to built-in Kotlin as its own change once every Android plugin
+  supports it (`mobile_scanner` 7.x is the candidate); see
+  `guidelines/flutter_build_flavors_guide.md` ("Android Toolchain Baseline").
+- **Risk:** `file_picker` 12+ needs iOS 14.0, but the Xcode project still targets 13.0.
+  **Mitigation:** raise the iOS deployment target to at least 14.0 when iOS is declared.
+- **Risk:** `audioplayers` pulls in `http` as a transitive package, which
+  [dependencies.md](dependencies.md) §4 forbids. Release builds have no `INTERNET`
+  permission, so it cannot reach the network on Android.
+  **Mitigation:** decide in its own plan (accept with this note, or replace
+  `audioplayers`).
 
 ---
 

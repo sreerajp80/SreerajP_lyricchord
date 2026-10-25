@@ -82,7 +82,7 @@ void main() {
       final result = importer.convert('S S S S S S S ||', tala: 'Misra Chapu');
 
       expect(result.isAmbiguous, isTrue);
-      expect(result.problems.join(' '), contains('score the same'));
+      expect(result.problems.whereType<CarnaticReadingsTie>(), hasLength(1));
     });
   });
 
@@ -134,9 +134,11 @@ void main() {
     });
 
     test('nothing is reported as snapped any more', () {
+      // Snapping a note to the beat used to be reported as a problem. There is
+      // no such problem now, so a carried-over note reports nothing at all.
       final result = importer.convert(_pallavi, tala: 'Misra Chapu');
 
-      expect(result.problems.join(' '), isNot(contains('snap')));
+      expect(result.problems, isEmpty);
     });
 
     test('a note held over a bar keeps its full length', () {
@@ -189,7 +191,9 @@ void main() {
       final result = importer.convert(_pallavi, tala: 'Nonsense');
 
       expect(result.hasLines, isFalse);
-      expect(result.problems, isNotEmpty);
+      final problem = result.problems.single;
+      expect(problem, isA<CarnaticUnknownTala>());
+      expect((problem as CarnaticUnknownTala).tala, 'Nonsense');
     });
 
     test('empty and junk input are handled', () {
@@ -203,7 +207,9 @@ void main() {
       final result = importer.convert('S S ||', tala: 'Misra Chapu');
 
       expect(result.chosen.isPerfect, isFalse);
-      expect(result.problems.join(' '), contains('aksharakalas'));
+      final wrong = result.problems.whereType<CarnaticWrongLength>().first;
+      expect(wrong.cycle, 1);
+      expect(wrong.wanted, 14);
     });
   });
 }

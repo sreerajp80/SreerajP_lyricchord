@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 
 import 'package:lyricchord/providers/metronome_runtime_provider.dart';
 import 'package:lyricchord/services/metronome_calculator.dart';
@@ -87,17 +88,18 @@ class _MetronomeTempoSheetState extends ConsumerState<MetronomeTempoSheet> {
     final runtime = ref.watch(metronomeRuntimeProvider);
     final notifier = ref.read(metronomeRuntimeProvider.notifier);
     final bpm = runtime.effectiveBpm(widget.songBpm);
+    final l10n = AppLocalizations.of(context);
 
     final tapsNeeded = _tapsToAverage - _taps.length;
     final String tapHint;
     if (_taps.isEmpty) {
-      tapHint = 'Tap along with the music';
+      tapHint = l10n.descMetronomeTapAlong;
     } else if (_taps.length < 2) {
-      tapHint = 'Keep tapping…';
+      tapHint = l10n.descMetronomeKeepTapping;
     } else {
       tapHint = tapsNeeded > 0
-          ? 'Good — $tapsNeeded more tap${tapsNeeded == 1 ? '' : 's'} to steady it'
-          : 'Steady';
+          ? l10n.descMetronomeTapsNeeded(tapsNeeded)
+          : l10n.descMetronomeSteady;
     }
 
     return SafeArea(
@@ -107,14 +109,14 @@ class _MetronomeTempoSheetState extends ConsumerState<MetronomeTempoSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Metronome tempo', style: theme.textTheme.titleMedium),
+            Text(l10n.titleMetronomeTempo, style: theme.textTheme.titleMedium),
             const SizedBox(height: 4),
             Text(
               runtime.isOverridden
-                  ? 'Set by you for this session'
+                  ? l10n.descMetronomeSetByYou
                   : widget.songBpm > 0
-                  ? "Using this song's saved tempo"
-                  : 'This song has no saved tempo',
+                  ? l10n.descMetronomeUsingSongTempo
+                  : l10n.descMetronomeNoSongTempo,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -128,12 +130,15 @@ class _MetronomeTempoSheetState extends ConsumerState<MetronomeTempoSheet> {
                       ? () => notifier.nudge(-1, songBpm: widget.songBpm)
                       : null,
                   icon: const Icon(Icons.remove),
-                  tooltip: 'Slower by 1',
+                  tooltip: l10n.tooltipMetronomeSlowerByOne,
                 ),
                 Column(
                   children: [
                     Text('$bpm', style: theme.textTheme.displaySmall),
-                    Text('BPM', style: theme.textTheme.labelSmall),
+                    Text(
+                      l10n.labelMetronomeBpmUnit,
+                      style: theme.textTheme.labelSmall,
+                    ),
                   ],
                 ),
                 IconButton.filledTonal(
@@ -141,7 +146,7 @@ class _MetronomeTempoSheetState extends ConsumerState<MetronomeTempoSheet> {
                       ? () => notifier.nudge(1, songBpm: widget.songBpm)
                       : null,
                   icon: const Icon(Icons.add),
-                  tooltip: 'Faster by 1',
+                  tooltip: l10n.tooltipMetronomeFasterByOne,
                 ),
               ],
             ),
@@ -151,14 +156,14 @@ class _MetronomeTempoSheetState extends ConsumerState<MetronomeTempoSheet> {
               max: MetronomeCalculator.maxBpm.toDouble(),
               divisions:
                   MetronomeCalculator.maxBpm - MetronomeCalculator.minBpm,
-              label: '$bpm BPM',
+              label: l10n.labelInfoBpm(bpm),
               onChanged: (value) => notifier.setOverride(value.round()),
             ),
             const SizedBox(height: 8),
             FilledButton.tonalIcon(
               onPressed: _onTap,
               icon: const Icon(Icons.touch_app_outlined),
-              label: const Text('Tap tempo'),
+              label: Text(l10n.actionMetronomeTapTempo),
             ),
             const SizedBox(height: 4),
             Text(
@@ -179,8 +184,8 @@ class _MetronomeTempoSheetState extends ConsumerState<MetronomeTempoSheet> {
               icon: const Icon(Icons.restore),
               label: Text(
                 widget.songBpm > 0
-                    ? 'Use song tempo (${widget.songBpm} BPM)'
-                    : 'No song tempo to go back to',
+                    ? l10n.actionMetronomeUseSongTempo
+                    : l10n.actionMetronomeNoSongTempoToRestore,
               ),
             ),
           ],

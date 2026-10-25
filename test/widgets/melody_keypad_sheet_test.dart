@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/widgets/melody_beat_grid.dart';
 import 'package:lyricchord/widgets/melody_keypad_sheet.dart';
+import '../helpers/tooltip_expectations.dart';
 
 void main() {
   /// Puts the sheet on screen and hands back what it pops.
@@ -23,6 +26,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -125,6 +130,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -144,6 +151,7 @@ void main() {
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
+    expectAllIconButtonsHaveTooltips(tester);
 
     await tapKey(tester, 'G3');
     await tapKey(tester, 'Share -');

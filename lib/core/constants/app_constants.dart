@@ -5,11 +5,22 @@
 class AppConstants {
   AppConstants._();
 
+  /// Largest file the app will import, in bytes (5 MB).
+  ///
+  /// A chord sheet is a few KB, so this is very generous; it only stops a
+  /// huge or wrong file from running the app out of memory. The Android
+  /// file-open path (`MainActivity.MAX_IMPORT_FILE_BYTES`) uses the same value.
+  static const int maxImportFileBytes = 5 * 1024 * 1024;
+
   /// drift (SQLite) database file name.
   static const String databaseName = 'lyricchord.db';
 
   /// shared_preferences key for the saved theme mode.
   static const String prefThemeMode = 'theme_mode';
+
+  /// The chosen app language: `system` or a language code (engineering
+  /// standard §8.4).
+  static const String prefAppLanguage = 'app_language';
 
   /// shared_preferences key for the user's saved custom chord notations.
   static const String prefCustomChords = 'custom_chords';

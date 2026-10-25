@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lyricchord/core/constants/app_constants.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
 import 'package:lyricchord/screens/song_list_screen.dart';
 import 'package:lyricchord/screens/song_performance_screen.dart';
@@ -56,10 +57,13 @@ class _DetailPane extends ConsumerWidget {
                 color: theme.colorScheme.primary,
               ),
               const SizedBox(height: 16),
-              Text('Pick a song', style: theme.textTheme.titleMedium),
+              Text(
+                AppLocalizations.of(context).titleHomePickSong,
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               Text(
-                'Choose a song on the left to open it here.',
+                AppLocalizations.of(context).descHomePickSongMessage,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,

@@ -1,4 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 
 import 'package:lyricchord/models/melody_line.dart';
 import 'package:lyricchord/services/melody_entry_service.dart';
@@ -55,19 +58,20 @@ class _MelodyKeypadSheetState extends State<MelodyKeypadSheet> {
   /// Asks before throwing away work; a sheet with nothing in it just closes.
   Future<void> _cancel() async {
     if (!_entry.isEmpty && _entry.line != _startingLine) {
+      final l10n = AppLocalizations.of(context);
       final leave = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Discard this melody?'),
-          content: const Text('What you tapped will be lost.'),
+          title: Text(l10n.titleMelodyKeypadDiscard),
+          content: Text(l10n.descMelodyKeypadDiscardMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Keep editing'),
+              child: Text(l10n.actionKeepEditing),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Discard'),
+              child: Text(l10n.actionDiscard),
             ),
           ],
         ),
@@ -85,6 +89,7 @@ class _MelodyKeypadSheetState extends State<MelodyKeypadSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final line = _line;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -99,7 +104,7 @@ class _MelodyKeypadSheetState extends State<MelodyKeypadSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'Melody keypad',
+                    l10n.actionEditorMelodyKeypad,
                     style: theme.textTheme.titleLarge,
                   ),
                 ),
@@ -117,7 +122,7 @@ class _MelodyKeypadSheetState extends State<MelodyKeypadSheet> {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  problem,
+                  problem.text(l10n),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.error,
                   ),
@@ -150,32 +155,31 @@ class _MelodyKeypadSheetState extends State<MelodyKeypadSheet> {
                       runSpacing: 8,
                       children: [
                         _PadButton(
-                          label: 'Hold ,',
-                          tooltip: 'Ring on for one more beat',
+                          label: l10n.labelMelodyKeypadHold,
+                          tooltip: l10n.tooltipMelodyKeypadHold,
                           onPressed: () => _update(_entry.hold()),
                         ),
                         _PadButton(
-                          label: 'Bar |',
-                          tooltip: 'Group divider — takes no time',
+                          label: l10n.labelMelodyKeypadBar,
+                          tooltip: l10n.tooltipMelodyKeypadBar,
                           onPressed: () => _update(_entry.barLine()),
                         ),
                         _PadButton(
-                          label: 'Share -',
-                          tooltip: 'The next note shares this beat',
+                          label: l10n.labelMelodyKeypadShare,
+                          tooltip: l10n.tooltipMelodyKeypadShare,
                           selected: _entry.shareArmed,
                           onPressed: _entry.canShare
                               ? () => _update(_entry.share())
                               : null,
                         ),
                         _PadButton(
-                          label: 'Tie ,-',
-                          tooltip:
-                              'Start the next note part-way through a beat',
+                          label: l10n.labelMelodyKeypadTie,
+                          tooltip: l10n.tooltipMelodyKeypadTie,
                           onPressed: () => _update(_entry.tie()),
                         ),
                         _PadButton(
-                          label: 'Silence x',
-                          tooltip: 'Stop the sound',
+                          label: l10n.labelMelodyKeypadSilence,
+                          tooltip: l10n.tooltipMelodyKeypadSilence,
                           onPressed: () => _update(_entry.silence()),
                         ),
                       ],
@@ -185,10 +189,22 @@ class _MelodyKeypadSheetState extends State<MelodyKeypadSheet> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _markButton(MelodyMark.octaveUp, 'Octave ↑'),
-                        _markButton(MelodyMark.octaveDown, 'Octave ↓'),
-                        _markButton(MelodyMark.slide, 'Slide !'),
-                        _markButton(MelodyMark.shake, 'Shake ~'),
+                        _markButton(
+                          MelodyMark.octaveUp,
+                          l10n.labelMelodyKeypadOctaveUp,
+                        ),
+                        _markButton(
+                          MelodyMark.octaveDown,
+                          l10n.labelMelodyKeypadOctaveDown,
+                        ),
+                        _markButton(
+                          MelodyMark.slide,
+                          l10n.labelMelodyKeypadSlide,
+                        ),
+                        _markButton(
+                          MelodyMark.shake,
+                          l10n.labelMelodyKeypadShake,
+                        ),
                       ],
                     ),
                   ],
@@ -200,7 +216,7 @@ class _MelodyKeypadSheetState extends State<MelodyKeypadSheet> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.backspace_outlined),
-                  tooltip: 'Backspace',
+                  tooltip: l10n.tooltipMelodyKeypadBackspace,
                   onPressed: _entry.isEmpty && !_entry.shareArmed
                       ? null
                       : () => _update(_entry.backspace()),
@@ -209,17 +225,17 @@ class _MelodyKeypadSheetState extends State<MelodyKeypadSheet> {
                   onPressed: _entry.isEmpty
                       ? null
                       : () => _update(_entry.clear()),
-                  child: const Text('Clear'),
+                  child: Text(l10n.actionClear),
                 ),
                 const Spacer(),
-                TextButton(onPressed: _cancel, child: const Text('Cancel')),
+                TextButton(onPressed: _cancel, child: Text(l10n.actionCancel)),
                 const SizedBox(width: 8),
                 FilledButton.icon(
                   onPressed: _entry.isEmpty
                       ? null
                       : () => Navigator.of(context).pop(_entry.line),
                   icon: const Icon(Icons.add),
-                  label: const Text('Insert'),
+                  label: Text(l10n.actionInsert),
                 ),
               ],
             ),
@@ -257,12 +273,13 @@ class _BeatCount extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     // With no tala, or one the app does not know, it says nothing about fit
     // rather than guessing.
     if (talaBeats == null) {
       return Text(
-        '$beats ${beats == 1 ? 'beat' : 'beats'}',
+        l10n.labelMelodyKeypadBeats(beats),
         style: theme.textTheme.labelLarge,
       );
     }
@@ -280,7 +297,9 @@ class _BeatCount extends StatelessWidget {
           const SizedBox(width: 4),
         ],
         Text(
-          good ? '$beats beats — fits $tala' : '$beats of $talaBeats beats',
+          good
+              ? l10n.descMelodyKeypadFits(beats, tala)
+              : l10n.labelMelodyKeypadOfBeats(beats, talaBeats!),
           style: theme.textTheme.labelLarge?.copyWith(
             color: good ? theme.colorScheme.primary : null,
           ),
@@ -311,7 +330,7 @@ class _Preview extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: line.beats.isEmpty
           ? Text(
-              'Tap a swara to start. Hold adds a beat, Bar marks a group.',
+              AppLocalizations.of(context).descMelodyKeypadStartHint,
               style: theme.textTheme.bodySmall,
             )
           : MelodyBeatGrid(line: line),

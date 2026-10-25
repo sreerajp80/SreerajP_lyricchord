@@ -1,37 +1,41 @@
 import 'package:flutter/foundation.dart'
     show LicenseEntryWithLineBreaks, LicenseRegistry;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/core/config/app_flavor_config.dart';
+import 'package:lyricchord/core/constants/app_version.g.dart';
+import 'package:lyricchord/core/errors/global_error_handlers.dart';
+import 'package:lyricchord/core/logging/app_logger.dart';
 import 'package:lyricchord/core/router/app_router.dart';
-import 'package:lyricchord/data/app_database.dart';
+import 'package:lyricchord/core/startup/app_startup.dart';
 import 'package:lyricchord/l10n/app_localizations.dart';
-import 'package:lyricchord/providers/database_provider.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
+import 'package:lyricchord/providers/locale_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
 import 'package:lyricchord/theme/app_theme.dart';
 import 'package:lyricchord/widgets/file_intent_listener.dart';
 
+/// Start-up order (engineering standard §4.5; documented in
+/// `docs/architecture.md` §5).
 Future<void> main() async {
+  // 1. Flutter bindings.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. Logging, then the global error handlers, so every later step can log.
+  AppLogger.init();
+  installGlobalErrorHandlers();
+  AppLogger.info(
+    'App start: flavor=${AppFlavorConfig.instance.flavor.name}, '
+    'version=$kAppVersion',
+  );
 
   _registerFontLicenses();
 
-  // Open the database (seeds the classic songs on first run) and load the saved
-  // preferences before the first frame, so the app opens with the right theme.
-  final database = AppDatabase();
-  final prefs = await SharedPreferences.getInstance();
-
-  runApp(
-    ProviderScope(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(database),
-        sharedPreferencesProvider.overrideWithValue(prefs),
-      ],
-      child: const LyricChordApp(),
-    ),
-  );
+  // Steps 3 and 4 (desktop FFI set-up, secure storage) do not apply: the app
+  // is mobile-only and keeps no secrets.
+  await AppStartup.start(app: const LyricChordApp());
 }
 
 /// Registers the SIL Open Font Licence for the bundled lyric fonts so they
@@ -44,6 +48,13 @@ void _registerFontLicenses() {
       'Noto Sans Malayalam',
       'Noto Serif Malayalam',
     ], noto);
+
+    final devanagari = await rootBundle.loadString(
+      'assets/fonts/OFL-Noto-Devanagari.txt',
+    );
+    yield LicenseEntryWithLineBreaks(const [
+      'Noto Sans Devanagari',
+    ], devanagari);
 
     final manjari = await rootBundle.loadString('assets/fonts/OFL-Manjari.txt');
     yield LicenseEntryWithLineBreaks(const ['Manjari'], manjari);
@@ -62,14 +73,19 @@ class LyricChordApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
-      title: 'LyricChord',
+      onGenerateTitle: (context) => AppLocalizations.of(context).titleApp,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // null follows the phone; resolveAppLocale then picks a supported one.
+      locale: ref.watch(localeProvider),
+      localeResolutionCallback: (device, supported) =>
+          resolveAppLocale(device, supported),
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(goRouterProvider),
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       builder: (context, child) =>
           FileIntentListener(child: child ?? const SizedBox.shrink()),
     );

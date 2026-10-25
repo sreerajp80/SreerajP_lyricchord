@@ -41,9 +41,11 @@ lyricchord/
 |-- ios/                     # iOS native host project and Xcode configuration
 |-- lib/                     # Application Dart source code
 |   |-- core/                # Cross-cutting foundational modules
-|   |   |-- config/          # AppConfig and ConfigService
+|   |   |-- config/          # AppConfig, ConfigService and AppFlavorConfig
 |   |   |-- constants/       # App-wide constants, keys, and generated build metadata
-|   |   |-- errors/          # Custom exceptions and failure models
+|   |   |-- errors/          # Custom exceptions, failure models, global error handlers
+|   |   |-- logging/         # AppLogger
+|   |   |-- startup/         # AppStartup (start-up steps and restart)
 |   |   |-- router/          # go_router declarative route definitions
 |   |   `-- utils/           # Pure utility helpers (text formatting, line breaks)
 |   |-- data/                # Drift SQLite database, schema, tables, and DAOs
@@ -78,7 +80,8 @@ lyricchord/
 
 ### 3.1 `core/`
 Foundational code that has no dependency on domain models. Contains configuration
-loaders, constants, router definitions, and string/line-break utilities.
+loaders, the flavor config, the logger, the global error handlers, constants, router
+definitions, and string/line-break utilities.
 
 ### 3.2 `data/`
 Owns SQLite persistence via Drift. Houses table definitions (`songs`, `setlists`),

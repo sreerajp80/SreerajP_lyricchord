@@ -3,15 +3,17 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printing/printing.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import 'package:lyricchord/core/logging/app_logger.dart';
 import 'package:lyricchord/core/utils/safe_file_name.dart';
 import 'package:lyricchord/core/utils/system_ui.dart';
+import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/models/setlist.dart';
 import 'package:lyricchord/models/lyric_font.dart';
 import 'package:lyricchord/models/song_note.dart';
@@ -24,6 +26,8 @@ import 'package:lyricchord/providers/scroll_speed_settings_provider.dart';
 import 'package:lyricchord/providers/setlist_provider.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
 import 'package:lyricchord/providers/stage_mode_provider.dart';
+import 'package:lyricchord/services/stage_quiet_mode_service.dart';
+import 'package:lyricchord/widgets/stage_feedback.dart';
 import 'package:lyricchord/services/auto_scroll_calculator.dart';
 import 'package:lyricchord/services/chord_pro_service.dart';
 import 'package:lyricchord/services/chord_sheet_parser.dart';
@@ -103,11 +107,18 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
   /// without touching `ref`, which is no longer safe to use by then.
   late final AutoScrollNotifier _autoScroll;
 
+  /// Kept from `initState` for the same reason: [dispose] must give the phone
+  /// its ringer back if the song is left while Quiet Mode is on.
+  late final StageQuietModeService _quietMode;
+  late final StageModeNotifier _stageMode;
+
   @override
   void initState() {
     super.initState();
     _currentId = widget.songId;
     _autoScroll = ref.read(autoScrollProvider.notifier);
+    _quietMode = ref.read(stageQuietModeServiceProvider);
+    _stageMode = ref.read(stageModeProvider.notifier);
     // Keep the screen on while a song is open to perform, so the phone does not
     // dim or lock mid-song. Released again in [dispose].
     WidgetsBinding.instance.addObserver(this);
@@ -145,6 +156,18 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
   void dispose() {
     // Leaving the screen must not lose a speed still waiting on the debounce.
     _autoScroll.flushSave();
+    // Leaving the song must never leave the phone silent or the next song
+    // opening in a locked Stage Mode. The provider is changed after this
+    // frame, because providers must not change while the tree is torn down.
+    if (_quietMode.isQuietActive) _quietMode.disableQuietMode();
+    final stageMode = _stageMode;
+    Future.microtask(() {
+      try {
+        stageMode.exit();
+      } catch (_) {
+        // The whole app (and the provider) is already gone; nothing to reset.
+      }
+    });
     WidgetsBinding.instance.removeObserver(this);
     // Give the screen back to the phone's normal timeout when leaving.
     WakelockPlus.disable();
@@ -183,11 +206,7 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
     if (didPop) return;
     final stageState = ref.read(stageModeProvider);
     if (stageState.isLocked) {
-      ref
-          .read(stageModeProvider.notifier)
-          .unlockStageWithAuth(
-            reason: 'Authenticate to unlock Stage Mode and exit',
-          );
+      unlockStageWithFeedback(context, ref);
       return;
     }
     ref.read(stageModeProvider.notifier).exit();
@@ -358,6 +377,7 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
       );
     }
 
+    final l10n = AppLocalizations.of(context);
     final id = _currentId;
     final currentIndex = (ids != null && id != null) ? ids.indexOf(id) : -1;
     final totalSongs = ids?.length ?? 0;
@@ -366,7 +386,7 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
       appBar: AppBar(
         automaticallyImplyLeading: !widget.embedded,
         title: id == null
-            ? const Text('Song')
+            ? Text(l10n.titlePerfSong)
             : _AppBarTitle(
                 songId: id,
                 setlist: setlist,
@@ -376,7 +396,7 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
         actions: [
           if (setlist != null && setlist.songs.isNotEmpty) ...[
             IconButton(
-              tooltip: 'Previous song',
+              tooltip: l10n.tooltipPerfPreviousSong,
               icon: const Icon(Icons.skip_previous),
               onPressed: currentIndex > 0
                   ? () => _controller?.previousPage(
@@ -386,7 +406,7 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
                   : null,
             ),
             IconButton(
-              tooltip: 'Next song',
+              tooltip: l10n.tooltipPerfNextSong,
               icon: const Icon(Icons.skip_next),
               onPressed: currentIndex >= 0 && currentIndex < totalSongs - 1
                   ? () => _controller?.nextPage(
@@ -396,7 +416,7 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
                   : null,
             ),
             IconButton(
-              tooltip: 'Setlist songs',
+              tooltip: l10n.tooltipPerfSetlistSongs,
               icon: const Icon(Icons.queue_music),
               onPressed: () =>
                   _showQuickSetlistSheet(context, setlist, currentIndex),
@@ -404,7 +424,7 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
           ],
           if (id != null)
             IconButton(
-              tooltip: 'Edit song',
+              tooltip: l10n.tooltipPerfEditSong,
               onPressed: () => context.push('/song/$id/edit'),
               icon: const Icon(Icons.edit_outlined),
             ),
@@ -442,7 +462,9 @@ class _SongPerformanceScreenState extends ConsumerState<SongPerformanceScreen>
                     ),
                   ),
                   Text(
-                    '${setlist.songCount} songs',
+                    AppLocalizations.of(
+                      context,
+                    ).labelSetlistSongCount(setlist.songCount),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -535,10 +557,11 @@ class _AppBarTitle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final song = ref.watch(songByIdProvider(songId)).value;
-    if (song == null) return const Text('Song');
+    final l10n = AppLocalizations.of(context);
+    if (song == null) return Text(l10n.titlePerfSong);
 
     final String subtitle = (setlist != null && index >= 0 && total > 0)
-        ? '${setlist!.name} (${index + 1}/$total)'
+        ? l10n.titlePerfSetlistPosition(setlist!.name, index + 1, total)
         : song.artist;
 
     return Column(
@@ -1011,10 +1034,13 @@ class _MissingSong extends StatelessWidget {
               color: theme.colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
-            Text('Song not found', style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context).errorPerfNotFoundTitle,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
-              'It may have been deleted from your songbook.',
+              AppLocalizations.of(context).descPerfNotFoundMessage,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1045,9 +1071,10 @@ class _OverflowMenu extends ConsumerWidget {
     final song = id == null ? null : ref.watch(songByIdProvider(id)).value;
     final settings = ref.watch(performanceSettingsProvider);
     final semitones = settings.semitones;
+    final l10n = AppLocalizations.of(context);
 
     return PopupMenuButton<VoidCallback>(
-      tooltip: 'More options',
+      tooltip: l10n.tooltipEditorMoreOptions,
       onSelected: (action) => action(),
       itemBuilder: (menuContext) => [
         PopupMenuItem<VoidCallback>(
@@ -1061,11 +1088,11 @@ class _OverflowMenu extends ConsumerWidget {
                   showTranspose: !song.isIndian,
                   showMelodyToggle: _hasMelodyLines(song.lyrics),
                 ),
-          child: const ListTile(
+          child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.tune),
-            title: Text('Performance controls'),
+            leading: const Icon(Icons.tune),
+            title: Text(l10n.actionPerfControls),
           ),
         ),
         _chordReferenceItem(context, ref),
@@ -1079,11 +1106,11 @@ class _OverflowMenu extends ConsumerWidget {
                   semitones,
                   ref.read(lyricFontProvider),
                 ),
-          child: const ListTile(
+          child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.output_rounded),
-            title: Text('Export'),
+            leading: const Icon(Icons.output_rounded),
+            title: Text(l10n.actionExport),
           ),
         ),
         PopupMenuItem<VoidCallback>(
@@ -1096,30 +1123,30 @@ class _OverflowMenu extends ConsumerWidget {
                   semitones,
                   ref.read(lyricFontProvider),
                 ),
-          child: const ListTile(
+          child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.share_outlined),
-            title: Text('Share'),
+            leading: const Icon(Icons.share_outlined),
+            title: Text(l10n.actionShare),
           ),
         ),
         const PopupMenuDivider(),
         PopupMenuItem<VoidCallback>(
           value: () => showGesturesHelpDialog(context),
-          child: const ListTile(
+          child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.touch_app_outlined),
-            title: Text('Gestures help'),
+            leading: const Icon(Icons.touch_app_outlined),
+            title: Text(l10n.tooltipPerfGesturesHelp),
           ),
         ),
         PopupMenuItem<VoidCallback>(
           value: () => context.push('/settings'),
-          child: const ListTile(
+          child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.settings_outlined),
-            title: Text('Settings'),
+            leading: const Icon(Icons.settings_outlined),
+            title: Text(l10n.titleSettings),
           ),
         ),
       ],
@@ -1169,7 +1196,11 @@ class _OverflowMenu extends ConsumerWidget {
         dense: true,
         contentPadding: EdgeInsets.zero,
         leading: const Icon(Icons.piano_outlined),
-        title: Text(indian ? 'Swara Reference' : 'Chord Reference Guide'),
+        title: Text(
+          indian
+              ? AppLocalizations.of(context).actionPerfSwaraReference
+              : AppLocalizations.of(context).actionPerfChordReferenceGuide,
+        ),
       ),
     );
   }
@@ -1194,6 +1225,7 @@ class _OverflowMenu extends ConsumerWidget {
     LyricFont font,
   ) async {
     String chosenFormat = 'chordpro';
+    final l10n = AppLocalizations.of(context);
 
     final result = await showDialog<String>(
       context: context,
@@ -1201,7 +1233,7 @@ class _OverflowMenu extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Export song'),
+              title: Text(l10n.titlePerfExportDialog),
               content: RadioGroup<String>(
                 groupValue: chosenFormat,
                 onChanged: (val) {
@@ -1209,15 +1241,15 @@ class _OverflowMenu extends ConsumerWidget {
                     setDialogState(() => chosenFormat = val);
                   }
                 },
-                child: const Column(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     RadioListTile<String>(
-                      title: Text('ChordPro (.chordpro)'),
+                      title: Text(l10n.labelSongListFormatChordPro),
                       value: 'chordpro',
                     ),
                     RadioListTile<String>(
-                      title: Text('PDF (.pdf)'),
+                      title: Text(l10n.labelSongListFormatPdf),
                       value: 'pdf',
                     ),
                   ],
@@ -1226,12 +1258,12 @@ class _OverflowMenu extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.actionCancel),
                 ),
                 FilledButton(
                   onPressed: () =>
                       Navigator.of(dialogContext).pop(chosenFormat),
-                  child: const Text('Export'),
+                  child: Text(l10n.actionExport),
                 ),
               ],
             );
@@ -1256,6 +1288,7 @@ class _OverflowMenu extends ConsumerWidget {
     LyricFont font,
   ) async {
     String chosenFormat = 'chordpro';
+    final l10n = AppLocalizations.of(context);
 
     final result = await showDialog<String>(
       context: context,
@@ -1263,7 +1296,7 @@ class _OverflowMenu extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Share song'),
+              title: Text(l10n.titlePerfShareDialog),
               content: RadioGroup<String>(
                 groupValue: chosenFormat,
                 onChanged: (val) {
@@ -1271,19 +1304,19 @@ class _OverflowMenu extends ConsumerWidget {
                     setDialogState(() => chosenFormat = val);
                   }
                 },
-                child: const Column(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     RadioListTile<String>(
-                      title: Text('AirQR Stream (Animated QR)'),
+                      title: Text(l10n.labelPerfFormatAirQr),
                       value: 'airqr',
                     ),
                     RadioListTile<String>(
-                      title: Text('ChordPro (.chordpro)'),
+                      title: Text(l10n.labelSongListFormatChordPro),
                       value: 'chordpro',
                     ),
                     RadioListTile<String>(
-                      title: Text('PDF (.pdf)'),
+                      title: Text(l10n.labelSongListFormatPdf),
                       value: 'pdf',
                     ),
                   ],
@@ -1292,12 +1325,12 @@ class _OverflowMenu extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.actionCancel),
                 ),
                 FilledButton(
                   onPressed: () =>
                       Navigator.of(dialogContext).pop(chosenFormat),
-                  child: const Text('Share'),
+                  child: Text(l10n.actionShare),
                 ),
               ],
             );
@@ -1327,6 +1360,7 @@ class _OverflowMenu extends ConsumerWidget {
     SongNote song,
     int semitones,
   ) async {
+    final l10n = AppLocalizations.of(context);
     try {
       const service = ChordProService();
       final text = service.format(song, semitones: semitones);
@@ -1335,7 +1369,7 @@ class _OverflowMenu extends ConsumerWidget {
       await Printing.sharePdf(bytes: bytes, filename: fileName);
     } catch (_) {
       if (context.mounted) {
-        _showSnack(context, 'Could not share the ChordPro file.');
+        _showSnack(context, l10n.errorPerfShareChordProFailed);
       }
     }
   }
@@ -1348,6 +1382,7 @@ class _OverflowMenu extends ConsumerWidget {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context, rootNavigator: true);
+    final l10n = AppLocalizations.of(context);
 
     var dialogOpen = true;
     void closeDialog() {
@@ -1378,7 +1413,7 @@ class _OverflowMenu extends ConsumerWidget {
 
       if (bytes.isEmpty) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Could not export the PDF (no pages).')),
+          SnackBar(content: Text(l10n.errorPerfPdfNoPages)),
         );
         return;
       }
@@ -1387,18 +1422,12 @@ class _OverflowMenu extends ConsumerWidget {
       await Printing.sharePdf(bytes: bytes, filename: fileName);
     } on TimeoutException {
       closeDialog();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('PDF export took too long and was stopped.'),
-        ),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.errorPerfPdfTimeout)));
     } catch (error, stack) {
       closeDialog();
-      if (kDebugMode) {
-        debugPrint('PDF share failed: $error\n$stack');
-      }
+      AppLogger.error('PDF share failed', error: error, stackTrace: stack);
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not share the PDF.')),
+        SnackBar(content: Text(l10n.errorPerfSharePdfFailed)),
       );
     }
   }
@@ -1421,6 +1450,7 @@ class _OverflowMenu extends ConsumerWidget {
     // Capture these before any await so we never touch a stale context.
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context, rootNavigator: true);
+    final l10n = AppLocalizations.of(context);
 
     var dialogOpen = true;
     void closeDialog() {
@@ -1455,7 +1485,7 @@ class _OverflowMenu extends ConsumerWidget {
 
       if (bytes.isEmpty) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Could not export the PDF (no pages).')),
+          SnackBar(content: Text(l10n.errorPerfPdfNoPages)),
         );
         return;
       }
@@ -1463,32 +1493,25 @@ class _OverflowMenu extends ConsumerWidget {
       // Save through the system "Save" dialog (scoped storage, no permission).
       // This preserves a Unicode file name — the share sheet's content URI
       // percent-encodes non-ASCII names, so Malayalam titles came out garbled.
-      final path = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export as PDF',
+      final savedUri = await FilePicker.saveFile(
+        dialogTitle: l10n.titlePerfExportPdf,
         fileName: '${safeFileName(song.title)}.pdf',
-        type: FileType.custom,
-        allowedExtensions: const ['pdf'],
         bytes: bytes,
+        mimeType: 'application/pdf',
       );
-      if (path != null) {
+      if (savedUri != null) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Exported "${song.title}".')),
+          SnackBar(content: Text(l10n.bodyPerfExported(song.title))),
         );
       }
     } on TimeoutException {
       closeDialog();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('PDF export took too long and was stopped.'),
-        ),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.errorPerfPdfTimeout)));
     } catch (error, stack) {
       closeDialog();
-      if (kDebugMode) {
-        debugPrint('PDF export failed: $error\n$stack');
-      }
+      AppLogger.error('PDF export failed', error: error, stackTrace: stack);
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not export the PDF.')),
+        SnackBar(content: Text(l10n.errorPerfExportPdfFailed)),
       );
     }
   }
@@ -1500,22 +1523,21 @@ class _OverflowMenu extends ConsumerWidget {
     SongNote song,
     int semitones,
   ) async {
+    final l10n = AppLocalizations.of(context);
     try {
       const service = ChordProService();
       final text = service.format(song, semitones: semitones);
-      final path = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export as ChordPro',
+      final savedUri = await FilePicker.saveFile(
+        dialogTitle: l10n.titlePerfExportChordPro,
         fileName: '${safeFileName(song.title)}.chordpro',
-        type: FileType.custom,
-        allowedExtensions: const ['chordpro'],
         bytes: Uint8List.fromList(utf8.encode(text)),
       );
-      if (context.mounted && path != null) {
-        _showSnack(context, 'Exported "${song.title}".');
+      if (context.mounted && savedUri != null) {
+        _showSnack(context, l10n.bodyPerfExported(song.title));
       }
     } catch (_) {
       if (context.mounted) {
-        _showSnack(context, 'Could not export the ChordPro file.');
+        _showSnack(context, l10n.errorPerfExportChordProFailed);
       }
     }
   }

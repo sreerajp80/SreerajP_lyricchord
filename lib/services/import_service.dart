@@ -48,8 +48,28 @@ class ImportService {
     required String content,
     required ImportDuplicateStrategy strategy,
     UserTitlePromptHandler? onAskUserTitle,
+    String untitledTitle = ChordProService.defaultUntitledTitle,
+  }) {
+    return importSongs(
+      songs: chordProService.parseMultiple(
+        content,
+        untitledTitle: untitledTitle,
+      ),
+      strategy: strategy,
+      onAskUserTitle: onAskUserTitle,
+    );
+  }
+
+  /// Saves already-parsed [songs] per [strategy].
+  ///
+  /// The import preview calls this with the very songs it showed, so what is
+  /// saved is exactly what the user saw — no second trip through ChordPro text.
+  Future<ImportResult> importSongs({
+    required List<SongNote> songs,
+    required ImportDuplicateStrategy strategy,
+    UserTitlePromptHandler? onAskUserTitle,
   }) async {
-    final parsedList = chordProService.parseMultiple(content);
+    final parsedList = songs;
     final importedSongs = <SongNote>[];
     final importedIds = <int>[];
 
@@ -70,14 +90,11 @@ class ImportService {
       // Handle duplicate based on strategy
       switch (strategy) {
         case ImportDuplicateStrategy.overwrite:
-          final updated = existing.copyWith(
-            title: parsed.title,
-            artist: parsed.artist,
-            lyrics: parsed.lyrics,
-            key: parsed.key,
-            bpm: parsed.bpm,
-            timestamp: now.millisecondsSinceEpoch,
-          );
+          final updated = _overwrite(
+            existing,
+            parsed,
+            now,
+          ).copyWith(title: parsed.title);
           await repository.update(updated);
           importedSongs.add(updated);
           importedIds.add(existing.id);
@@ -126,13 +143,7 @@ class ImportService {
 
           if (userTitle.toLowerCase() == existing.title.trim().toLowerCase()) {
             // User typed same name -> overwrite
-            final updated = existing.copyWith(
-              artist: parsed.artist,
-              lyrics: parsed.lyrics,
-              key: parsed.key,
-              bpm: parsed.bpm,
-              timestamp: now.millisecondsSinceEpoch,
-            );
+            final updated = _overwrite(existing, parsed, now);
             await repository.update(updated);
             importedSongs.add(updated);
             importedIds.add(existing.id);
@@ -153,6 +164,31 @@ class ImportService {
       importedSongs: importedSongs,
       importedIds: importedIds,
       totalParsed: parsedList.length,
+    );
+  }
+
+  /// [existing] with the content of [parsed] written over it.
+  ///
+  /// Carries the raga, tala and tradition as well as the words and tempo: an
+  /// Indian song imported over a Western one must not keep the Western
+  /// tradition, or the transposer would treat its swaras as chords. The
+  /// existing title, favourite star and scroll settings are kept.
+  SongNote _overwrite(SongNote existing, SongNote parsed, DateTime now) {
+    return SongNote(
+      id: existing.id,
+      title: existing.title,
+      artist: parsed.artist,
+      lyrics: parsed.lyrics,
+      key: parsed.key,
+      bpm: parsed.bpm,
+      favorite: existing.favorite,
+      timestamp: now.millisecondsSinceEpoch,
+      scrollSpeed: existing.scrollSpeed,
+      scrollMeasures: existing.scrollMeasures,
+      scrollSpeedSet: existing.scrollSpeedSet,
+      raga: parsed.raga,
+      tala: parsed.tala,
+      tradition: parsed.tradition,
     );
   }
 }

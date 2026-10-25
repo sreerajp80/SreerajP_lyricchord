@@ -1,3 +1,4 @@
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,6 +18,7 @@ import 'package:lyricchord/screens/setlist_list_screen.dart';
 import 'package:lyricchord/screens/settings_screen.dart';
 import 'package:lyricchord/screens/song_editor_screen.dart';
 import 'package:lyricchord/screens/song_performance_screen.dart';
+import 'package:lyricchord/screens/language_settings_screen.dart';
 import 'package:lyricchord/screens/theme_settings_screen.dart';
 
 import 'package:lyricchord/screens/import_settings_screen.dart';
@@ -25,6 +27,13 @@ import 'package:lyricchord/models/import_preview_args.dart';
 import 'package:lyricchord/screens/import_preview_screen.dart';
 import 'package:lyricchord/screens/air_qr_receiver_screen.dart';
 import 'package:lyricchord/screens/air_qr_transmitter_screen.dart';
+
+/// The app-wide SnackBar host.
+///
+/// Lets code that sits above any `Scaffold` (such as the file-open listener)
+/// still tell the user what happened.
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 /// The app's routes.
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -39,10 +48,20 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => const HomeShell(),
     routes: [
       GoRoute(path: '/', builder: (context, state) => const HomeShell()),
+      // These two routes need their data in `extra`. Without it (a bare link,
+      // or the data lost when the page is rebuilt) a hard cast would throw, so
+      // the redirect sends the user to the songbook instead (hard rule 4). The
+      // builders check again, so they can never throw even if reached directly.
       GoRoute(
         path: '/air-qr-transmit',
-        builder: (context, state) =>
-            AirQrTransmitterScreen(args: state.extra as AirQrTransmitterArgs),
+        redirect: (context, state) =>
+            state.extra is AirQrTransmitterArgs ? null : '/',
+        builder: (context, state) {
+          final args = state.extra;
+          return args is AirQrTransmitterArgs
+              ? AirQrTransmitterScreen(args: args)
+              : const HomeShell();
+        },
       ),
       GoRoute(
         path: '/air-qr-receive',
@@ -50,8 +69,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/import-preview',
-        builder: (context, state) =>
-            ImportPreviewScreen(args: state.extra as ImportPreviewArgs),
+        redirect: (context, state) =>
+            state.extra is ImportPreviewArgs ? null : '/',
+        builder: (context, state) {
+          final args = state.extra;
+          return args is ImportPreviewArgs
+              ? ImportPreviewScreen(args: args)
+              : const HomeShell();
+        },
       ),
       GoRoute(
         path: '/new',
@@ -118,6 +143,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'themes',
             builder: (context, state) => const ThemeSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'language',
+            builder: (context, state) => const LanguageSettingsScreen(),
           ),
           GoRoute(
             path: 'chords',

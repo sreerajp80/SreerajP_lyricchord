@@ -68,10 +68,9 @@ class StageModeNotifier extends Notifier<StageModeState> {
   /// Goes full screen.
   void enter() {
     if (state.enabled) return;
+    // Quiet Mode always starts off: the user turns it on from the HUD, and
+    // only after the phone confirms the ringer really went silent.
     state = const StageModeState(enabled: true, hudVisible: true);
-    if (state.isQuietMode) {
-      ref.read(stageQuietModeServiceProvider).enableQuietMode();
-    }
   }
 
   /// Leaves full screen and restores system states.
@@ -92,37 +91,44 @@ class StageModeNotifier extends Notifier<StageModeState> {
   }
 
   /// Authenticates using biometric/PIN to unlock Stage view.
-  Future<bool> unlockStageWithAuth({
+  ///
+  /// The lock only guards against accidental touches, so it must never trap
+  /// the user: when the check cannot run at all (no screen lock, no hardware,
+  /// lockout, or a platform error) the stage unlocks anyway. Only a person who
+  /// was asked and failed or backed out stays locked. The returned
+  /// [StageAuthResult] lets the screen tell the user what happened.
+  Future<StageAuthResult> unlockStageWithAuth({
     String reason = 'Authenticate to unlock Stage View',
   }) async {
     final security = ref.read(stageSecurityServiceProvider);
-    final isAvailable = await security.isSecurityAvailable();
-    if (!isAvailable) {
-      // Fallback: unlock directly if no hardware lock is set up
-      state = state.copyWith(isLocked: false, hudVisible: true);
-      return true;
-    }
-
     final result = await security.authenticate(reason: reason);
-    if (result.isSuccess) {
+    if (!result.isDenied) {
       state = state.copyWith(isLocked: false, hudVisible: true);
-      return true;
     }
-    return false;
+    return result;
   }
 
-  /// Toggles Stage Quiet Mode on/off.
-  Future<void> toggleQuietMode() async {
-    final newQuiet = !state.isQuietMode;
-    state = state.copyWith(isQuietMode: newQuiet);
+  /// Turns Stage Quiet Mode on or off.
+  ///
+  /// `isQuietMode` follows what the phone really did, so the HUD icon never
+  /// says "quiet" while the ringer can still sound. Returns the result of
+  /// turning it on, or `null` when it was turned off (or Stage Mode is off).
+  Future<QuietModeResult?> toggleQuietMode() async {
+    if (!state.enabled) return null;
     final quietService = ref.read(stageQuietModeServiceProvider);
-    if (state.enabled) {
-      if (newQuiet) {
-        await quietService.enableQuietMode();
-      } else {
-        await quietService.disableQuietMode();
-      }
+    if (state.isQuietMode) {
+      await quietService.disableQuietMode();
+      if (state.enabled) state = state.copyWith(isQuietMode: false);
+      return null;
     }
+    final result = await quietService.enableQuietMode();
+    if (!state.enabled) {
+      // Stage Mode was left while we waited; do not leave the phone silent.
+      if (result == QuietModeResult.on) await quietService.disableQuietMode();
+      return result;
+    }
+    state = state.copyWith(isQuietMode: result == QuietModeResult.on);
+    return result;
   }
 
   /// Shows the control bar.

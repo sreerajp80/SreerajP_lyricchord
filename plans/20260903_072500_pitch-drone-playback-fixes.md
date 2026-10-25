@@ -1,6 +1,6 @@
 # Fix Pitch Drone Restart, Mode Switching, and Premature Stopping
 
-**Status:** Proposed
+**Status:** completed
 
 ## Issue
 

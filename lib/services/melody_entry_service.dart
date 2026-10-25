@@ -88,12 +88,10 @@ class MelodyEntry {
   MelodyEntry silence() => _addPiece(_silence);
 
   /// Adds a hold: one more beat of whatever is already sounding.
-  MelodyEntry hold() =>
-      MelodyEntry(tokens: [...tokens, _hold], shareArmed: false);
+  MelodyEntry hold() => MelodyEntry(tokens: [...tokens, _hold]);
 
   /// Adds a bar line. It takes no time — it only marks a tala group.
-  MelodyEntry barLine() =>
-      MelodyEntry(tokens: [...tokens, _barLine], shareArmed: false);
+  MelodyEntry barLine() => MelodyEntry(tokens: [...tokens, _barLine]);
 
   /// Arms the next note to share the last beat rather than start a new one.
   MelodyEntry share() =>

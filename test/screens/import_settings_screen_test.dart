@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/app_localizations_delegates.dart';
 import 'package:lyricchord/models/import_settings.dart';
 import 'package:lyricchord/providers/import_settings_provider.dart';
 import 'package:lyricchord/providers/theme_mode_provider.dart';
@@ -18,18 +20,19 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-          child: const MaterialApp(home: ImportSettingsScreen()),
+          child: const MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: ImportSettingsScreen(),
+          ),
         ),
       );
 
       expect(find.text('Import Settings'), findsOneWidget);
       expect(find.text('Overwrite'), findsOneWidget);
-      expect(find.text('Rename imported songs'), findsOneWidget);
-      expect(find.text('Rename existing songs'), findsOneWidget);
-      expect(
-        find.text('User suggested name for imported song'),
-        findsOneWidget,
-      );
+      expect(find.text('Rename imported'), findsOneWidget);
+      expect(find.text('Rename existing'), findsOneWidget);
+      expect(find.text('Ask for a new name'), findsOneWidget);
 
       await tester.tap(find.text('Overwrite'));
       await tester.pumpAndSettle();

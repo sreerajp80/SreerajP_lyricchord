@@ -50,7 +50,6 @@ void main() {
     const song = SongNote(
       title: 'Spoken Word',
       lyrics: 'just some words\nwith no chords at all',
-      key: 'C',
       bpm: 100,
       timestamp: 0,
     );
@@ -66,7 +65,6 @@ void main() {
       title: 'Transposed',
       lyrics: '[G]hi [C]there [G/B]bass',
       key: 'G',
-      bpm: 120,
       timestamp: 0,
     );
 
@@ -74,7 +72,7 @@ void main() {
   });
 
   test('builds HTML for an empty song', () async {
-    const song = SongNote(title: 'Empty', key: 'C', bpm: 120, timestamp: 0);
+    const song = SongNote(title: 'Empty', timestamp: 0);
 
     final html = await service.buildHtml(song);
     expectIsSelfContainedHtml(html);
@@ -85,8 +83,6 @@ void main() {
     const song = SongNote(
       title: 'Rock & <Roll>',
       lyrics: 'a < b & c',
-      key: 'C',
-      bpm: 120,
       timestamp: 0,
     );
 
@@ -139,7 +135,6 @@ void main() {
       title: 'Song One',
       artist: 'Artist One',
       lyrics: '[C]First song lyrics',
-      key: 'C',
       bpm: 100,
       timestamp: 0,
     );
@@ -148,7 +143,6 @@ void main() {
       artist: 'Artist Two',
       lyrics: '[G]Second song lyrics',
       key: 'G',
-      bpm: 120,
       timestamp: 0,
     );
 
@@ -164,7 +158,6 @@ void main() {
     const song = SongNote(
       title: 'Sizes',
       lyrics: '[C]big enough to read',
-      key: 'C',
       bpm: 100,
       timestamp: 0,
     );
@@ -191,7 +184,6 @@ void main() {
         lyrics:
             '[C]a very long lyric line that would normally not fit across the '
             'width of an A4 page at fifteen points',
-        key: 'C',
         bpm: 100,
         timestamp: 0,
       );
@@ -217,7 +209,6 @@ void main() {
     const song1 = SongNote(
       title: 'One',
       lyrics: '[C]first',
-      key: 'C',
       bpm: 100,
       timestamp: 0,
     );

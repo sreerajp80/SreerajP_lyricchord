@@ -1,5 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:lyricchord/l10n/app_localizations.dart';
+import 'package:lyricchord/l10n/l10n_labels.dart';
 
 import 'package:lyricchord/models/melody_line.dart';
 import 'package:lyricchord/providers/melody_player_provider.dart';
@@ -49,7 +52,6 @@ class MelodyLineRow extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _PlayButton(
               playing: isPlaying,
@@ -74,14 +76,14 @@ class MelodyLineRow extends ConsumerWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 _Toggle(
-                  label: 'Loop',
+                  label: AppLocalizations.of(context).labelMelodyLineLoop,
                   selected: playback.loop,
                   onChanged: (value) => ref
                       .read(melodyPlayerProvider.notifier)
                       .setLoop(loop: value),
                 ),
                 _Toggle(
-                  label: 'Half speed',
+                  label: AppLocalizations.of(context).labelMelodyLineHalfSpeed,
                   selected: playback.isHalfSpeed,
                   onChanged: (value) => ref
                       .read(melodyPlayerProvider.notifier)
@@ -94,7 +96,7 @@ class MelodyLineRow extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(left: 36, top: 2),
             child: Text(
-              melody.problems.first,
+              melody.problems.first.text(AppLocalizations.of(context)),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
               ),
@@ -124,7 +126,11 @@ class MelodyLineRow extends ConsumerWidget {
       // Say so rather than showing a cursor over silence — a player that looks
       // like it is working while nothing comes out is the bug this avoids.
       ScaffoldMessenger.maybeOf(ref.context)?.showSnackBar(
-        const SnackBar(content: Text('Could not play this melody.')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(ref.context).errorMelodyLinePlayFailed,
+          ),
+        ),
       );
     }
   }
@@ -145,6 +151,7 @@ class _PlayButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
     return IconButton(
       onPressed: enabled ? onPressed : null,
       visualDensity: VisualDensity.compact,
@@ -153,8 +160,8 @@ class _PlayButton extends StatelessWidget {
       iconSize: 20,
       color: scheme.primary,
       tooltip: enabled
-          ? (playing ? 'Stop' : 'Hum this line')
-          : 'Add a {tonic: ...} line to hear this',
+          ? (playing ? l10n.tooltipMelodyLineStop : l10n.tooltipMelodyLinePlay)
+          : l10n.tooltipMelodyLineNeedsTonic('{tonic: ...}'),
       icon: Icon(playing ? Icons.stop_circle : Icons.play_circle),
     );
   }

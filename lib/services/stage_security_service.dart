@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 
 /// Result of local biometric or device authentication.
+///
+/// Only [failure] and [canceled] mean "the person did not unlock". Every other
+/// non-success outcome means the check could not run at all, and the caller
+/// must not keep the user locked out because of it.
 enum StageAuthOutcome { success, failure, canceled, notAvailable, error }
 
 class StageAuthResult {
@@ -12,6 +16,12 @@ class StageAuthResult {
   const StageAuthResult(this.outcome, {this.message});
 
   bool get isSuccess => outcome == StageAuthOutcome.success;
+
+  /// True when the person was asked and did not pass (wrong finger, or backed
+  /// out of the prompt). False for success and for "could not ask at all".
+  bool get isDenied =>
+      outcome == StageAuthOutcome.failure ||
+      outcome == StageAuthOutcome.canceled;
 }
 
 /// Local authentication service for Stage Security (Stage Lock Mode).
@@ -52,12 +62,17 @@ class StageSecurityService {
 
       final authenticated = await _localAuth.authenticate(
         localizedReason: reason,
-        biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
 
       return StageAuthResult(
         authenticated ? StageAuthOutcome.success : StageAuthOutcome.failure,
+      );
+    } on LocalAuthException catch (e) {
+      // local_auth 3.x reports failures this way.
+      return StageAuthResult(
+        outcomeForLocalAuthCode(e.code),
+        message: e.description,
       );
     } on PlatformException catch (e) {
       final code = e.code.toLowerCase();
@@ -76,6 +91,32 @@ class StageSecurityService {
       return StageAuthResult(StageAuthOutcome.error, message: e.message);
     } catch (e) {
       return StageAuthResult(StageAuthOutcome.error, message: e.toString());
+    }
+  }
+
+  /// Maps a `local_auth` error code to a [StageAuthOutcome].
+  ///
+  /// The person backing out (or the system closing the prompt) is
+  /// [StageAuthOutcome.canceled]. No enrolled lock, no hardware, or a lockout
+  /// is [StageAuthOutcome.notAvailable]. Anything else is
+  /// [StageAuthOutcome.error].
+  static StageAuthOutcome outcomeForLocalAuthCode(LocalAuthExceptionCode code) {
+    switch (code) {
+      case LocalAuthExceptionCode.userCanceled:
+      case LocalAuthExceptionCode.systemCanceled:
+      case LocalAuthExceptionCode.timeout:
+      case LocalAuthExceptionCode.userRequestedFallback:
+      case LocalAuthExceptionCode.authInProgress:
+        return StageAuthOutcome.canceled;
+      case LocalAuthExceptionCode.noCredentialsSet:
+      case LocalAuthExceptionCode.noBiometricsEnrolled:
+      case LocalAuthExceptionCode.noBiometricHardware:
+      case LocalAuthExceptionCode.biometricHardwareTemporarilyUnavailable:
+      case LocalAuthExceptionCode.temporaryLockout:
+      case LocalAuthExceptionCode.biometricLockout:
+        return StageAuthOutcome.notAvailable;
+      default:
+        return StageAuthOutcome.error;
     }
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lyricchord/models/song_title_words.dart';
 import 'package:lyricchord/core/utils/chord_insert.dart';
 import 'package:lyricchord/providers/database_provider.dart';
 import 'package:lyricchord/providers/song_editor_provider.dart';
@@ -228,6 +229,25 @@ void main() {
 
       final saved = await repo.watchSongById(id).first;
       expect(saved!.title, 'Untitled Song');
+    });
+
+    test('a song with no title is saved in the given language', () async {
+      await open(0);
+      final editor = container.read(songEditorProvider(0).notifier);
+      final words = SongTitleWords(
+        untitled: 'अनामगीतम्',
+        copyOf: (title) => '$title (प्रतिलिपिः)',
+      );
+
+      editor.setLyrics('just words');
+      final id = await editor.save(words: words);
+      final copyId = await editor.saveAsCopy(words: words);
+
+      expect((await repo.watchSongById(id).first)!.title, 'अनामगीतम्');
+      expect(
+        (await repo.watchSongById(copyId).first)!.title,
+        'अनामगीतम् (प्रतिलिपिः)',
+      );
     });
   });
 }

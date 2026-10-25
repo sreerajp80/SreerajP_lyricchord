@@ -12,7 +12,12 @@ class AirQrNotifier extends Notifier<AirQrProgress> {
   }
 
   void processScannedCode(String raw) {
-    if (state.status == AirQrStatus.completed) return;
+    // A finished or failed stream waits for resetStream(); more frames would
+    // only repeat the same result.
+    if (state.status == AirQrStatus.completed ||
+        state.status == AirQrStatus.error) {
+      return;
+    }
     final updated = _service.processFrameString(raw, state);
     state = updated;
   }
