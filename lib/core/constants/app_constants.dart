@@ -88,4 +88,24 @@ class AppConstants {
   /// Width (in logical pixels) at and above which the tablet dual-pane
   /// layout is used; below this a single-pane phone layout is used.
   static const double tabletBreakpoint = 600.0;
+
+  /// shared_preferences key for the song list's share of the tablet width
+  /// (0.0–1.0).
+  static const String prefSplitListFraction = 'split_list_fraction';
+
+  /// shared_preferences key for whether the tablet song list is hidden.
+  static const String prefSplitListCollapsed = 'split_list_collapsed';
+
+  /// The song list's default share of the tablet width (38%, as on Android).
+  static const double splitDefaultListFraction = 0.38;
+
+  /// Narrowest the tablet song list can be dragged while it is open.
+  static const double splitMinListWidth = 240.0;
+
+  /// Widest the tablet song list can be, as a share of the width, so the song
+  /// always keeps the larger side.
+  static const double splitMaxListFraction = 0.6;
+
+  /// Dragging the list narrower than this hides it.
+  static const double splitCollapseWidth = 120.0;
 }

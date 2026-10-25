@@ -46,11 +46,10 @@ void main() {
 
   testWidgets('groups the beats the tala way', (tester) async {
     await pumpGrid(tester, '{melody} P , M | G , | R S');
-    // Three groups means two gaps between them.
-    final gaps = tester
-        .widgetList<SizedBox>(find.byType(SizedBox))
-        .where((box) => box.width == 14);
-    expect(gaps.length, 2);
+    // One outer Wrap holding one Wrap per tala group.
+    final outer = tester.widget<Wrap>(find.byType(Wrap).first);
+    expect(outer.spacing, 14);
+    expect(outer.children.length, 3);
   });
 
   testWidgets('shows the writer\'s own spelling', (tester) async {
@@ -105,12 +104,114 @@ void main() {
     expect(find.byType(Container), findsNothing);
   });
 
-  testWidgets('a long line scrolls instead of overflowing', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(320, 200));
+  testWidgets('a long line wraps onto more rows instead of overflowing', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await pumpGrid(tester, '{melody} S R G M | P D N S | R G M P | D N S R');
     expect(tester.takeException(), isNull);
-    expect(find.byType(SingleChildScrollView), findsOneWidget);
+    expect(find.byType(SingleChildScrollView), findsNothing);
+
+    // The first and the last beat sit on different rows, and both are on
+    // screen.
+    final first = tester.getTopLeft(find.text('S').first);
+    final last = tester.getTopLeft(find.text('R').last);
+    expect(last.dy, greaterThan(first.dy));
+    expect(last.dx, lessThan(320));
+  });
+
+  testWidgets('a group that fits on a row is not split', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await pumpGrid(tester, '{melody} S R G M | P D N Sa');
+    // The second group moves down as a whole: its first and last beat share a
+    // row.
+    final p = tester.getTopLeft(find.text('P'));
+    final sa = tester.getTopLeft(find.text('Sa'));
+    expect(sa.dy, p.dy);
+  });
+
+  testWidgets('a group wider than the row breaks between boxes', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(200, 400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await pumpGrid(tester, '{melody} S R G M P D N S R G M P');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('scrolls the sheet to keep the sounding beat in view', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 300));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    final line = parser.parse('{melody} S R G M | P D N S | R G M P | D N S Q');
+
+    Widget sheet(int? currentBeat) => MaterialApp(
+      localizationsDelegates: appLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: SingleChildScrollView(
+          controller: controller,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Lyrics above push the grid below the screen.
+              const SizedBox(height: 600),
+              MelodyBeatGrid(line: line, currentBeat: currentBeat),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(sheet(null));
+    expect(controller.offset, 0);
+
+    // The last beat is the 'Q', which has a text of its own to find.
+    final lastBeat = line.beats.length - 1;
+    await tester.pumpWidget(sheet(lastBeat));
+    await tester.pumpAndSettle();
+
+    expect(controller.offset, greaterThan(0));
+    final box = tester.getRect(find.text('Q'));
+    expect(box.bottom, lessThanOrEqualTo(300));
+    expect(box.top, greaterThanOrEqualTo(0));
+  });
+
+  testWidgets('does not scroll when the sounding beat is already visible', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    final line = parser.parse('{melody} S R G');
+
+    Widget sheet(int? currentBeat) => MaterialApp(
+      localizationsDelegates: appLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: SingleChildScrollView(
+          controller: controller,
+          child: Column(
+            children: [
+              MelodyBeatGrid(line: line, currentBeat: currentBeat),
+              const SizedBox(height: 2000),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(sheet(0));
+    await tester.pumpWidget(sheet(1));
+    await tester.pumpAndSettle();
+    expect(controller.offset, 0);
   });
 }

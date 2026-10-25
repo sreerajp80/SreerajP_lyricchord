@@ -3604,4 +3604,14 @@ class AppLocalizationsSa extends AppLocalizations {
 
   @override
   String get labelLanguageSystem => 'तन्त्रसिद्धम्';
+
+  @override
+  String get tooltipHideList => 'सूची गोप्यताम्';
+
+  @override
+  String get tooltipShowList => 'सूची दर्श्यताम्';
+
+  @override
+  String get descResizeListHandle =>
+      'गीतसूच्याः विस्तारं परिवर्तयितुं कर्ष्यताम्। गोपयितुं दर्शयितुं वा द्विवारं स्पृश्यताम्।';
 }

@@ -971,5 +971,8 @@
   "helpSongbookS6P2": "ततः LyricChord प्रथमस्थापने इव निदर्शनगीतैः सह आरभते।",
   "helpSongbookS6P3": "गीतानि पुनः अपेक्षितानि स्युः चेत्, प्रथमं तानि निर्याप्यन्ताम् (निर्यापणविषयः दृश्यताम्)।",
   "titleSettingsLanguage": "भाषा",
-  "labelLanguageSystem": "तन्त्रसिद्धम्"
+  "labelLanguageSystem": "तन्त्रसिद्धम्",
+  "tooltipHideList": "सूची गोप्यताम्",
+  "tooltipShowList": "सूची दर्श्यताम्",
+  "descResizeListHandle": "गीतसूच्याः विस्तारं परिवर्तयितुं कर्ष्यताम्। गोपयितुं दर्शयितुं वा द्विवारं स्पृश्यताम्।"
 }

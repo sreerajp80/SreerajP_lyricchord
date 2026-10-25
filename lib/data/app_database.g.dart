@@ -1912,7 +1912,7 @@ class $$SongNotesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$SongNotesTable, SongNoteRow>(table),
                   $$SongNotesTableReferences(db, table, e),
                 ),
               )
@@ -2209,7 +2209,7 @@ class $$SetlistsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$SetlistsTable, SetlistRow>(table),
                   $$SetlistsTableReferences(db, table, e),
                 ),
               )
@@ -2562,7 +2562,7 @@ class $$SetlistItemsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$SetlistItemsTable, SetlistItemRow>(table),
                   $$SetlistItemsTableReferences(db, table, e),
                 ),
               )

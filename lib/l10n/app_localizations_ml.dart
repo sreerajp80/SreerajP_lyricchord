@@ -3631,4 +3631,14 @@ class AppLocalizationsMl extends AppLocalizations {
 
   @override
   String get labelLanguageSystem => 'സിസ്റ്റം സ്വതവേ';
+
+  @override
+  String get tooltipHideList => 'പട്ടിക മറയ്ക്കുക';
+
+  @override
+  String get tooltipShowList => 'പട്ടിക കാണിക്കുക';
+
+  @override
+  String get descResizeListHandle =>
+      'പാട്ടുകളുടെ പട്ടികയുടെ വീതി മാറ്റാൻ വലിക്കുക. മറയ്ക്കാനോ കാണിക്കാനോ രണ്ടുതവണ തൊടുക.';
 }

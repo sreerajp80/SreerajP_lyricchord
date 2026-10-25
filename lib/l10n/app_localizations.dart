@@ -5934,6 +5934,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System default'**
   String get labelLanguageSystem;
+
+  /// Tablet split view: button on the divider that hides the song list. Short tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide list'**
+  String get tooltipHideList;
+
+  /// Tablet split view: button on the divider that shows the hidden song list again. Short tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Show list'**
+  String get tooltipShowList;
+
+  /// Screen-reader label for the tablet divider between the song list and the song.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to resize the song list. Double-tap to hide or show it.'**
+  String get descResizeListHandle;
 }
 
 class _AppLocalizationsDelegate

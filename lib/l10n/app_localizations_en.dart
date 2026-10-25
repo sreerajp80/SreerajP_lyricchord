@@ -3595,4 +3595,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelLanguageSystem => 'System default';
+
+  @override
+  String get tooltipHideList => 'Hide list';
+
+  @override
+  String get tooltipShowList => 'Show list';
+
+  @override
+  String get descResizeListHandle =>
+      'Drag to resize the song list. Double-tap to hide or show it.';
 }

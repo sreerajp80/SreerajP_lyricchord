@@ -6,12 +6,14 @@ import 'package:lyricchord/l10n/app_localizations.dart';
 import 'package:lyricchord/providers/song_list_provider.dart';
 import 'package:lyricchord/screens/song_list_screen.dart';
 import 'package:lyricchord/screens/song_performance_screen.dart';
+import 'package:lyricchord/widgets/resizable_split_view.dart';
 
 /// Chooses the layout for the songbook.
 ///
 /// Below [AppConstants.tabletBreakpoint] (600 dp) the list fills the screen and
 /// tapping a song navigates. At 600 dp and above the list sits on the left
-/// (38%) with the song on the right (62%), matching the Android app.
+/// (38% by default, as on Android) with the song on the right. The divider
+/// can be dragged to resize the list or hide it ([ResizableSplitView]).
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key});
 
@@ -22,12 +24,9 @@ class HomeShell extends StatelessWidget {
         final isTablet = constraints.maxWidth >= AppConstants.tabletBreakpoint;
         if (!isTablet) return const SongListScreen();
 
-        return const Row(
-          children: [
-            Expanded(flex: 38, child: SongListScreen(dualPane: true)),
-            VerticalDivider(width: 1),
-            Expanded(flex: 62, child: _DetailPane()),
-          ],
+        return const ResizableSplitView(
+          list: SongListScreen(dualPane: true),
+          detail: _DetailPane(),
         );
       },
     );

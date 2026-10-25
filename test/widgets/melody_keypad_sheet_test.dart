@@ -55,10 +55,18 @@ void main() {
   ///
   /// Scoped to the button block, because the preview grid draws the same swara
   /// text as the key that wrote it — a bare `find.text('S')` would match both.
+  /// The grid wraps its rows with a [Wrap] too, so its boxes are left out.
   Future<void> tapKey(WidgetTester tester, String label) async {
-    await tester.tap(
-      find.descendant(of: find.byType(Wrap), matching: find.text(label)),
-    );
+    final inGrid = find
+        .descendant(of: find.byType(MelodyBeatGrid), matching: find.text(label))
+        .evaluate()
+        .toSet();
+    final onKeypad = find
+        .descendant(of: find.byType(Wrap), matching: find.text(label))
+        .evaluate()
+        .toSet()
+        .difference(inGrid);
+    await tester.tap(find.byElementPredicate(onKeypad.contains));
     await tester.pumpAndSettle();
   }
 

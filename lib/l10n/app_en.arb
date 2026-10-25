@@ -4461,5 +4461,17 @@
   "labelLanguageSystem": "System default",
   "@labelLanguageSystem": {
     "description": "Language choice: follow the phone's language. Short label."
+  },
+  "tooltipHideList": "Hide list",
+  "@tooltipHideList": {
+    "description": "Tablet split view: button on the divider that hides the song list. Short tooltip."
+  },
+  "tooltipShowList": "Show list",
+  "@tooltipShowList": {
+    "description": "Tablet split view: button on the divider that shows the hidden song list again. Short tooltip."
+  },
+  "descResizeListHandle": "Drag to resize the song list. Double-tap to hide or show it.",
+  "@descResizeListHandle": {
+    "description": "Screen-reader label for the tablet divider between the song list and the song."
   }
 }
