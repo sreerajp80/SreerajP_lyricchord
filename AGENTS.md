@@ -326,8 +326,8 @@ Every change follows plan-before-changing and log-after-changing:
    generated-file check, the format check, `flutter analyze` and `flutter test`. CI never
    builds release artifacts, signs, holds signing secrets, uploads, or publishes. Release
    builds are done locally (`docs/guidelines/flutter_project_engineering_standard.md` §19).
-   Dependabot is not used (no `.github/dependabot.yml`), even though engineering standard
-   §19.2 asks for it; dependencies are updated by hand, each with its own plan.
+   Dependabot is not used (no `.github/dependabot.yml`), as engineering standard
+   §19.2 requires; dependencies are updated by hand, each with its own plan.
 
 Create `plans/` and `change_log/` if they do not exist.
 
