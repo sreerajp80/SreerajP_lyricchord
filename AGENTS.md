@@ -288,7 +288,7 @@ AGENTS.md            # this file — project rules for AI agents
 README.md            # setup, run, test, build
 PRIVACY.md           # privacy policy draft
 l10n.yaml            # localization configuration
-.github/             # CI checks + Dependabot only
+.github/             # CI checks only
 docs/                # design docs (profile, architecture, security, release, idea, plan)
 docs/guidelines/     # shared Flutter guidelines submodule (read-only)
 plans/               # one plan per change (see workflow rules)
@@ -322,11 +322,12 @@ Every change follows plan-before-changing and log-after-changing:
    check out or commit the submodule or its version. If a guideline needs a change, write a note
    for the user instead (`docs/guidelines/DOCS_FOLDER_GUIDELINE.md` §1.1). If the folder is empty
    or missing, stop and ask the user.
-5. **CI is checks + Dependabot only.** GitHub CI runs only `flutter pub get`, code generation,
-   the generated-file check, the format check, `flutter analyze`, `flutter test`, plus
-   Dependabot (`.github/dependabot.yml` for `pub` and `github-actions`). CI never builds
-   release artifacts, signs, holds signing secrets, uploads, or publishes. Release builds are
-   done locally (`docs/guidelines/flutter_project_engineering_standard.md` §19).
+5. **CI is checks only.** GitHub CI runs only `flutter pub get`, code generation, the
+   generated-file check, the format check, `flutter analyze` and `flutter test`. CI never
+   builds release artifacts, signs, holds signing secrets, uploads, or publishes. Release
+   builds are done locally (`docs/guidelines/flutter_project_engineering_standard.md` §19).
+   Dependabot is not used (no `.github/dependabot.yml`), even though engineering standard
+   §19.2 asks for it; dependencies are updated by hand, each with its own plan.
 
 Create `plans/` and `change_log/` if they do not exist.
 

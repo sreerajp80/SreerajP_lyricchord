@@ -102,12 +102,12 @@ version themselves ([guidelines/DOCS_FOLDER_GUIDELINE.md](guidelines/DOCS_FOLDER
 
 ---
 
-## 6. CI Is Checks And Dependabot Only
+## 6. CI Is Checks Only
 
 GitHub CI (`.github/workflows/ci.yml`) runs only `flutter pub get`, code generation, the
 generated-file check, the format check, `flutter analyze` and `flutter test`.
-`.github/dependabot.yml` opens update pull requests for `pub` and `github-actions`; each one
-still goes through plan → approve → log before it is merged. CI never builds release artifacts,
+Dependabot is not used (no `.github/dependabot.yml`); dependencies are updated by hand, and
+each update goes through plan → approve → log. CI never builds release artifacts,
 signs, holds secrets, uploads or publishes. Releases are built locally
 ([release_process.md](release_process.md)).
 

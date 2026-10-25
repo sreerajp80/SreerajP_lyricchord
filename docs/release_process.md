@@ -181,7 +181,7 @@ unless the plugin needs it, and nothing exported may accept data without validat
 - Rules:
   - Back up the keystore in at least two separate secure, offline places. Losing it means you can
     no longer publish updates under the same signature.
-  - GitHub CI runs only checks and Dependabot; it never holds signing secrets.
+  - GitHub CI runs only checks; it never holds signing secrets.
   - Apple certificates and provisioning profiles follow the same rules
     ([guidelines/guideline.md](guidelines/guideline.md) §2.5).
 

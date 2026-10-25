@@ -131,5 +131,5 @@ without `--flavor` until they are set up on a Mac.
 | IDE | VS Code (from code — please confirm) |
 | Can build iOS / macOS locally | TODO — needed before first iOS release |
 | Git hosting | GitHub |
-| CI checks | yes — analyze/test and Dependabot only (engineering standard §19) |
+| CI checks | yes — analyze/test only (no Dependabot) (engineering standard §19) |
 | Release owner (role) | The app owner |
