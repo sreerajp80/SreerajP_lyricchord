@@ -164,6 +164,67 @@ void buildVersion10Database(File file) {
   db.close();
 }
 
+/// Builds a database whose *last* non-null song columns — `title`,
+/// `timestamp` and `scroll_speed_set` — and the setlist columns are nullable
+/// and hold NULL, stamped at [version].
+///
+/// The field report: a phone upgraded from an old build showed an empty
+/// songbook, and every import failed its duplicate-title check with "Null
+/// check operator used on a null value", even after the other columns were
+/// repaired.
+void buildDatabaseWithNullTitleTimeAndSetlist(
+  File file, {
+  required int version,
+}) {
+  final db = sqlite3.open(file.path);
+  db.execute('''
+    CREATE TABLE song_notes (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      title TEXT,
+      artist TEXT NOT NULL DEFAULT '',
+      lyrics TEXT NOT NULL DEFAULT '',
+      key TEXT NOT NULL DEFAULT 'C',
+      bpm INTEGER NOT NULL DEFAULT 120,
+      favorite INTEGER NOT NULL DEFAULT 0,
+      timestamp INTEGER,
+      scroll_speed REAL NOT NULL DEFAULT 1.0,
+      scroll_measures INTEGER NOT NULL DEFAULT 32,
+      raga TEXT NOT NULL DEFAULT '',
+      tala TEXT NOT NULL DEFAULT '',
+      tradition TEXT NOT NULL DEFAULT '',
+      scroll_speed_set INTEGER
+    )''');
+  db.execute('''
+    CREATE TABLE setlists (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      description TEXT,
+      created_at INTEGER,
+      updated_at INTEGER
+    )''');
+  db.execute('''
+    CREATE TABLE setlist_items (
+      id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      setlist_id INTEGER NOT NULL REFERENCES setlists(id) ON DELETE CASCADE,
+      song_id INTEGER NOT NULL REFERENCES song_notes(id) ON DELETE CASCADE,
+      sort_order INTEGER
+    )''');
+  db.execute(
+    'INSERT INTO song_notes (title, lyrics, timestamp, scroll_speed_set) '
+    "VALUES ('Kanyaka Mariyam Innal', '[Em]hello', 2000, 0)",
+  );
+  // Title, timestamp and scroll_speed_set all NULL.
+  db.execute("INSERT INTO song_notes (lyrics) VALUES ('[C]no name')");
+  // A song with a title but no time or speed flag.
+  db.execute(
+    "INSERT INTO song_notes (title, lyrics) VALUES ('Untitled Song', '[G]x')",
+  );
+  db.execute('INSERT INTO setlists (id) VALUES (1)');
+  db.execute('INSERT INTO setlist_items (setlist_id, song_id) VALUES (1, 1)');
+  db.execute('PRAGMA user_version = $version');
+  db.close();
+}
+
 void main() {
   late Directory dir;
   late File file;
@@ -328,6 +389,55 @@ void main() {
         expect(untouched.scrollSpeedSet, isFalse);
       },
     );
+  });
+
+  // Version 10 runs the upgrade; version 11 is already current, so only the
+  // repair in `beforeOpen` can fix it.
+  group('NULL title, timestamp and setlist columns', () {
+    for (final version in [10, 11]) {
+      test('a version $version database reads every song back', () async {
+        buildDatabaseWithNullTitleTimeAndSetlist(file, version: version);
+
+        final db = AppDatabase.forTesting(NativeDatabase(file));
+        addTearDown(db.close);
+
+        final songs = await SongRepository(db).watchAllSongs().first;
+
+        expect(songs, hasLength(3));
+        // The newest song first; the two with no time sort to the end.
+        expect(songs.first.title, 'Kanyaka Mariyam Innal');
+        final nameless = songs.firstWhere((s) => s.lyrics == '[C]no name');
+        expect(nameless.title, 'Untitled Song');
+        expect(nameless.timestamp, 0);
+        expect(nameless.scrollSpeedSet, isFalse);
+      });
+
+      test('version $version: the import duplicate check works', () async {
+        buildDatabaseWithNullTitleTimeAndSetlist(file, version: version);
+
+        final db = AppDatabase.forTesting(NativeDatabase(file));
+        addTearDown(db.close);
+        final repository = SongRepository(db);
+
+        final found = await repository.findByTitle('Kanyaka Mariyam Innal');
+        expect(found?.lyrics, '[Em]hello');
+        expect(await repository.findByTitle('Untitled Song'), isNotNull);
+        expect(await repository.findByTitle('No Such Song'), isNull);
+      });
+
+      test('version $version: setlists read back with defaults', () async {
+        buildDatabaseWithNullTitleTimeAndSetlist(file, version: version);
+
+        final db = AppDatabase.forTesting(NativeDatabase(file));
+        addTearDown(db.close);
+
+        final setlists = await SetlistRepository(db).watchAllSetlists().first;
+
+        expect(setlists, hasLength(1));
+        expect(setlists.single.name, 'Setlist');
+        expect(setlists.single.description, '');
+      });
+    }
   });
 
   // Versions 1–7 had no `raga`, `tala` or `tradition` columns. The version 4

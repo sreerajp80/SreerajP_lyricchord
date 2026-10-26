@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart' show Database;
 
 import 'package:lyricchord/core/constants/app_constants.dart';
+// The app's own name for a song saved with no title, reused by the NULL repair.
+import 'package:lyricchord/models/song_title_words.dart';
 // Both are pure logic — no storage, no UI, no navigation. Imported here only so
 // the version 9 backfill classifies old songs by exactly the same rule the rest
 // of the app uses, instead of a second copy that could drift out of step.
@@ -138,7 +140,7 @@ class AppDatabase extends _$AppDatabase {
       await _addMissingSongColumns(m);
       // Older builds may have left NULLs in columns drift reads as non-null;
       // heal them before the first read below.
-      await _healNullSongColumns();
+      await _healNullValues();
       if (from < 2) {
         await m.createTable(setlists);
         await m.createTable(setlistItems);
@@ -176,7 +178,7 @@ class AppDatabase extends _$AppDatabase {
       // Safety net for a device already stamped at version 9 with NULLs left
       // in place: onUpgrade will never run again there, so the repair above
       // would never fire. Once the data is clean this touches no rows.
-      await _healNullSongColumns();
+      await _healNullValues();
     },
   );
 
@@ -473,40 +475,74 @@ class AppDatabase extends _$AppDatabase {
   /// Every `song_notes` column drift declares non-null, with the SQL literal to
   /// put back when a row holds NULL instead.
   ///
-  /// `id`, `title` and `timestamp` are left out on purpose: they are NOT NULL in
-  /// every schema this app has ever written, so a NULL there is not a shape we
-  /// can invent a sensible value for.
-  static const Map<String, String> _songColumnDefaults = {
+  /// Only `id` is left out: it is the row id, which SQLite never lets be NULL.
+  /// `title`, `timestamp` and `scroll_speed_set` are in the list because an
+  /// upgraded phone still showed an empty songbook with the other columns
+  /// repaired. A song with no title gets the app's own "Untitled Song", so it
+  /// stays visible and can be renamed; one with no time sorts to the end.
+  static final Map<String, String> _songColumnDefaults = {
+    'title': _sqlText(SongTitleWords.englishUntitled),
     'artist': "''",
     'lyrics': "''",
     'key': "'C'",
     'bpm': '120',
     'favorite': '0',
+    'timestamp': '0',
     'scroll_speed': '1.0',
     'scroll_measures': '32',
+    'scroll_speed_set': '0',
     'raga': "''",
     'tala': "''",
     'tradition': "''",
   };
 
-  /// Replaces NULL with the declared default in every non-null `song_notes`
-  /// column.
+  /// The same repair for the setlist tables, whose rows drift also maps with
+  /// `!` on every non-null column.
+  static const Map<String, Map<String, String>> _setlistColumnDefaults = {
+    'setlists': {
+      'name': "'Setlist'",
+      'description': "''",
+      'created_at': '0',
+      'updated_at': '0',
+    },
+    'setlist_items': {'sort_order': '0'},
+  };
+
+  /// [text] as a single-quoted SQL string literal.
+  static String _sqlText(String text) => "'${text.replaceAll("'", "''")}'";
+
+  /// Replaces NULL with the declared default in every non-null column of
+  /// `song_notes`, `setlists` and `setlist_items`.
   ///
   /// Older builds added some of these columns without a NOT NULL default, so on
   /// those phones the rows hold NULL. Drift declares the columns non-null and
   /// ends every one with `!` in its row mapper, so a single NULL makes reading
   /// *any* song throw "Null check operator used on a null value" — which leaves
-  /// the songbook permanently empty.
+  /// the songbook permanently empty and makes every import's duplicate-title
+  /// check fail.
   ///
   /// Safe to run on a healthy database (the columns are NOT NULL there, so the
   /// `WHERE` matches nothing) and safe on an old database that does not have a
-  /// column yet (the column check skips it).
-  Future<void> _healNullSongColumns() async {
-    final existing = await _songColumnNames();
-    for (final entry in _songColumnDefaults.entries) {
+  /// table or column yet (the column check skips it).
+  Future<void> _healNullValues() async {
+    await _healNullColumns('song_notes', _songColumnDefaults);
+    for (final table in _setlistColumnDefaults.entries) {
+      await _healNullColumns(table.key, table.value);
+    }
+  }
+
+  /// Sets each column in [defaults] that exists in [table] to its default
+  /// wherever it holds NULL. Plain SQL, so it never goes through drift's typed
+  /// row mapper.
+  Future<void> _healNullColumns(
+    String table,
+    Map<String, String> defaults,
+  ) async {
+    final existing = await _columnNames(table);
+    for (final entry in defaults.entries) {
       if (existing.contains(entry.key)) {
         await customStatement(
-          'UPDATE song_notes SET ${entry.key} = ${entry.value} '
+          'UPDATE $table SET ${entry.key} = ${entry.value} '
           'WHERE ${entry.key} IS NULL',
         );
       }
@@ -536,8 +572,12 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// The column names the `song_notes` table currently has on disk.
-  Future<Set<String>> _songColumnNames() async {
-    final rows = await customSelect("PRAGMA table_info('song_notes')").get();
+  Future<Set<String>> _songColumnNames() => _columnNames('song_notes');
+
+  /// The column names [table] currently has on disk; empty if the table does
+  /// not exist yet.
+  Future<Set<String>> _columnNames(String table) async {
+    final rows = await customSelect("PRAGMA table_info('$table')").get();
     return rows.map((row) => row.read<String>('name')).toSet();
   }
 
